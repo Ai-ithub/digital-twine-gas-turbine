@@ -1,7 +1,7 @@
 # Compressor-Dashboard
 
 
-Here’s the suggested `README.md` description in Persian:
+
 
 ---
 
