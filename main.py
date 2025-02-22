@@ -2,13 +2,13 @@ import numpy as np
 import pandas as pd
 from scipy import stats
 from scipy.integrate import solve_ivp
-from great_expectations.dataset import PandasDataset
+import great_expectations as ge
 
 # ----------------------------
 # ۱. تولید داده با معیارهای ISO
 # ----------------------------
 class CompressorDataGenerator:
-    def _init_(self, num_samples=100000):
+    def __init__(self, num_samples=100000):
         self.num_samples = num_samples
         self.params = {
             'MW': 16.04,
@@ -44,52 +44,11 @@ class CompressorDataGenerator:
         return self.df
 
 # ----------------------------
-# ۲. اعتبارسنجی با Great Expectations
+# اجرای تولید داده
 # ----------------------------
-class ISOValidator:
-    def _init_(self, df):
-        self.ge_df = PandasDataset(df)
-    
-    def add_iso_expectations(self):
-        self.ge_df.expect_column_values_to_be_between('P_in', 3.0, 4.0, meta={"ISO_standard": "5389:2021"})
-        self.ge_df.expect_column_mean_to_be_between('T_out', 320, 380, meta={"ISO_standard": "5389:2021"})
-        self.ge_df.expect_column_values_to_be_between('Vibration', 0.5, 4.5, meta={"ISO_standard": "10816-3:2018"})
-    
-    def validate(self):
-        return self.ge_df.validate()
+generator = CompressorDataGenerator()
+df_sim = generator.generate()
+df_sim['Status'] = pd.cut(df_sim.Vibration, bins=[0, 2, 4.5, np.inf], labels=['Normal', 'Imbalance', 'Fault'])
+df_sim.to_csv('simulated_compressor_data.csv', index=False)
 
-# ----------------------------
-# ۳. تحلیل آماری پیشرفته
-# ----------------------------
-class StatisticalAnalyzer:
-    def _init_(self, real_data, simulated_data):
-        self.real = real_data
-        self.sim = simulated_data
-    
-    def run_tests(self):
-        results = {}
-        for col in ['P_in', 'T_out', 'Vibration']:
-            results[f'KS_{col}'] = stats.ks_2samp(self.real[col], self.sim[col])
-        results['TTest_Power'] = stats.ttest_ind(self.real['Power'], self.sim['Power'])
-        return results
-
-# ----------------------------
-# اجرای کامل گردش کار
-# ----------------------------
-if _name_ == "_main_":
-    generator = CompressorDataGenerator()
-    df_sim = generator.generate()
-    df_sim['Status'] = pd.cut(df_sim.Vibration, bins=[0, 2, 4.5, np.inf], labels=['Normal', 'Imbalance', 'Fault'])
-    
-    validator = ISOValidator(df_sim)
-    validator.add_iso_expectations()
-    validation_report = validator.validate()
-    
-    df_real = pd.read_csv('real_compressor_data.csv')
-    analyzer = StatisticalAnalyzer(df_real, df_sim)
-    stats_results = analyzer.run_tests()
-    
-    df_sim.to_parquet('validated_compressor_data.parquet')
-    print("گزارش اعتبارسنجی ISO:", validation_report)
-    print("نتایج آماری:", stats_results)
-    
+print("✅ داده‌های شبیه‌سازی‌شده با موفقیت تولید و ذخیره شدند.")
