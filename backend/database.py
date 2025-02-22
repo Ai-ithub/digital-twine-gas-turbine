@@ -1,16 +1,16 @@
-import mysql.connector
+import pymysql
 from flask import Flask, jsonify
 
 # Database Connection Class
 class DatabaseReader:
     def __init__(self, host, user, password, database, table):
-        self.conn = mysql.connector.connect(
+        self.conn = pymysql.connect(
             host=host,
             user=user,
             password=password,
             database=database
         )
-        self.cursor = self.conn.cursor(dictionary=True)
+        self.cursor = self.conn.cursor(pymysql.cursors.DictCursor)
         self.table = table
         self.cursor.execute(f"SELECT * FROM {self.table}")
         self.data = self.cursor.fetchall()
