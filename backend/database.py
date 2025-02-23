@@ -23,3 +23,4 @@ class DatabaseReader:
             return record
         else:
             return None
+
