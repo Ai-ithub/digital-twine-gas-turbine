@@ -71,6 +71,8 @@ def dart_predictions():
 
     predictions_list = [{"Entry": idx + 1, "Predicted Value": float(value)} for idx, value in enumerate(predicted_values)]
     return jsonify ({"Dart Predictions":predictions_list})
+
+
 if __name__ == '__main__':
     app.run(debug=True)
 
