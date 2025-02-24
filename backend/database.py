@@ -1,30 +1,3 @@
-# import pymysql
-# from flask import Flask, jsonify
-
-# # Database Connection Class
-# class DatabaseReader:
-#     def __init__(self, host, user, password, database, table):
-#         self.conn = pymysql.connect(
-#             host=host,
-#             user=user,
-#             password=password,
-#             database=database
-#         )
-#         self.cursor = self.conn.cursor(pymysql.cursors.DictCursor)
-#         self.table = table
-#         self.cursor.execute(f"SELECT * FROM {self.table}")
-#         self.data = self.cursor.fetchall()
-#         self.index = 0
-    
-#     def get_next(self):
-#         if self.index < len(self.data):
-#             record = self.data[self.index]
-#             self.index += 1
-#             return record
-#         else:
-#             return None
-
-
 import pymysql
 from typing import Dict, List, Optional
 import logging
@@ -78,7 +51,7 @@ class CompressorDatabase:
 
         base_query = f"""
             SELECT 
-                timestamp,
+                TimeData,  -- Changed from 'timestamp' to 'TimeData'
                 Pressure_In,
                 Temperature_In,
                 Flow_Rate,
@@ -86,7 +59,7 @@ class CompressorDatabase:
                 Temperature_Out,
                 Efficiency
             FROM {self.table}
-            ORDER BY timestamp ASC
+            ORDER BY TimeData ASC
         """
         
         try:
