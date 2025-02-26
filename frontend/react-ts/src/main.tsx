@@ -1,11 +1,7 @@
-<<<<<<< HEAD
-=======
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
-import './index.css'
-import App from './App.tsx'
-import './index.css'
->>>>>>> main
+ 
+ 
+ 
+
 
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
@@ -14,7 +10,7 @@ import Home from './pages/Home';
 import Status from './pages/Status';
 import Analytics from './pages/Analytics';
 import Sensor from './pages/Sensor';
-
+import './index.css'
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <Router>
     <Routes>
