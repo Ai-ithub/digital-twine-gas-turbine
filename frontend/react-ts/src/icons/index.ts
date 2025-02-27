@@ -52,6 +52,12 @@ import { ReactComponent as ChatIcon } from "./chat.svg?react";
 import { ReactComponent as MoreDotIcon } from "./moredot.svg?react";
 import { ReactComponent as AlertHexaIcon } from "./alert-hexa.svg?react";
 import { ReactComponent as ErrorHexaIcon } from "./info-hexa.svg?react";
+import { ReactComponent as HomeIcon } from "./home.svg?react";
+import { ReactComponent as AnalysticIcon } from "./analysis.svg?react";
+import { ReactComponent as RepairIcon } from "./repair.svg?react";
+import { ReactComponent as SensorIcon } from "./sensor.svg?react";
+
+
 
 export {
   ErrorHexaIcon,
@@ -67,7 +73,6 @@ export {
   BoxIcon,
   CloseIcon,
   CheckCircleIcon,
-  AlertIcon,
   InfoIcon,
   ErrorIcon,
   ArrowUpIcon,
@@ -108,4 +113,9 @@ export {
   HorizontaLDots,
   ChevronUpIcon,
   ChatIcon,
+  HomeIcon,
+  AnalysticIcon,
+  SensorIcon,
+  AlertIcon,
+  RepairIcon,
 };
