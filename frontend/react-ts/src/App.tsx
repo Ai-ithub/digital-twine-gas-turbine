@@ -10,6 +10,7 @@ import Sensor from "./pages/Sensor";
 import NotFound from "./pages/OtherPage/NotFound";
 import Analytic from "./pages/Analytic";
 
+
 export default function App() {
   return (
     <>
