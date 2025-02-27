@@ -3,8 +3,18 @@ import { Link, useLocation } from "react-router";
   import {
  
   ChevronDownIcon,
- 
+  
   HorizontaLDots,
+
+  HomeIcon,
+
+  AnalysticIcon,
+
+  SensorIcon,
+
+  RepairIcon,
+
+  AlertIcon  
   
 } from "../icons";
 import { useSidebar } from "../context/SidebarContext";
@@ -12,34 +22,38 @@ import { useSidebar } from "../context/SidebarContext";
 
 type NavItem = {
   name: string;
-  // icon: React.ReactNode;
+  icon: React.ReactNode;
   path?: string;
   subItems?: { name: string; path: string; pro?: boolean; new?: boolean }[];
 };
 
 const navItems: NavItem[] = [
   {
-    // icon: <GridIcon />,
+    icon: <HomeIcon />,
     name: "Home",
     path: "/",
   },
   {
-    
+    icon: <AnalysticIcon />,
+
     name: "Analytic",
     path: "/Analytic",
   },
   {
-    
+    icon: <AlertIcon />,
+
     name: "Aleart",
     path: "/Aleart",
   },
   {
-     
+    icon: <SensorIcon />,
+
     name: "Sensor",
     path: "/Sensor",
   },
   {
-   
+    icon: <RepairIcon />,
+
     name: "Repairs",
     path: "/Repairs",
   },
@@ -118,7 +132,7 @@ const AppSidebar: React.FC = () => {
                     : "menu-item-icon-inactive"
                 }`}
               >
-                {/* {nav.icon} */}
+                {nav.icon}
               </span>
               {(isExpanded || isHovered || isMobileOpen) && (
                 <span className="menu-item-text">{nav.name}</span>
@@ -149,7 +163,7 @@ const AppSidebar: React.FC = () => {
                       : "menu-item-icon-inactive"
                   }`}
                 >
-                  {/* {nav.icon} */}
+                  {nav.icon}
                 </span>
                 {(isExpanded || isHovered || isMobileOpen) && (
                   <span className="menu-item-text">{nav.name}</span>
@@ -237,8 +251,8 @@ const AppSidebar: React.FC = () => {
           !isExpanded && !isHovered ? "lg:justify-center" : "justify-start"
         }`}
       >
-        {/* <Link to="/">
-          {isExpanded || isHovered || isMobileOpen ? (
+        <Link to="/">
+          
             <>
               <img
                 className="dark:hidden"
@@ -247,23 +261,16 @@ const AppSidebar: React.FC = () => {
                 width={150}
                 height={40}
               />
-              <img
-                className="hidden dark:block"
-                src="/images/logo/Air_Compressor_1.svg"
+                            <img
+                className="dark:hidden"
+                src="/images/logo/SGT-400.svg"
                 alt="Logo"
                 width={150}
                 height={40}
               />
             </>
-          ) : (
-            <img
-              src="/images/logo/Air_Compressor_1.svg"
-              alt="Logo"
-              width={32}
-              height={32}
-            />
-          )}
-        </Link> */}
+
+        </Link>
       </div>
       <div className="flex flex-col overflow-y-auto duration-300 ease-linear no-scrollbar">
         <nav className="mb-6">
