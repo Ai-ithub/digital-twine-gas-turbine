@@ -1,5 +1,10 @@
  
 import PageMeta from "../components/common/PageMeta";
+import GanttChart from "../components/common/GanttChart";
+import AirCompressorPerformanceMetrics from "../components/common/AirCompressorPerformanceMetrics";
+import CompressorHeatMap from "../components/common/CompressorHeatMap";
+
+
 
 export default function Analytic() {
   return (
@@ -8,27 +13,19 @@ export default function Analytic() {
         title="Analytic"
         description="This is Analytic page"
       />
-      <div className="grid grid-cols-12 gap-4 md:gap-6">
-        <div className="border col-span-12 space-y-6 xl:col-span-7">
-a
-        </div>
-
-        <div className="border col-span-12 xl:col-span-5">
-          b
-        </div>
-
-        <div className="border col-span-12">
-         c
-        </div>
-
-        <div className="border col-span-12 xl:col-span-5">
-   d
-        </div>
-
-        <div className="border col-span-12 xl:col-span-7">
-          e
-        </div>
+      <div className= "mb-4">
+        <GanttChart />
       </div>
+
+      <div className= "mb-4">
+      <CompressorHeatMap />
+      </div>
+      
+      <div className= "mb-4">
+      <AirCompressorPerformanceMetrics />
+      </div>
+
+
     </>
   );
 }
