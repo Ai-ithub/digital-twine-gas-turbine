@@ -1,25 +1,18 @@
- 
- 
- 
+import { StrictMode } from "react";
+import { createRoot } from "react-dom/client";
+import "./index.css";
+import "swiper/swiper-bundle.css";
+import "simplebar-react/dist/simplebar.min.css";
+import App from "./App.tsx";
+import { AppWrapper } from "./components/common/PageMeta.tsx";
+import { ThemeProvider } from "./context/ThemeContext.tsx";
 
-
-import ReactDOM from 'react-dom/client';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import App from './App';
-import Home from './pages/Home';
-import Status from './pages/Status';
-import Analytics from './pages/Analytics';
-import Sensor from './pages/Sensor';
-import './index.css'
-ReactDOM.createRoot(document.getElementById('root')!).render(
-  <Router>
-    <Routes>
-      <Route path="/" element={<App />}>
-        <Route index element={<Home />} />
-        <Route path="status" element={<Status />} />
-        <Route path="analytics" element={<Analytics />} />
-        <Route path="sensor" element={<Sensor />} />
-      </Route>
-    </Routes>
-  </Router>
+createRoot(document.getElementById("root")!).render(
+  <StrictMode>
+    <ThemeProvider>
+      <AppWrapper>
+        <App />
+      </AppWrapper>
+    </ThemeProvider>
+  </StrictMode>
 );
