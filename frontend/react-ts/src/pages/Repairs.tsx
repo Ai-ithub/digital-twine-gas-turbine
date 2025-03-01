@@ -1,5 +1,6 @@
  
 import PageMeta from "../components/common/PageMeta";
+import Dashboard from "../components/common/Dashboard";
 
 export default function Repairs() {
   return (
@@ -8,27 +9,9 @@ export default function Repairs() {
         title="Repairs"
         description="This is repairs page"
       />
-      <div className="grid grid-cols-12 gap-4 md:gap-6">
-        <div className="border col-span-12 space-y-6 xl:col-span-7">
-a
-        </div>
 
-        <div className="border col-span-12 xl:col-span-5">
-          b
-        </div>
+      <Dashboard /> 
 
-        <div className="border col-span-12">
-         c
-        </div>
-
-        <div className="border col-span-12 xl:col-span-5">
-   d
-        </div>
-
-        <div className="border col-span-12 xl:col-span-7">
-          e
-        </div>
-      </div>
     </>
   );
 }
