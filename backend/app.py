@@ -8,15 +8,15 @@ db_config = {
     "host": "localhost",
     "user": "root",
     "password": "f1309D1309",
-    "database": "compressor",
-    "table": "CompressorData"
+    "database": "compressor_db",
+    "table": "compressor_data"
 }
 
 MODEL_PATH = "compressor_status_prediction_model.onnx"
 # Create instances of the database and predictor
 db = CompressorDatabase(**db_config)
 predictor = VibrationPredictor(db_config=db_config)
-predictor_status = CompressorStatusPredictor(db_config, MODEL_PATH)
+# predictor_status = CompressorStatusPredictor(db_config, MODEL_PATH)
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -29,7 +29,7 @@ def get_all_data():
     
     # Query to get all columns
     query = f"""
-        SELECT * FROM {db.table} ORDER BY TimeData ASC
+        SELECT * FROM {db.table} ORDER BY Time ASC
     """
     
     if not db.load_data(query=query):
@@ -58,8 +58,8 @@ def dart_predictions():
     db_host = "localhost"
     db_user = "root"
     db_password = "f1309D1309"
-    db_name = "compressor"
-    db_table = "CompressorData"
+    db_name = "compressor_db"
+    db_table = "compressor_data"
     
     # Create a predictor object
     predictor = ONNXPredictor(onnx_model_path, db_host, db_user, db_password, db_name, db_table)
@@ -77,17 +77,17 @@ def dart_predictions():
 
 
 
-@app.route('/predict', methods=['GET'])
-def predict():
-    """Endpoint برای پیش‌بینی وضعیت کمپرسور."""
-    prediction = predictor_status.predict()
-    return jsonify({"predicted_status": prediction})
+# @app.route('/predict', methods=['GET'])
+# def predict():
+#     """Endpoint برای پیش‌بینی وضعیت کمپرسور."""
+#     prediction = predictor_status.predict()
+#     return jsonify({"predicted_status": prediction})
 
 
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, host='0.0.0.0', port=5001)
 
 
 
