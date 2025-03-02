@@ -431,9 +431,9 @@ plt.ylabel('Vibration (mm/s)')
 plt.legend()
 plt.show()
 
-# !pip install onnx
+!pip install onnx
 
-# !pip install onnxruntime
+!pip install onnxruntime
 
 import torch
 import onnx
