@@ -9,8 +9,8 @@ class CompressorDatabase:
                  host: str = "localhost",
                  user: str = "root",
                  password: str = "f1309D1309",
-                 database: str = "compressor_db",
-                 table: str = "compressor_data"):
+                 database: str = "compressor",
+                 table: str = "CompressorData"):
         
         self.host = host
         self.user = user
