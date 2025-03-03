@@ -101,10 +101,10 @@ if __name__ == "__main__":
     onnx_model_path = "dart_model.onnx"  # Path to the ONNX model
     
     # Database configuration
-    db_host = "localhost"
-    db_user = "root"
+    db_host = "MYSQL1001.site4now.net"
+    db_user = "ab377b_faridka"
     db_password = "f1309D1309"
-    db_name = "compressor_db"
+    db_name = "db_ab377b_faridka"
     db_table = "compressor_data"
     
     # Create a predictor object
