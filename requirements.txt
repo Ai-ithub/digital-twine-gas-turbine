@@ -2,3 +2,8 @@ great_expectations
 pandas 
 numpy
 scipy
+flask
+pymysql
+
+
+
