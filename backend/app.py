@@ -98,6 +98,8 @@ from vibration_predictor import VibrationPredictor  # Import prediction class
 from onnxPredictor import ONNXPredictor
 from model_class import CompressorStatusPredictor
 import logging
+from flask_cors import CORS
+
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
@@ -115,6 +117,8 @@ MODEL_PATH = "compressor_status_prediction_model.onnx"
 
 # Initialize Flask app
 app = Flask(__name__)
+CORS(app)
+
 
 @app.route('/get_all_data', methods=['GET'])
 def get_all_data():
