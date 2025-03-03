@@ -14,7 +14,8 @@ import { Link, useLocation } from "react-router";
 
   RepairIcon,
 
-  AlertIcon  
+  AlertIcon,  
+   
   
 } from "../icons";
 import { useSidebar } from "../context/SidebarContext";
@@ -24,7 +25,7 @@ type NavItem = {
   name: string;
   icon: React.ReactNode;
   path?: string;
-  subItems?: { name: string; path: string; pro?: boolean; new?: boolean }[];
+  subItems?: { name: string; path: string; pro?: boolean; new?: boolean; }[];
 };
 
 const navItems: NavItem[] = [
@@ -33,11 +34,11 @@ const navItems: NavItem[] = [
     name: "Home",
     path: "/",
   },
+ 
   {
     icon: <AnalysticIcon />,
-
     name: "Analytic",
-    path: "/Analytic",
+    subItems: [{ name: "Compressor Risk Heat Map", path: "/RiskHeatMap", pro: false   },{ name: "All data", path: "/Analytic", pro: false }],
   },
   {
     icon: <AlertIcon />,
