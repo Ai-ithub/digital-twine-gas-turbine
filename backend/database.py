@@ -6,10 +6,10 @@ class CompressorDatabase:
     """Class for managing connection and reading compressor data"""
     
     def __init__(self, 
-                 host: str = "MYSQL1001.site4now.net",
-                 user: str = "ab377b_faridka",
-                 password: str = "f1309D1309",
-                 database: str = "db_ab377b_faridka",
+                 host: str = "localhost",
+                 user: str = "root",
+                 password: str = "Amir@123456",
+                 database: str = "compressor_db",
                  table: str = "compressor_data"):
         
         self.host = host
@@ -86,6 +86,3 @@ class CompressorDatabase:
         if self.connection:
             self.connection.close()
             self.logger.info("Database connection closed")
-
-
-
