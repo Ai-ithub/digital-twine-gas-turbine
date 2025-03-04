@@ -2,8 +2,7 @@
 import PageMeta from "../components/common/PageMeta";
 import GanttChart from "../components/common/GanttChart";
 import AirCompressorPerformanceMetrics from "../components/common/AirCompressorPerformanceMetrics";
-import CompressorHeatMap from "../components/common/CompressorHeatMap";
-
+ 
 
 
 export default function Analytic() {
@@ -17,9 +16,7 @@ export default function Analytic() {
         <GanttChart />
       </div>
 
-      <div className= "mb-4">
-      <CompressorHeatMap />
-      </div>
+   
       
       <div className= "mb-4">
       <AirCompressorPerformanceMetrics />

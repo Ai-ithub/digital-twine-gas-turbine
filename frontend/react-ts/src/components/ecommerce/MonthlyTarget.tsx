@@ -17,7 +17,7 @@ console.log(data,index);
 useEffect(() => {
   const fetchData = async () => {
       try {
-          const response = await fetch("http://localhost:5000/get_all_data");
+          const response = await fetch("http://192.168.37.122:5000/get_all_data");
           if (!response.ok) {
               throw new Error("❌ مشکل در دریافت داده");
           }
