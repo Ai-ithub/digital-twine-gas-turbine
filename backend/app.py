@@ -6,7 +6,7 @@ from onnxPredictor import ONNXPredictor
 db_config = {
     "host": "localhost",
     "user": "root",
-    "password": "f1309D1309",
+    "password": "Amir@123456",
     "database": "compressor_db",
     "table": "compressor_data"
 }
