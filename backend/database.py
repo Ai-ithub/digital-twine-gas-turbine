@@ -8,7 +8,7 @@ class CompressorDatabase:
     def __init__(self, 
                  host: str = "localhost",
                  user: str = "root",
-                 password: str = "f1309D1309",
+                 password: str = "Amir@123456",
                  database: str = "compressor_db",
                  table: str = "compressor_data"):
         
