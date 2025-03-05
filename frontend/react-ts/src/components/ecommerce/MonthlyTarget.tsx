@@ -11,7 +11,7 @@ export default function MonthlyTarget() {
   const [index, setIndex] = useState(0);
 // افزایش عدد
 
-console.log(data,index);
+ 
 
 
 useEffect(() => {
@@ -61,7 +61,7 @@ useEffect(() => {
 
 
 
-console.log(currentTemp);
+ 
 
   
 
@@ -157,26 +157,28 @@ const series = [currentTemp !== null ? currentTemp : 0];
     
     <div className="rounded-2xl border border-gray-200 bg-gray-100 dark:border-gray-800 dark:bg-white/[0.03]">
       <div className="px-5 pt-5 bg-white shadow-default rounded-2xl pb-11 dark:bg-gray-900 sm:px-6 sm:pt-6">
- 
-        <div className="relative ">
-        <div className="flex items-center justify-center gap-5 px-6 py-3.5 sm:gap-8 sm:py-5">
-        Temperature in
- 
 
+        <div className="relative ">
+
+        <div className="flex items-center justify-center gap-5 px-6 py-3.5 sm:gap-8 sm:py-5">
+  
+   
       
       </div>
-          <div className="max-h-[330px]" id="chartDarkStyle">
-            <Chart
+          <div className="w-35 h-35 max-h-[330px]" id="chartDarkStyle">
+
+            {/* <Chart
               options={options}
               series={series}
               type="radialBar"
               height={330}
-            />
+            /> */}
+           <div className="w-40 absolute left-1/2 top-full -translate-x-1/2 -translate-y-[95%] rounded-full bg-success-50 px-8 py-14 text-3xl font-medium text-success-600 dark:bg-success-500/15 dark:text-success-500">
+            {model}
           </div>
 
-          <span className="absolute left-1/2 top-full -translate-x-1/2 -translate-y-[95%] rounded-full bg-success-50 px-3 py-1 text-xs font-medium text-success-600 dark:bg-success-500/15 dark:text-success-500">
-            {model}
-          </span>
+
+          </div>
         </div>
  
       </div>
