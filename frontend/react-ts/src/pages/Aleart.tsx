@@ -21,7 +21,7 @@ const Alert: React.FC = () => {
 
   const fetchSensorData = async () => {
     try {
-      const response = await fetch("http://127.0.0.1:5000/get_all_data");
+      const response = await fetch("http://192.168.37.122:5000/get_all_data");
       if (!response.ok) throw new Error("Failed to fetch data");
 
       let data = await response.json();
