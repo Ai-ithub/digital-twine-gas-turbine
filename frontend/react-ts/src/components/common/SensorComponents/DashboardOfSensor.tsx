@@ -80,14 +80,14 @@ const DashboardOfSensors: React.FC = () => {
   const currentSensor = sensorData[currentIndex];
 
   return (
-    <div className="max-w-7xl mx-auto p-6 bg-gray-100 min-h-screen">
+    <div className="max-w-6xl mx-auto p-6   min-h-screen">
       {/* Dashboard Title */}
       <h2 className="text-3xl font-bold text-center text-gray-800 mb-6">
         Compressor Sensor Dashboard
       </h2>
 
       {/* Sensor Data Display */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 mb-2">
         <SensorCard title="Temperature" component={<TemperatureGauge temperature={currentSensor.Ambient_Temperature} />} />
         <SensorCard title="Air Quality" component={<AirQualityCircle value={currentSensor.Air_Pollution} />} />
         <SensorCard title="Pressure" component={<PressureBar pressure={currentSensor.Pressure_In} />} />
@@ -111,7 +111,7 @@ const DashboardOfSensors: React.FC = () => {
 // Reusable Card Component for Sensor Widgets
 const SensorCard: React.FC<{ title: string; component: React.ReactNode }> = ({ title, component }) => {
   return (
-    <div className="bg-white shadow-md rounded-lg p-6 flex flex-col items-center border border-gray-300">
+    <div className="mx-auto w-full max-w-[630px] text-center px-5 py-7 bg-white shadow-md rounded-lg  flex flex-col items-center border border-gray-300">
       <h3 className="text-lg font-semibold text-gray-700 mb-4">{title}</h3>
       {component}
     </div>
@@ -121,3 +121,8 @@ const SensorCard: React.FC<{ title: string; component: React.ReactNode }> = ({ t
 export default DashboardOfSensors;
 
 
+<div className="min-h-screen rounded-2xl border border-gray-200 bg-white px-5 py-7 dark:border-gray-800 dark:bg-white/[0.03] xl:px-10 xl:py-12">
+<div className="mx-auto w-full max-w-[630px] text-center">
+ 
+</div>
+</div>
