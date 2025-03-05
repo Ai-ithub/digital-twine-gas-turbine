@@ -21,7 +21,7 @@ const Alert: React.FC = () => {
 
   const fetchSensorData = async () => {
     try {
-      const response = await fetch("http://192.168.37.122:5000/get_all_data");
+      const response = await fetch("http://127.0.0.1:5000/get_all_data");
       if (!response.ok) throw new Error("Failed to fetch data");
 
       let data = await response.json();
@@ -141,20 +141,7 @@ const Alert: React.FC = () => {
   
 
   return (
-<<<<<<< HEAD
     <div className="max-w-7xl mx-auto p-6 bg-gray-100 min-h-screen">
-=======
-    <>
-      <PageMeta
-        title="Aleart"
-        description="This is aleart page"
-      />
-  
-      <div className="grid grid-cols-12 gap-4 md:gap-6">
-        <div className="border col-span-12 space-y-6 xl:col-span-7">
-        <DataInserter/>
-        </div>
->>>>>>> main
 
       <h2 className="text-3xl font-bold text-center text-gray-800 mb-6">
       Compressor Snsors Warnings
