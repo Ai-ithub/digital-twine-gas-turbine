@@ -22,13 +22,13 @@ const DashboardOfSensors: React.FC = () => {
 
   const fetchSensorData = async () => {
     try {
-      const response = await fetch("http://127.0.0.1:5001/get_all_data");
+      const response = await fetch("http://127.0.0.1:5000/get_all_data");
       if (!response.ok) throw new Error("Failed to fetch data");
 
       let data = await response.json();
       console.log("Raw Data from API:", data);
 
-      const parsedData: SensorData[] = data.data.map((item: any) => ({
+      const parsedData: SensorData[] = data.map((item: any) => ({
         Air_Pollution: item.Air_Pollution ?? 0,
         Ambient_Temperature: item.Ambient_Temperature ?? 0,
         Efficiency: item.Efficiency ?? 0,
