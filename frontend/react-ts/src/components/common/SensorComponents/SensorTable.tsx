@@ -19,21 +19,13 @@ const SensorTable: React.FC<SensorTableProps> = ({ data }) => {
           <th className="border px-4 py-2">Fuel Quality</th>
           <th className="border px-4 py-2">Humidity</th>
           <th className="border px-4 py-2">Load Factor</th>
-          <th className="border px-4 py-2">Maintenance Quality</th>
-          <th className="border px-4 py-2">Power Consumption</th>
-          <th className="border px-4 py-2">Pressure In</th>
-          <th className="border px-4 py-2">Pressure Out</th>
-          <th className="border px-4 py-2">Startup Cycles</th>
-          <th className="border px-4 py-2">Temperature In</th>
-          <th className="border px-4 py-2">Temperature Out</th>
-          <th className="border px-4 py-2">Time</th>
-          <th className="border px-4 py-2">Vibration</th>
-          <th className="border px-4 py-2">ID</th>     
+          <th className="border px-4 py-2">Maintenance Quality</th> 
        </tr>
+      
         </thead>
         <tbody>
           {data.length > 0 ? (
-            data.map((sensor) => (
+            data.map((sensor) => (<>
               <tr key={sensor.id} className="text-center">
                 <td className="border px-4 py-2">{sensor.Air_Pollution}</td>
                 <td className="border px-4 py-2">{sensor.Ambient_Temperature}</td>
@@ -47,7 +39,19 @@ const SensorTable: React.FC<SensorTableProps> = ({ data }) => {
 
                 <td className="border px-4 py-2">{sensor.Load_Factor}</td>
                 <td className="border px-4 py-2">{sensor.Maintenance_Quality}</td>
-
+              </tr>
+ <br />
+              <tr className="bg-gray-200 mt-5">
+       <th className="border px-4 py-2">Power Consumption</th>
+          <th className="border px-4 py-2">Pressure In</th>
+          <th className="border px-4 py-2">Pressure Out</th>
+          <th className="border px-4 py-2">Startup Cycles</th>
+          <th className="border px-4 py-2">Temperature In</th>
+          <th className="border px-4 py-2">Temperature Out</th>
+          <th className="border px-4 py-2">Time</th>
+          <th className="border px-4 py-2">Vibration</th>  
+       </tr>
+              <tr>
                 <td className="border px-4 py-2">{sensor.Power_Consumption}</td>
 
                 <td className="border px-4 py-2">{sensor.Pressure_In}</td>
@@ -59,13 +63,13 @@ const SensorTable: React.FC<SensorTableProps> = ({ data }) => {
                 <td className="border px-4 py-2">{sensor.Temperature_In}</td>
 
                 <td className="border px-4 py-2">{sensor.Temperature_Out}</td>
-
                 <td className="border px-4 py-2">
                   {sensor.TimeData.toLocaleString()} {/* نمایش تاریخ به فرمت محلی */}
                 </td>
                 <td className="border px-4 py-2">{sensor.Vibration}</td>
-                <td className="border px-4 py-2">{sensor.id}</td>
-              </tr>
+              
+                
+              </tr></>
             ))
           ) : (
             <tr>

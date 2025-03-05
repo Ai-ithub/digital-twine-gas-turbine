@@ -1,15 +1,21 @@
-import Chart from "react-apexcharts";
-import { ApexOptions } from "apexcharts";
+// import Chart from "react-apexcharts";
+// import { ApexOptions } from "apexcharts";
 import { useEffect, useState } from "react";
  
 
 export default function MonthlyTarget() {
   
-  const [data, setData] = useState<any[]>([]);
+  // const [data, setData] = useState<any[]>([]);
   const [temperatureArray, setTemperatureArray] = useState<number[]>([]);
   const [currentTemp, setCurrentTemp] = useState<number | null>(null);
-  const [index, setIndex] = useState(0);
+  // const [index, setIndex] = useState(0);
 // افزایش عدد
+
+
+
+
+
+console.log(temperatureArray);
 
  
 
@@ -22,7 +28,7 @@ useEffect(() => {
               throw new Error("❌ مشکل در دریافت داده");
           }
           const result = await response.json();
-          setData(result);
+          // setData(result);
 
           // استخراج `Temperature_In` از داده‌ها و ذخیره در آرایه
           const tempArray = result.map((item: any) => item.Temperature_In);
@@ -43,19 +49,19 @@ useEffect(() => {
 
  
 
-useEffect(() => {
-  if (temperatureArray.length === 0) return;
+// useEffect(() => {
+//   if (temperatureArray.length === 0) return;
 
-  const interval = setInterval(() => {
-      setIndex((prevIndex) => {
-          const newIndex = (prevIndex + 1) % temperatureArray.length;
-          setCurrentTemp(temperatureArray[newIndex]); // مقدار دما را بروزرسانی می‌کند
-          return newIndex;
-      });
-  }, 1000); // هر 1 ثانیه مقدار تغییر کند
+//   // const interval = setInterval(() => {
+//   //     setIndex((prevIndex) => {
+//   //         const newIndex = (prevIndex + 1) % temperatureArray.length;
+//   //         setCurrentTemp(temperatureArray[newIndex]); // مقدار دما را بروزرسانی می‌کند
+//   //         return newIndex;
+//   //     });
+//   // }, 1000); // هر 1 ثانیه مقدار تغییر کند
 
-  return () => clearInterval(interval); // پاک کردن تایمر هنگام خروج از کامپوننت
-}, [temperatureArray]);
+//   return () => clearInterval(interval); // پاک کردن تایمر هنگام خروج از کامپوننت
+// }, [temperatureArray]);
  
  
 
@@ -99,53 +105,53 @@ const series = [currentTemp !== null ? currentTemp : 0];
     
 
 
-  const options: ApexOptions = {
-    colors: [mcolor],
-    chart: {
-      fontFamily: "Outfit, sans-serif",
-      type: "radialBar",
-      height: 380 ,
-      sparkline: {
-        enabled: true,
-      },
-    },
-    plotOptions: {
-      radialBar: {
-        startAngle: -85,
-        endAngle: 85,
-        hollow: {
-          size: "65%",
-        },
-        track: {
-          background: "#E4E7EC",
-          strokeWidth: "100%",
-          margin: 5, // margin is in pixels
-        },
-        dataLabels: {
-          name: {
-            show: false,
-          },
-          value: {
-            fontSize: "24px",
-            fontWeight: "200",
-            offsetY: -40,
-            color: mcolor,
-            formatter: function (val) {
-              return val + " C";
-            },
-          },
-        },
-      },
-    },
-    fill: {
-      type: "solid",
-      colors: [mcolor],
-    },
-    stroke: {
-      lineCap: "round",
-    },
-    labels: ["Progress"],
-  };
+  // const options: ApexOptions = {
+  //   colors: [mcolor],
+  //   chart: {
+  //     fontFamily: "Outfit, sans-serif",
+  //     type: "radialBar",
+  //     height: 380 ,
+  //     sparkline: {
+  //       enabled: true,
+  //     },
+  //   },
+  //   plotOptions: {
+  //     radialBar: {
+  //       startAngle: -85,
+  //       endAngle: 85,
+  //       hollow: {
+  //         size: "65%",
+  //       },
+  //       track: {
+  //         background: "#E4E7EC",
+  //         strokeWidth: "100%",
+  //         margin: 5, // margin is in pixels
+  //       },
+  //       dataLabels: {
+  //         name: {
+  //           show: false,
+  //         },
+  //         value: {
+  //           fontSize: "24px",
+  //           fontWeight: "200",
+  //           offsetY: -40,
+  //           color: mcolor,
+  //           formatter: function (val) {
+  //             return val + " C";
+  //           },
+  //         },
+  //       },
+  //     },
+  //   },
+  //   fill: {
+  //     type: "solid",
+  //     colors: [mcolor],
+  //   },
+  //   stroke: {
+  //     lineCap: "round",
+  //   },
+  //   labels: ["Progress"],
+  // };
   
  // بررسی اگر `data` یک Object است، تبدیل به آرایه کنیم
 

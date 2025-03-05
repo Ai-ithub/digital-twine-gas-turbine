@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from "react";
 import {
-  LineChart,
+  // LineChart,
   Line,
   XAxis,
   YAxis,
@@ -26,6 +26,7 @@ const AirCompressorChart: React.FC = () => {
   const [timeFrame, setTimeFrame] = useState<string>("weekly");
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+
 
   const generateData = (period: string): ChartData[] => {
     const dataPoints = period === "weekly" ? 7 : 30;
@@ -56,6 +57,10 @@ const AirCompressorChart: React.FC = () => {
       const svgData = new XMLSerializer().serializeToString(svgElement);
       const canvas = document.createElement("canvas");
       const ctx = canvas.getContext("2d");
+
+      console.log(ctx);
+      console.log(setIsLoading,setError );
+
       const img = new Image();
       img.onload = () => {
         canvas.width = img.width;
