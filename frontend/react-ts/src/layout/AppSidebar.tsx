@@ -58,6 +58,12 @@ const navItems: NavItem[] = [
     name: "Repairs",
     path: "/Repairs",
   },
+  {
+    icon: <SensorIcon />,
+
+    name: "Register",
+    path: "/Register",
+  },
    
 ];
 
