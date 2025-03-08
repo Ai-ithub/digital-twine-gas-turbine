@@ -1,17 +1,15 @@
- 
+// src\pages\Sensor.tsx
 import PageMeta from "../components/common/PageMeta";
-import DashboardOfSensors from "../components/common/SensorComponents/DashboardOfSensor"
+import DashboardOfSensors from "../components/common/SensorComponents/DashboardOfSensor";
 
 export default function Sensor() {
   return (
     <>
-      <PageMeta
-        title="sensor"
-        description="This is sensor page"
-      />
-
+      <PageMeta title="Sensor" description="This is the sensor page" />
       <DashboardOfSensors />
-
     </>
   );
 }
+
+
+
