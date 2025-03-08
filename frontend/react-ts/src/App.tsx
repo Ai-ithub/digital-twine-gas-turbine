@@ -9,6 +9,7 @@ import Repairs from "./pages/Repairs";
 import Sensor from "./pages/Sensor";
 import NotFound from "./pages/OtherPage/NotFound";
 import Analytic from "./pages/Analytic";
+import RiskHeatMap from "./pages/RiskHeatMap";
 
 
 export default function App() {
@@ -24,6 +25,7 @@ export default function App() {
             <Route   path="/Repairs" element={< Repairs/>} />
             <Route   path="/Analytic" element={< Analytic />} />
             <Route   path="/Sensor" element={<Sensor />} />
+            <Route   path="/RiskHeatMap" element={<RiskHeatMap />} />
             <Route   path="*" element={<NotFound />} />
  
 
