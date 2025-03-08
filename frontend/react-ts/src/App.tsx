@@ -10,6 +10,8 @@ import Sensor from "./pages/Sensor";
 import NotFound from "./pages/OtherPage/NotFound";
 import Analytic from "./pages/Analytic";
 import RiskHeatMap from "./pages/RiskHeatMap";
+import SignIn from "./pages/AuthPages/SignIn";
+ import Register from "./pages/Register";
 
 
 export default function App() {
@@ -26,14 +28,15 @@ export default function App() {
             <Route   path="/Analytic" element={< Analytic />} />
             <Route   path="/Sensor" element={<Sensor />} />
             <Route   path="/RiskHeatMap" element={<RiskHeatMap />} />
-            <Route   path="*" element={<NotFound />} />
+            <Route   path="/Register"    element={<Register />} />
  
 
             {/* Others Page */}
  
           </Route>
 
- 
+          <Route path="/signin" element={<SignIn />} />
+          <Route   path="*" element={<NotFound />} />
         </Routes>
       </Router>
     </>
