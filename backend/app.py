@@ -95,6 +95,7 @@
 from flask import Flask, jsonify
 from database import CompressorDatabase  # Import database class
 from vibration_predictor import VibrationPredictor  # Import prediction class
+from Anomaly_Detection import AnomalyDetector # Import the new AnomalyDetector class
 from onnxPredictor import ONNXPredictor
 from model_class import CompressorStatusPredictor
 import logging
@@ -188,6 +189,26 @@ def predict_status():
         return jsonify({"error": "Prediction failed"}), 500
     
     return jsonify({"Predicted Status": prediction})
+
+
+
+
+@app.route('/detect_anomaly', methods=['GET'])
+def detect_anomaly():
+    """Detect anomalies using the latest data."""
+    try:
+        # مسیر مدل ONNX برای تشخیص ناهنجاری
+        anomaly_model_path = "isolation_forest_model.onnx"
+        
+        # ایجاد شیء AnomalyDetector
+        detector = AnomalyDetector(db_config, anomaly_model_path)
+        
+        # تشخیص ناهنجاری
+        result = detector.detect_anomalies(threshold=0.5)
+        
+        return jsonify({"status": result}), 200
+    except Exception as e:
+        return jsonify({"error": f"Anomaly detection failed: {str(e)}"}), 500
 
 
 if __name__ == '__main__':
