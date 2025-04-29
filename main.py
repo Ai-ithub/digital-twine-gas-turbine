@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import datetime
 
 # تعریف تعداد نمونه‌ها
 num_samples = 100000
@@ -15,6 +16,8 @@ Cp = gamma * R / (gamma - 1)  # گرمای مخصوص ثابت فشار (kJ/kg·
 time_interval = 1  # فاصله زمانی (ثانیه)
 time = np.arange(0, num_samples * time_interval, time_interval)  # بردار زمانی
 
+start_time = datetime.datetime(2025, 4, 28, 0, 0, 0)  # مثلا شروع از این تاریخ
+timestamp = [start_time + datetime.timedelta(seconds=int(t)) for t in time] 
 # تولید داده‌های سری زمانی
 pressure_in = 3.5 + 0.2 * np.sin(0.05 * time) + np.random.normal(0, 0.05, num_samples)  # فشار ورودی (bara)
 temperature_in = 293 + 5 * np.cos(0.03 * time) + np.random.normal(0, 1, num_samples)  # دمای ورودی (K)
@@ -67,7 +70,8 @@ viscosity = 1e-5 + 1e-6 * np.sin(0.02 * time) + np.random.normal(0, 1e-8, num_sa
 
 # ایجاد DataFrame
 data = {
-    "Time": time,  # اضافه کردن بردار زمانی
+    "ID": time,
+    "Timestamp": timestamp,  # اضافه کردن بردار زمانی
     "Pressure_In": pressure_in,
     "Temperature_In": temperature_in - 273.15,  # تبدیل به °C
     "Flow_Rate": flow_rate,
