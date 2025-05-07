@@ -73,14 +73,15 @@ def insert_data(connection, data):
         """
         
         # Remove the 'Time' column from the DataFrame
-        data = data.drop(columns=["Time"])
+        data = data.drop(columns=["Time", 'Anomaly_Score', 'Anomaly_Autoencoder', 'Anomaly_DBSCAN',
+                                  'Final_Anomaly', 'Anomaly_LOF', 'Anomaly_IForest'])
         #data["Timestamp"] = pd.to_datetime(data["Timestamp"])
         # Check that the DataFrame has the expected columns (17 columns)
         print("DataFrame columns after removing Time:", data.columns)
 
         # Convert DataFrame to list of tuples for insertion (17 columns)
         values = data[['Timestamp', 'Pressure_In', 'Temperature_In', 'Flow_Rate', 'Pressure_Out', 
-                       'Temperature_Out', 'Efficiency', 'Power_Consumption', 'Vibration', 'Status', 
+                       'Temperature_Out', 'Efficiency', 'Air_Pollution','Power_Consumption', 'Vibration', 'Status', 
                        'Ambient_Temperature', 'Humidity', 'Startup_Shutdown_Cycles', 'Maintenance_Quality', 'Fuel_Quality', 
                        'Load_Factor']].values.tolist()
         
