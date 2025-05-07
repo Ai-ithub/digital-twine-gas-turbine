@@ -51,7 +51,7 @@ class ONNXPredictor:
             raise Exception("Failed to load data from the database")
         
         # Assuming 'Vibration' is the main feature. Here, you can adjust if other features are needed.
-        vibration_data = [record['Vibration'] for record in db._data]
+        vibration_data = [record['vibration'] for record in db._data]
         
         # If no vibration data is found, raise an error
         if not vibration_data:

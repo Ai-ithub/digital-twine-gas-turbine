@@ -72,12 +72,12 @@ class VibrationPredictor:
         """پردازش و نرمال‌سازی رکورد"""
         try:
             features = np.array([
-                record['Pressure_In'],
-                record['Temperature_In'],
-                record['Flow_Rate'],
-                record['Pressure_Out'],
-                record['Temperature_Out'],
-                record['Efficiency']
+                record['pressure_in'],
+                record['temperature_in'],
+                record['flow_rate'],
+                record['pressure_out'],
+                record['temperature_out'],
+                record['efficiency']
             ], dtype=np.float32)
             
             normalized = (features - self.scaler_mean) / self.scaler_scale
@@ -111,7 +111,7 @@ class VibrationPredictor:
                 final_prediction = prediction * self.scaler_scale[-1] + self.scaler_mean[-1]
 
                 predictions.append({
-                    "TimeData": record['TimeData'],
+                    "TimeData": record['timestamp'],
                     "vibration": float(final_prediction),
                     "input_features": {
                         k: v for k, v in record.items() if k != 'TimeData'

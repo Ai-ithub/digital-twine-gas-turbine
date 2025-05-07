@@ -52,7 +52,7 @@ class CompressorDatabase:
         # Default query to select all records
         base_query = f"""
             SELECT * FROM {self.table}
-            ORDER BY TimeData ASC
+            ORDER BY timestamp ASC LIMIT 100
         """
         
         try:

@@ -107,10 +107,11 @@ logger = logging.getLogger(__name__)
 
 # اطلاعات اتصال به دیتابیس
 db_config = {
-    "host": "MYSQL1001.site4now.net",  # آدرس سرور MySQL
-    "user": "ab377b_faridka",          # نام کاربری شما
-    "password": "f1309D1309",    # رمز عبور شما (جایگزین کنید)
-    "database": "db_ab377b_faridka"    # نام دیتابیس شما
+    "host": "localhost",         # یا 127.0.0.1
+    "user": "new_user",          # باید وجود داشته باشه
+    "password": "new_password123",  # رمز صحیح
+    "database": "compressor_db",
+    #"port": 3306
 }
 
 MODEL_PATH = "compressor_status_prediction_model.onnx"
@@ -118,6 +119,19 @@ MODEL_PATH = "compressor_status_prediction_model.onnx"
 # Initialize Flask app
 app = Flask(__name__)
 CORS(app)
+
+
+@app.route('/')
+def home():
+    return jsonify({
+        "message": "Compressor API is running.",
+        "available_endpoints": [
+            "/get_all_data",
+            "/predict_all",
+            "/dart_predictions",
+            "/predict_status"
+        ]
+    })
 
 
 @app.route('/get_all_data', methods=['GET'])
@@ -158,10 +172,10 @@ def dart_predictions():
     onnx_model_path = "dart_model.onnx"  # Path to the ONNX model
     
     # Database configuration
-    db_host = "MYSQL1001.site4now.net"
-    db_user = "ab377b_faridka"
-    db_password = "f1309D1309"
-    db_name = "db_ab377b_faridka"
+    db_host = "localhost"
+    db_user = "new_user"
+    db_password = "new_password123"
+    db_name = "compressor_db"
     db_table = "compressor_data"
     
     # Create a predictor object

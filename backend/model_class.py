@@ -10,9 +10,9 @@ class CompressorStatusPredictor:
         self.db_config = db_config
         self.model_path = model_path
         self.ort_session = ort.InferenceSession(model_path)
-        self.features = ["Vibration", "Power_Consumption", "Efficiency", 
-                         "Ambient_Temperature", "Humidity", "Air_Pollution", 
-                         "Maintenance_Quality", "Fuel_Quality", "Load_Factor"]
+        self.features = ["vibration", "power_consumption", "efficiency", 
+                         "ambient_temperature", "humidity", "air_pollution", 
+                         "maintenance_quality", "fuel_quality", "load_factor"]
         self.scaler = StandardScaler()
         self._fit_scaler()
         self.status_map = {
