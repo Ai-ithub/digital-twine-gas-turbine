@@ -34,7 +34,7 @@ class CompressorStatusPredictor:
     def fetch_latest_data(self):
         """دریافت جدیدترین داده‌ها از دیتابیس."""
         conn = pymysql.connect(**self.db_config)
-        query = f"SELECT {', '.join(self.features)} FROM compressor_data ORDER BY TimeData DESC LIMIT 1"
+        query = f"SELECT {', '.join(self.features)} FROM compressor_data ORDER BY timestamp DESC LIMIT 1"
         df = pd.read_sql_query(query, conn)
         conn.close()
         return df.values
