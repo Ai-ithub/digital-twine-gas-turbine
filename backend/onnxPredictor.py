@@ -98,7 +98,7 @@ class ONNXPredictor:
 
 # Example usage of the class
 if __name__ == "__main__":
-    onnx_model_path = "dart_model.onnx"  # Path to the ONNX model
+    onnx_model_path = "backend/dart_model.onnx"  # Path to the ONNX model
     
     # Database configuration
     db_host = "MYSQL1001.site4now.net"

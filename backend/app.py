@@ -114,7 +114,7 @@ db_config = {
     #"port": 3306
 }
 
-MODEL_PATH = "compressor_status_prediction_model.onnx"
+MODEL_PATH = "backend/compressor_status_prediction_model.onnx"
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -169,7 +169,7 @@ def predict_all():
 
 @app.route('/dart_predictions', methods=['GET'])
 def dart_predictions():
-    onnx_model_path = "dart_model.onnx"  # Path to the ONNX model
+    onnx_model_path = "backend/dart_model.onnx"  # Path to the ONNX model
     
     # Database configuration
     db_host = "localhost"
