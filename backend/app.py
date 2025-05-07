@@ -66,8 +66,8 @@ def insert_data(connection, data):
         insert_query = """
         INSERT INTO compressor_data (
             timestamp, pressure_in, temperature_in, flow_rate, 
-            pressure_out, temperature_out, efficiency, power_consumption, 
-            vibration, status, ambient_temperature, humidity, air_pollution, 
+            pressure_out, temperature_out, efficiency, air_pollution, power_consumption, 
+            vibration, status, ambient_temperature, humidity, 
             startup_shutdown_cycles, maintenance_quality, fuel_quality, load_factor
         ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         """
@@ -87,7 +87,8 @@ def insert_data(connection, data):
         
         # Print the values being inserted to ensure they match
         print("Values to insert:", values[0])  # Print only the first 5 rows for brevity
-        
+        print(data["Ambient_Temperature"].head())
+
         cursor.executemany(insert_query, values)
         connection.commit()
         print(f"Successfully inserted {len(values)} records")
