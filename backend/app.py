@@ -43,15 +43,13 @@ def create_tables(connection):
             power_consumption FLOAT,
             vibration FLOAT,
             status VARCHAR(20),
-            frequency FLOAT,
-            amplitude FLOAT,
-            phase_angle FLOAT,
-            mass FLOAT,
-            stiffness FLOAT,
-            damping FLOAT,
-            density FLOAT,
-            velocity FLOAT,
-            viscosity FLOAT
+            ambient_temperature FLOAT,
+            humidity FLOAT,
+            air_pollution FLOAT,
+            startup_shutdown_cycles FLOAT,
+            maintenance_quality FLOAT,
+            fuel_quality FLOAT,
+            load_factor FLOAT
         )
         """
         cursor.execute(create_table_query)
@@ -69,19 +67,22 @@ def insert_data(connection, data):
         INSERT INTO compressor_data (
             timestamp, pressure_in, temperature_in, flow_rate, 
             pressure_out, temperature_out, efficiency, power_consumption, 
-            vibration, status, frequency, amplitude, phase_angle, 
-            mass, stiffness, damping, density, velocity, viscosity
-        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            vibration, status, ambient_temperature, humidity, air_pollution, 
+            startup_shutdown_cycles, maintenance_quality, fuel_quality, load_factor
+        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         """
         
         # Remove the 'Time' column from the DataFrame
-        data = data.drop(columns=["ID"])
+        data = data.drop(columns=["Time"])
         #data["Timestamp"] = pd.to_datetime(data["Timestamp"])
         # Check that the DataFrame has the expected columns (17 columns)
         print("DataFrame columns after removing Time:", data.columns)
 
         # Convert DataFrame to list of tuples for insertion (17 columns)
-        values = data[['Timestamp', 'Pressure_In', 'Temperature_In', 'Flow_Rate', 'Pressure_Out', 'Temperature_Out', 'Efficiency', 'Power_Consumption', 'Vibration', 'Status', 'Frequency', 'Amplitude', 'Phase_Angle', 'Mass', 'Stiffness', 'Damping', 'Density', 'Velocity', 'Viscosity']].values.tolist()
+        values = data[['Timestamp', 'Pressure_In', 'Temperature_In', 'Flow_Rate', 'Pressure_Out', 
+                       'Temperature_Out', 'Efficiency', 'Power_Consumption', 'Vibration', 'Status', 
+                       'Ambient_Temperature', 'Humidity', 'Startup_Shutdown_Cycles', 'Maintenance_Quality', 'Fuel_Quality', 
+                       'Load_Factor']].values.tolist()
         
         # Print the values being inserted to ensure they match
         print("Values to insert:", values[0])  # Print only the first 5 rows for brevity
@@ -119,7 +120,7 @@ def main():
             create_tables(connection)
             
             # Read the CSV file (without the Timestamp column)
-            df = pd.read_csv("balanced_compressor_time_series_with_anomalies.csv")  # Assuming Timestamp column is not in the CSV
+            df = pd.read_csv("final_optimized_anomaly_detected_data.csv")  # Assuming Timestamp column is not in the CSV
             
             # Insert data into database
             insert_data(connection, df)
