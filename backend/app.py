@@ -124,6 +124,7 @@ db_config = {
 >>>>>>> 59f5bcb (fixing issues)
 }
 
+<<<<<<< HEAD
 def create_database_connection():
     """Create a database connection"""
     try:
@@ -134,6 +135,9 @@ def create_database_connection():
     except Error as e:
         print(f"Error connecting to MySQL database: {e}")
         return None
+=======
+MODEL_PATH = "backend/compressor_status_prediction_model.onnx"
+>>>>>>> 8d87bae (fixing pipeline)
 
 def create_tables(connection):
     """Create necessary tables if they don't exist"""
@@ -285,7 +289,7 @@ if __name__ == "__main__":
 
 @app.route('/dart_predictions', methods=['GET'])
 def dart_predictions():
-    onnx_model_path = "dart_model.onnx"  # Path to the ONNX model
+    onnx_model_path = "backend/dart_model.onnx"  # Path to the ONNX model
     
     # Database configuration
     db_host = "localhost"
