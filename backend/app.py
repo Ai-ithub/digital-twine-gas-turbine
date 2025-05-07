@@ -119,7 +119,7 @@ def main():
             create_tables(connection)
             
             # Read the CSV file (without the Timestamp column)
-            df = pd.read_csv("balanced_compressor_time_series_data.csv")  # Assuming Timestamp column is not in the CSV
+            df = pd.read_csv("balanced_compressor_time_series_with_anomalies.csv")  # Assuming Timestamp column is not in the CSV
             
             # Insert data into database
             insert_data(connection, df)
