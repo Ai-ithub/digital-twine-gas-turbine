@@ -12,3 +12,24 @@
 ### **مرور کلی پروژه**
 
 هدف این پروژه ایجاد یک داشبورد تعاملی و مبتنی بر داده برای نظارت در زمان واقعی و تجزیه و تحلیل پیش‌بینی کمپرسور SGT-400 است. داشبورد پارامترهای مختلف عملیاتی مانند دما، فشار، ارتعاشات و موارد دیگر را نمایش می‌دهد. مدل‌های هوش مصنوعی برای پیش‌بینی مقادیر آینده این پارامترها به کار گرفته می‌شوند.
+
+### **اجرای پروژه**
+برای اجرای پروژه ابتدا `mysql` را نصب کنید. سپس در CMD دستورات زیر را اجرا کنید
+```bash
+mysql -u root -p
+```
+پس از اجرای این خط از شما درخواست رمز عبور میشود(رمز عبور mysql را وارد کنید) و سپس:
+```bash
+CREATE DATABASE compressor_db;
+CREATE USER 'new_user'@'localhost' IDENTIFIED WITH mysql_native_password BY 'new_password123';
+GRANT ALL PRIVILEGES ON compressor_db.* TO 'new_user'@'localhost';
+FLUSH PRIVILEGES;
+exit
+```
+حال برای اجرای Backend پروژه دستور زیر را در دایرکتوری پروژه اجرا کنید
+```bash
+pip install -r requirements.txt
+python pipeline.py
+```
+سپس به آدرس زیر بروید<br>
+[http://127.0.0.1:5000](http://127.0.0.1:5000)
