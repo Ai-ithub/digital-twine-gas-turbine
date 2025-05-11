@@ -9,7 +9,7 @@ class VibrationPredictor:
     
     def __init__(self,
                  db_config: Dict = None,
-                 model_path: str = "farid_kaki_vibration_transformer.onnx",
+                 model_path: str = "backend/farid_kaki_vibration_transformer.onnx",
                  window_size: int = 60):
         
         # تنظیمات پیش‌فرض
