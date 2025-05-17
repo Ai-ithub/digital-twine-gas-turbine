@@ -39,8 +39,8 @@ class VibrationPredictor:
 
         # بارگیری پارامترهای نرمال‌سازی
         try:
-            self.scaler_mean = np.load('scaler_mean.npy')
-            self.scaler_scale = np.load('scaler_scale.npy')
+            self.scaler_mean = np.load('backend/scaler_mean.npy')
+            self.scaler_scale = np.load('backend/scaler_scale.npy')
             self.logger.info("پارامترهای نرمال‌سازی بارگیری شدند")
         except FileNotFoundError as e:
             self.logger.error(f"فایل‌های نرمال‌سازی یافت نشدند: {str(e)}")
