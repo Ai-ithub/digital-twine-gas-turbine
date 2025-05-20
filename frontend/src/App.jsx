@@ -1,32 +1,28 @@
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
-
-const data = [
-  { week: 'Week 1', performance: 80, vibration: 20 },
-  { week: 'Week 2', performance: 90, vibration: 30 },
-  { week: 'Week 3', performance: 85, vibration: 25 },
-  { week: 'Week 4', performance: 100, vibration: 35 },
-];
+import Linechart from './components/Linechart';
+import Ganttchart from './components/Ganttchart';
+//import VibrationHeatmap from './components/VibrationHeatmap';
 
 function App() {
   return (
-    <div style={{ padding: '2rem', fontFamily: 'sans-serif' }}>
-      <h2>نمودار عملکرد و ارتعاش</h2>
-      <LineChart
-        width={600}
-        height={300}
-        data={data}
-        margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-      >
-        <CartesianGrid strokeDasharray="3 3" />
-        <XAxis dataKey="week" />
-        <YAxis />
-        <Tooltip />
-        <Legend />
-        <Line type="monotone" dataKey="performance" stroke="#8884d8" />
-        <Line type="monotone" dataKey="vibration" stroke="#82ca9d" />
-      </LineChart>
+    <div className="p-6 bg-gray-50 min-h-screen">
+      <h1 className="text-2xl font-bold mb-5 text-blue-600 text-center">داشبورد کمپرسور</h1>
+      <section className='p-5 bg-blue-500 flex justify-between flex-wrap gap-4 '>
+        <div className="bg-white rounded-xl p-4 shadow-md w-full md:w-[48%]">
+          <Linechart />
+        </div>
+        <div className="bg-white rounded-xl  w-full md:w-[48%]">
+          <Ganttchart />
+        </div>
+        {/* <div className="bg-white rounded-xl  w-full md:w-[48%]">
+          <VibrationHeatmap />
+        </div> */}
+      </section>
     </div>
   );
 }
 
 export default App;
+
+
+
+
