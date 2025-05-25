@@ -153,7 +153,7 @@ const ScatterPlot = () => {
 
       if (receivedData.length === 0) return;
 
-      const excludedKeys = ["status", "timestamp", "id"];
+      const excludedKeys = ["status", "timestamp", "id","time"];
       const startTime = new Date(receivedData[0].timestamp).getTime();
 
       const transformed = receivedData.map((item) => {
