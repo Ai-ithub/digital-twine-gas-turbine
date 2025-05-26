@@ -2,6 +2,9 @@ import React, { useEffect, useState } from "react";
 import Papa from "papaparse";
 import axios from "axios";
 import jalaali from "jalaali-js";
+import dayjs from "dayjs";
+import jalaliday from "jalaliday";
+
 import {
   BarChart,
   Bar,
@@ -14,59 +17,64 @@ import {
 
 const GanttChart = () => {
   const [data, setData] = useState([]);
+  dayjs.extend(jalaliday);
 
   useEffect(() => {
     async function fetchData() {
       try {
-        // 🟡 خواندن فایل CSV از public/data/data.csv
         const csvResponse = await fetch("/data/data.csv");
         const csvText = await csvResponse.text();
         const parsedCSV = Papa.parse(csvText, { header: true }).data;
 
-        console.log("📄 CSV Parsed ✅", parsedCSV);
-
-        // 🔵 گرفتن maintenance_quality از API
-        const apiResponse = await axios.get("http://localhost:5000/get_all_data");
+        const apiResponse = await axios.get(
+          "http://localhost:5000/get_all_data"
+        );
         const allData = apiResponse.data;
-        const maintenance_quality = allData[allData.length - 1]?.maintenance_quality || 100;
-
-        console.log("🔧 Maintenance Quality ✅", maintenance_quality);
-
-        const toJalali = (date) => {
-          const { jy, jm, jd } = jalaali.toJalaali(date);
-          return `${jy}-${jm.toString().padStart(2, "0")}-${jd.toString().padStart(2, "0")}`;
-        };
+        const maintenance_quality =
+          allData[allData.length - 1]?.maintenance_quality || 100;
 
         const groupStandardInterval = {
-          11: 1000,  // فیلتر
-          22: 4320,  // متحرک
-          33: 26280, // سایر
+          11: 1000, //Filters
+          22: 4320, // Moving_Part
+          33: 26280, // Other_components
         };
 
         const result = parsedCSV
-          .filter((row) => row.part_id && row.last_replacement && row.group_code)
+          .filter(
+            (row) => row.part_id && row.last_replacement && row.group_code
+          )
           .map((row) => {
             const group = parseInt(row.group_code);
             const part_id = row.part_id;
-            const lastReplacement = new Date(row.last_replacement);
-
+            const lastReplacement = dayjs(row.last_replacement); 
+          
             const standardInterval = groupStandardInterval[group] || 0;
-
-            const replacementIntervalHours = standardInterval * (maintenance_quality / 100);
+            const replacementIntervalHours =
+              standardInterval * (maintenance_quality / 100);
             const replacementIntervalDays = replacementIntervalHours / 24;
-
-            const nextReplacement = new Date(lastReplacement);
-            nextReplacement.setDate(nextReplacement.getDate() + replacementIntervalDays);
-
+          
+            const nextReplacement = lastReplacement.add(replacementIntervalDays, "day");
+          
+            const today = dayjs().calendar("jalali").startOf("day");
+            const startDate = lastReplacement.calendar("jalali").startOf("day");
+            const endDate = nextReplacement.calendar("jalali").startOf("day");
+          
+            const diffWithStart = Math.abs(startDate.diff(today, "day"));
+            const diffWithEnd = Math.max(0, endDate.diff(today, "day"));
+            const duration = Math.round(replacementIntervalDays);
+          
             return {
               part_id,
-              start: toJalali(lastReplacement),
-              end: toJalali(nextReplacement),
-              duration: Math.round(replacementIntervalDays),
+              start: startDate.format("YYYY-MM-DD"),
+              end: endDate.format("YYYY-MM-DD"),
+              diffWithStart,
+              diffWithEnd,
+              duration,
+              nextReplacement: endDate.format("YYYY-MM-DD"),
             };
           });
+          
 
-        console.log("🎯 Final Gantt Data", result);
         setData(result);
       } catch (error) {
         console.error("❌ خطا در دریافت یا پردازش داده‌ها:", error);
@@ -78,12 +86,14 @@ const GanttChart = () => {
 
   return (
     <div className="w-full h-full p-4">
-      <h2 className="text-xl font-bold mb-4 text-center">نمودار گانت زمان تعویض قطعات</h2>
+      <h2 className="text-xl font-bold mb-4 text-center">
+        نمودار گانت زمان تعویض قطعات
+      </h2>
       <ResponsiveContainer width="95%" height={100 * data.length}>
         <BarChart
           data={data}
           layout="vertical"
-          margin={{ top: 20, right:5 , left: 85, bottom: 20 }}
+          margin={{ top: 20, right: 5, left: 85, bottom: 20 }}
         >
           <XAxis type="number" unit=" روز" />
           <YAxis type="category" dataKey="part_id" />
@@ -91,10 +101,20 @@ const GanttChart = () => {
             formatter={(value) => `${value} روز`}
             labelFormatter={(label) => `قطعه: ${label}`}
           />
-          <Bar dataKey="duration" fill="#38bdf8">
-            <LabelList dataKey="start" position="insideLeft" />
-            <LabelList dataKey="end" position="insideRight" />
-          </Bar>
+          <Bar
+            dataKey="diffWithStart"
+            stackId="a"
+            fill="#82ca9d"
+            name="تعداد روز کارکرد فعلی"
+            position="insideLeft"
+          />
+          <Bar
+            dataKey="diffWithEnd"
+            stackId="a"
+            fill="#8884d8"
+            name="تعداد روز باقی‌مانده عمر"
+            position="insideRight"
+          />
         </BarChart>
       </ResponsiveContainer>
       <div className="mt-4">
@@ -112,11 +132,6 @@ const GanttChart = () => {
 };
 
 export default GanttChart;
-
-
-
-
-
 
 ///////////01/////////////
 // import React, { useEffect, useState } from 'react';
@@ -192,25 +207,21 @@ export default GanttChart;
 //         </BarChart>
 //       </ResponsiveContainer>
 
-      // <div className="mt-4">
-      //   <h3 className="font-semibold mb-2">تاریخ‌های تخمینی تعویض بعدی:</h3>
-      //   <ul className="list-disc pl-5 text-sm">
-      //     {data.map((item) => (
-      //       <li key={item.name}>
-      //         {item.name}: {item.nextReplacement}
-      //       </li>
-      //     ))}
-      //   </ul>
-      // </div>
+// <div className="mt-4">
+//   <h3 className="font-semibold mb-2">تاریخ‌های تخمینی تعویض بعدی:</h3>
+//   <ul className="list-disc pl-5 text-sm">
+//     {data.map((item) => (
+//       <li key={item.name}>
+//         {item.name}: {item.nextReplacement}
+//       </li>
+//     ))}
+//   </ul>
+// </div>
 //     </div>
 //   );
 // };
 
 // export default Ganttchart;
-
-
-
-
 
 /////////////////////////////////////////
 //کد برای اینکه تاریخ تعویض قطعه از API گرفته شود و

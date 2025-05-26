@@ -11,8 +11,10 @@
   },
   "dependencies": {
     "axios": "^1.9.0",
+    "dayjs": "^1.11.13",
     "heatmap.js": "^2.0.5",
     "jalaali-js": "^1.2.8",
+    "jalaliday": "^2.3.0",
     "moment-jalaali": "^0.10.4",
     "papaparse": "^5.5.3",
     "react": "^19.0.0",
