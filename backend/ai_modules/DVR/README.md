@@ -1,10 +1,10 @@
-# 📌 Data Validation & Reconciliation (DVR)
+# Data Validation & Reconciliation (DVR)
 
-## 🎯 Objective
+## Objective
 Ensure the reliability of sensor data by detecting and correcting faulty measurements before they affect downstream AI modules (like PdM or RTO).
 
 
-## 🧠 Algorithms Used
+## Algorithms Used
 
 | Algorithm                     | Purpose                                                                 |
 |-------------------------------|-------------------------------------------------------------------------|
@@ -14,7 +14,7 @@ Ensure the reliability of sensor data by detecting and correcting faulty measure
 | ⏳ Bayesian Inference          | Probabilistic estimation of true sensor values with confidence intervals |
 
 
-## 📋 Tasks To-Do
+## Tasks To-Do
 
 - [x] Implement domain-specific rules (e.g., acceptable ranges and rate-of-change)
 - [x] Apply PCA-based anomaly detection
@@ -23,7 +23,7 @@ Ensure the reliability of sensor data by detecting and correcting faulty measure
 - [ ] Visualize raw vs cleaned data, and log anomalies
 
 
-## 📦 Expected Output
+## Expected Output
 
 - Cleaned sensor dataset
 - Anomaly labels (pr row or column)
@@ -31,7 +31,7 @@ Ensure the reliability of sensor data by detecting and correcting faulty measure
 - Visualization of error regions, outlier sensors, and reconstructed data
 
 
-## 💡 Why It Matters
+## Why It Matters
 
 Inaccurate or missing sensor data can lead to:
 
