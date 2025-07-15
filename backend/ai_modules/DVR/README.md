@@ -3,7 +3,6 @@
 ## 🎯 Objective
 Ensure the reliability of sensor data by detecting and correcting faulty measurements before they affect downstream AI modules (like PdM or RTO).
 
----
 
 ## 🧠 Algorithms Used
 
@@ -14,7 +13,6 @@ Ensure the reliability of sensor data by detecting and correcting faulty measure
 | ⏳ WLS (Weighted Least Squares)      | Reconstruct missing or noisy values using sensor relationships         |
 | ⏳ Bayesian Inference          | Probabilistic estimation of true sensor values with confidence intervals |
 
----
 
 ## 📋 Tasks To-Do
 
@@ -24,7 +22,6 @@ Ensure the reliability of sensor data by detecting and correcting faulty measure
 - [ ] Apply Bayesian modeling (optional but useful)
 - [ ] Visualize raw vs cleaned data, and log anomalies
 
----
 
 ## 📦 Expected Output
 
@@ -33,7 +30,6 @@ Ensure the reliability of sensor data by detecting and correcting faulty measure
 - Corrected values (when possible)
 - Visualization of error regions, outlier sensors, and reconstructed data
 
----
 
 ## 💡 Why It Matters
 
