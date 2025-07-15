@@ -144,132 +144,123 @@ The system provides an interactive dashboard that monitors and visualizes real-t
 - Integration with SCADA systems
 
 
-Updated Software Requirements Specification (SRS)
-Project: SGT-400 Compressor Dashboard
 
-6. Artificial Intelligence & Advanced Analytics Requirements
-6.1 Model Types and Algorithms
-Real-Time Optimization (RTO)
-Purpose: Dynamic adjustment of compressor parameters for optimal performance
 
-Algorithms:
 
-Model Predictive Control (MPC)
 
-Reinforcement Learning (PPO, DDPG)
+# Updated Software Requirements Specification (SRS)  
+**Project:** SGT-400 Compressor Dashboard  
 
-Genetic Algorithms for multi-objective optimization
+---
 
-Inputs:
+## 6. Artificial Intelligence & Advanced Analytics Requirements  
 
-Real-time sensor data (pressure, temperature, flow rates)
+### 6.1 Model Types and Algorithms  
+#### **Real-Time Optimization (RTO)**  
+- **Purpose:** Dynamic adjustment of compressor parameters for optimal performance  
+- **Algorithms:**  
+  - Model Predictive Control (MPC)  
+  - Reinforcement Learning (PPO, DDPG)  
+  - Genetic Algorithms for multi-objective optimization  
+- **Inputs:**  
+  - Real-time sensor data (pressure, temperature, flow rates)  
+  - Operational constraints (e.g., max vibration thresholds)  
 
-Operational constraints (e.g., max vibration thresholds)
+#### **Real-Time Monitoring (RTM)**  
+- **Purpose:** Continuous condition tracking with anomaly detection  
+- **Algorithms:**  
+  - **Statistical Process Control (SPC):** Shewhart charts, CUSUM  
+  - **Unsupervised Learning:** Isolation Forest, One-Class SVM, Autoencoders  
+  - **Time-Series Analysis:** STL decomposition, Prophet for trend detection  
+- **Outputs:**  
+  - Real-time alerts (visual/audible)  
+  - Deviation scores for each sensor  
 
-Real-Time Monitoring (RTM)
-Purpose: Continuous condition tracking with anomaly detection
+#### **Data Validation & Reconciliation (DVR)**  
+- **Purpose:** Ensure data consistency and correct sensor faults  
+- **Algorithms:**  
+  - **Gross Error Detection:** Principal Component Analysis (PCA), Grubbs’ test  
+  - **Reconciliation:** Weighted Least Squares (WLS), Bayesian inference  
+  - **Rule-Based Checks:** Physical bounds, rate-of-change limits  
+- **Tools:**  
+  - Python libraries: `SciPy` (statistical tests), `PyMC3` (Bayesian methods)  
 
-Algorithms:
+#### **Predictive Maintenance (PdM)**  
+- **Purpose:** Forecast failures and recommend maintenance actions  
+- **Algorithms:**  
+  - **Remaining Useful Life (RUL):** LSTM, Transformer-based models (e.g., Temporal Fusion Transformer)  
+  - **Failure Mode Classification:** Random Forest, XGBoost, SHAP for explainability  
+  - **Survival Analysis:** Cox Proportional Hazards, Weibull models  
+- **Data Requirements:**  
+  - Historical failure logs  
+  - Maintenance records (downtime, part replacements)  
 
-Statistical Process Control (SPC): Shewhart charts, CUSUM
+---
 
-Unsupervised Learning: Isolation Forest, One-Class SVM, Autoencoders
+### 6.2 Model Implementation  
+#### **Deployment Architecture**  
+1. **RTO/RTM Pipeline:**  
+   - **Streaming:** Apache Kafka for real-time data ingestion  
+   - **Processing:** PySpark or Flink for high-frequency computations  
+   - **Serving:** FastAPI endpoints with `onnxruntime` for low-latency inference  
 
-Time-Series Analysis: STL decomposition, Prophet for trend detection
+2. **PdM/DVR Pipeline:**  
+   - **Batch Processing:** Airflow/Dagster for scheduled model retraining  
+   - **Storage:** Time-series database (InfluxDB) for reconciled data  
 
-Outputs:
+#### **Validation & Testing**  
+- **RTO:** Simulation via digital twin (e.g., MATLAB Simulink integration)  
+- **DVR:** Synthetic fault injection to test reconciliation accuracy  
+- **PdM:** Backtesting against historical failure events  
 
-Real-time alerts (visual/audible)
+---
 
-Deviation scores for each sensor
+## Updates to Functional Requirements  
 
-Data Validation & Reconciliation (DVR)
-Purpose: Ensure data consistency and correct sensor faults
+### 3.2 Predictive Analytics (Expanded)  
+- **Sub-features:**  
+  - **RTO Recommendations:** Display optimal setpoints (e.g., "Adjust inlet valve to 75%").  
+  - **PdM Outputs:** Show RUL estimates (e.g., "Bearing health: 82% – expected failure in 14 days").  
+  - **DVR Flags:** Highlight sensors with suspected faults (e.g., "Pressure Sensor #3 requires calibration").  
 
-Algorithms:
+### 3.3 Alert System (Enhanced)  
+- **Priority Levels:**  
+  - **Critical (Red):** Immediate shutdown required (e.g., vibration > 10mm/s).  
+  - **Warning (Yellow):** Predictive alert (e.g., "Efficiency degradation detected").  
+  - **Info (Blue):** DVR correction applied (e.g., "Reconciled temperature values using PCA").  
 
-Gross Error Detection: Principal Component Analysis (PCA), Grubbs’ test
+---
 
-Reconciliation: Weighted Least Squares (WLS), Bayesian inference
+## New Non-Functional Requirements  
 
-Rule-Based Checks: Physical bounds, rate-of-change limits
+### 4.6 Explainability  
+- All AI models must provide interpretable outputs (e.g., SHAP plots for PdM, rule logs for DVR).  
 
-Tools:
+### 4.7 Fault Tolerance  
+- System must degrade gracefully if DVR fails (e.g., fall back to raw sensor data with clear warnings).  
 
-Python libraries: SciPy (statistical tests), PyMC3 (Bayesian methods)
+---
 
-Predictive Maintenance (PdM)
-Purpose: Forecast failures and recommend maintenance actions
+## Design Constraints (Updated)  
+- **RTO Models:** Must execute inference in <500ms to support closed-loop control.  
+- **PdM Models:** Require retraining weekly using new maintenance logs.  
 
-Algorithms:
+---
 
-Remaining Useful Life (RUL): LSTM, Transformer-based models (e.g., Temporal Fusion Transformer)
+## Future Enhancements  
+- **Digital Twin Integration:** Live synchronization with a physics-based simulator for RTO.  
+- **Edge Deployment:** Export RTM models to ESP32/PLC for offline monitoring.  
 
-Failure Mode Classification: Random Forest, XGBoost, SHAP for explainability
+--- 
 
-Survival Analysis: Cox Proportional Hazards, Weibull models
+**Example Workflow:**  
+1. **RTM** detects abnormal vibration → Triggers **DVR** to validate data.  
+2. **DVR** confirms fault → **PdM** updates RUL for bearing assembly.  
+3. **RTO** suggests reduced load to extend RUL until maintenance.  
 
-Data Requirements:
+**Key Libraries/Tools:**  
+- `TensorFlow Probability` (Bayesian DVR)  
+- `MLflow` (model tracking for PdM)  
+- `Dash` (for interactive RTO scenario testing)  
 
-Historical failure logs
-
-Maintenance records (downtime, part replacements)
-
-6.2 Model Implementation
-Deployment Architecture
-RTO/RTM Pipeline:
-
-Streaming: Apache Kafka for real-time data ingestion
-
-Processing: PySpark or Flink for high-frequency computations
-
-Serving: FastAPI endpoints with onnxruntime for low-latency inference
-
-PdM/DVR Pipeline:
-
-Batch Processing: Airflow/Dagster for scheduled model retraining
-
-Storage: Time-series database (InfluxDB) for reconciled data
-
-Validation & Testing
-RTO: Simulation via digital twin (e.g., MATLAB Simulink integration)
-
-DVR: Synthetic fault injection to test reconciliation accuracy
-
-PdM: Backtesting against historical failure events
-
-Updates to Functional Requirements
-3.2 Predictive Analytics (Expanded)
-Sub-features:
-
-RTO Recommendations: Display optimal setpoints (e.g., "Adjust inlet valve to 75%").
-
-PdM Outputs: Show RUL estimates (e.g., "Bearing health: 82% – expected failure in 14 days").
-
-DVR Flags: Highlight sensors with suspected faults (e.g., "Pressure Sensor #3 requires calibration").
-
-3.3 Alert System (Enhanced)
-Priority Levels:
-
-Critical (Red): Immediate shutdown required (e.g., vibration > 10mm/s).
-
-Warning (Yellow): Predictive alert (e.g., "Efficiency degradation detected").
-
-Info (Blue): DVR correction applied (e.g., "Reconciled temperature values using PCA").
-
-New Non-Functional Requirements
-4.6 Explainability
-All AI models must provide interpretable outputs (e.g., SHAP plots for PdM, rule logs for DVR).
-
-4.7 Fault Tolerance
-System must degrade gracefully if DVR fails (e.g., fall back to raw sensor data with clear warnings).
-
-Design Constraints (Updated)
-RTO Models: Must execute inference in <500ms to support closed-loop control.
-
-PdM Models: Require retraining weekly using new maintenance logs.
-
-Future Enhancements
-Digital Twin Integration: Live synchronization with a physics-based simulator for RTO.
-
-Edge Deployment: Export RTM models to ESP32/PLC for offline monitoring.
+This update aligns the SRS with industrial AI best practices while specifying actionable algorithms for each functional module.
