@@ -1,145 +1,166 @@
-# Software Requirements Specification (SRS)
-
-**Project:** SGT-400 Compressor Dashboard  
-
----
-
-## 1. Introduction
-
-### 1.1 Purpose
-The purpose of this document is to define the software requirements for the “SGT-400 Compressor Dashboard” system. This system is designed to monitor the real-time status of the SGT-400 compressor and predict key operational parameters using AI models.
-
-### 1.2 Scope
-The project involves the development of a web-based, data-driven dashboard for monitoring and forecasting the condition of the SGT-400 compressor. It provides:
-
-- A responsive user interface using **LabVIEW**
-- A backend API developed with **Flask**
-- Integration of AI models for time-series prediction of key parameters
-- Data storage for both real-time and predicted sensor values
-
-### 1.3 Definitions, Acronyms, and Abbreviations
-| Term | Definition |
-|------|------------|
-| SGT-400 | Industrial gas turbine compressor |
-| API | Application Programming Interface |
-| AI | Artificial Intelligence |
-| UI | User Interface |
-| UX | User Experience |
-| LSTM | Long Short-Term Memory (a type of neural network for time series) |
+# **Software Requirements Specification (SRS)**  
+**Project:** **SGT-400 Compressor Predictive Maintenance & Optimization Dashboard**  
 
 ---
 
-## 2. Overall Description
+## **1. Introduction**  
 
-### 2.1 System Overview
-The system provides an interactive dashboard that monitors and visualizes real-time compressor data and uses AI models to forecast critical metrics such as temperature, pressure, and vibration.
+### **1.1 Purpose**  
+This document defines the software requirements for the **SGT-400 Compressor Predictive Maintenance & Optimization Dashboard**, a real-time monitoring, predictive maintenance, and operational optimization system. The system integrates AI-driven forecasting, anomaly detection, and real-time optimization to enhance compressor performance and reliability.  
 
-### 2.2 Product Functions
-- Real-time data visualization via interactive charts
-- Forecasting of compressor parameters using AI models
-- Anomaly detection and alerting
-- Historical data filtering and retrieval
-- Secure user access and API integration
+### **1.2 Scope**  
+The system includes:  
+- A **real-time monitoring dashboard** (LabVIEW-based UI)  
+- **AI-powered predictive maintenance** (failure prediction, anomaly detection)  
+- **Real-time optimization** (AI-driven parameter tuning for efficiency)  
+- **Automated alerting & reporting**  
+- **Secure API backend** (Flask/FastAPI)  
+- **Scalable database** (Time-series DB + MySQL)  
 
-### 2.3 User Classes and Characteristics
-- **Operators:** Monitor live compressor performance
-- **Engineers:** Analyze performance trends and diagnostics
-- **Managers:** View summarized reports and receive alerts
-- **Data Analysts:** Work with historical and predictive data
+### **1.3 Definitions, Acronyms, and Abbreviations**  
 
----
-
-## 3. Functional Requirements
-
-### 3.1 Real-Time Sensor Visualization
-- Display incoming sensor data such as:
-  - Inlet/Outlet temperature
-  - Inlet/Outlet pressure
-  - Vibration
-  - Power consumption
-- Update charts in near real-time
-
-### 3.2 Predictive Analytics
-- Use trained models (e.g., LSTM) to forecast future values
-- Plot predicted values alongside real-time data
-
-### 3.3 Alert System
-- Generate alerts if thresholds are crossed
-- Visual and audible indicators in UI
-
-### 3.4 Historical Data Access
-- Users can view past data using time filters
-- Support data export as CSV or JSON
-
-### 3.5 Data Persistence
-- Store raw and predicted data in a structured database
-- Ensure data retention policies are applied
+| Term | Definition |  
+|------|------------|  
+| **SGT-400** | Siemens industrial gas turbine compressor |  
+| **CBM** | Condition-Based Maintenance |  
+| **RUL** | Remaining Useful Life (prediction) |  
+| **LSTM/GRU** | Deep learning models for time-series forecasting |  
+| **XGBoost/LightGBM** | Gradient boosting for classification/regression |  
+| **Reinforcement Learning (RL)** | AI for real-time optimization |  
+| **InfluxDB** | Time-series database for sensor data |  
 
 ---
 
-## 4. Non-Functional Requirements
+## **2. Overall Description**  
 
-### 4.1 Performance
-- Real-time updates must occur with 1 seconds latency
-- Backend must support up to 10 concurrent users
+### **2.1 System Overview**  
+The system provides:  
+✔ **Real-time monitoring** (sensor data visualization)  
+✔ **Predictive maintenance** (RUL estimation, anomaly detection)  
+✔ **Optimization** (AI-driven parameter adjustments for efficiency)  
+✔ **Automated reporting & alerts**  
 
-### 4.2 Usability
-- Clean, modern UI using Tailwind CSS
-- Mobile and desktop responsive design
+### **2.2 Product Functions**  
+| Feature | Description |  
+|---------|------------|  
+| **Live Monitoring** | Real-time visualization of temperature, pressure, vibration, power |  
+| **Predictive Maintenance** | AI models predict failures and recommend maintenance |  
+| **Optimization Engine** | AI suggests optimal compressor settings in real time |  
+| **Anomaly Detection** | Identifies abnormal behavior using unsupervised learning |  
+| **Alert System** | Notifies users of critical events (SMS/Email/UI alerts) |  
+| **Historical Analysis** | Trend analysis, failure root-cause investigation |  
 
-### 4.3 Security
-- User authentication (JWT)
-- Role-based access control (Admin, Viewer, Analyst)
-
-### 4.4 Maintainability
-- Modular and documented code
-- Support for unit and integration testing
-
-### 4.5 Scalability
-- Should support additional compressors in future deployments
-
----
-
-## 5. External Interface Requirements
-
-### 5.1 User Interface
-- Built with **LabVIEW**
-
-### 5.2 Hardware Interfaces
-- None directly; assumes data is provided via a secure stream or API
-
-### 5.3 Software Interfaces
-- Database: MySQL
+### **2.3 User Classes**  
+| Role | Responsibilities |  
+|------|----------------|  
+| **Operators** | Monitor real-time performance, respond to alerts |  
+| **Maintenance Engineers** | Review predictive maintenance recommendations |  
+| **Process Engineers** | Optimize compressor settings using AI suggestions |  
+| **Managers** | View reports, KPIs, and system health |  
 
 ---
 
-## 6. Artificial Intelligence Requirements
+## **3. Functional Requirements**  
 
-### 6.1 Model Types
-- LSTM or GRU for time-series forecasting
-- Isolation Forest or LOF for anomaly detection
+### **3.1 Real-Time Monitoring**  
+- **FR-01:** Display live sensor data (temperature, pressure, vibration, power)  
+- **FR-02:** Update dashboards with ≤ **1-second latency**  
+- **FR-03:** Support multi-view dashboards (mobile/desktop)  
 
-### 6.2 Input Data
-- Historical sensor data: temperature, pressure, vibration, etc.
-- External features: ambient temperature, humidity
+### **3.2 Predictive Maintenance**  
+- **FR-04:** **LSTM/Transformer-based RUL prediction** (Remaining Useful Life)  
+- **FR-05:** **Isolation Forest / Autoencoder-based anomaly detection**  
+- **FR-06:** Generate maintenance recommendations based on predictions  
 
-### 6.3 Model Serving
-- Trained models serialized with `pickle` or `joblib`
-- Deployed via Flask API routes
+### **3.3 Real-Time Optimization**  
+- **FR-07:** **Reinforcement Learning (RL)-driven optimization** (adjust setpoints for efficiency)  
+- **FR-08:** **Digital Twin integration** (simulate changes before applying)  
+
+### **3.4 Alerting & Reporting**  
+- **FR-09:** **Threshold-based & AI-driven alerts**  
+- **FR-10:** **Automated PDF/Excel report generation**  
+
+### **3.5 Data Management**  
+- **FR-11:** Store **raw + predicted** data in **InfluxDB + MySQL**  
+- **FR-12:** **Data retention policy** (1 year raw, 5 years aggregated)  
 
 ---
 
-## 7. Design Constraints
+## **4. Non-Functional Requirements**  
 
-- Use only open-source tools and libraries
-- Dashboard must follow REST API design principles
-- Must support future multi-language UI (i18n-ready)
+### **4.1 Performance**  
+- **≤ 1 sec latency** for real-time updates  
+- **Support 50+ concurrent users**  
+
+### **4.2 Usability**  
+- **LabVIEW UI** with **Tailwind CSS** for modern styling  
+- **Mobile-responsive** design  
+
+### **4.3 Security**  
+- **JWT-based authentication**  
+- **Role-based access control (RBAC)**  
+
+### **4.4 Scalability**  
+- **Kubernetes-ready** for future scaling  
+- **Support multiple compressors**  
+
+### **4.5 AI Model Requirements**  
+- **LSTM/Transformer** for time-series forecasting  
+- **XGBoost/LightGBM** for classification tasks  
+- **RL (PPO/SAC)** for real-time optimization  
 
 ---
 
-## 8. Future Enhancements (Optional)
+## **5. External Interfaces**  
 
-- Support for multiple compressors on one dashboard
-- Predictive maintenance scheduling
-- Integration with SCADA systems
+### **5.1 User Interface**  
+- **LabVIEW-based dashboard**  
+- **Interactive charts (Plotly/D3.js)**  
+
+### **5.2 Hardware Interfaces**  
+- **OPC-UA / Modbus** for sensor data ingestion  
+
+### **5.3 Software Interfaces**  
+- **Database:** InfluxDB (time-series) + MySQL (metadata)  
+- **API:** FastAPI (Python)  
+
+---
+
+## **6. AI & Algorithm Requirements**  
+
+### **6.1 Predictive Maintenance Models**  
+| Model | Use Case |  
+|-------|---------|  
+| **LSTM / Transformer** | RUL Prediction |  
+| **Isolation Forest / Autoencoder** | Anomaly Detection |  
+| **XGBoost / LightGBM** | Failure Classification |  
+
+### **6.2 Optimization Models**  
+| Model | Use Case |  
+|-------|---------|  
+| **Reinforcement Learning (PPO/SAC)** | Real-time parameter tuning |  
+| **Bayesian Optimization** | Optimal setpoint recommendation |  
+
+### **6.3 Data Requirements**  
+- **Historical sensor data** (5+ years)  
+- **Maintenance logs** (for supervised learning)  
+
+---
+
+## **7. Future Enhancements**  
+- **Digital Twin integration**  
+- **Multi-compressor fleet management**  
+- **Edge AI deployment (NVIDIA Jetson)**  
+
+---
+
+### **Version Control**  
+| Version | Date | Changes |  
+|---------|------|---------|  
+| 1.0 | 2025-07-19 | Initial SRS (Predictive Maintenance + Optimization) |  
+
+**Approved by:** [Your Name]  
+**Date:** [YYYY-MM-DD]  
+
+---
 
