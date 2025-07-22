@@ -1,0 +1,11 @@
+{
+    "components": [
+        {
+            "name": "Button",
+            "description": "A simple button component.",
+            "imports": {
+                "default": "./button/button.tsx"
+            }
+        }
+    ]
+}

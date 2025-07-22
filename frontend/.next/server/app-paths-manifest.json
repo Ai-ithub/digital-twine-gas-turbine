@@ -1,0 +1,9 @@
+{
+  "/not-found": "app/not-found.js",
+  "/display/sensor/page": "app/display/sensor/page.js",
+  "/display/gauge/page": "app/display/gauge/page.js",
+  "/maintenance/page": "app/maintenance/page.js",
+  "/connection/page": "app/connection/page.js",
+  "/monitoring/page": "app/monitoring/page.js",
+  "/page": "app/page.js"
+}
