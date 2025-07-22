@@ -1,127 +1,123 @@
-import mysql.connector
-from mysql.connector import Error
-import pandas as pd
-from datetime import datetime
+import os
+import logging
+from flask import Flask, jsonify
+from flask_cors import CORS
+from dotenv import load_dotenv
 
-# Database configuration
+# Import your custom classes
+from database import CompressorDatabase
+from vibration_predictor import VibrationPredictor
+from onnxPredictor import ONNXPredictor
+from model_class import CompressorStatusPredictor
+
+# --- 1. Configuration ---
+# Load variables from .env file for security
+load_dotenv()
+
+# Setup logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
+# Get DB config from environment variables with defaults for local dev
 DB_CONFIG = {
-    'host': 'sql102.infinityfree.com',
-    'user': 'if0_38611183',
-    'password': 'tOfY6fMAcbXIcFw',
-    'database': 'if0_38611183_XXX',
-    'port': 3306
+    "host": os.getenv("DB_HOST", "127.0.0.1"),
+    "user": os.getenv("DB_USER", "root"),
+    "password": os.getenv("DB_PASSWORD"), # This MUST be set in your .env file
+    "database": os.getenv("DB_DATABASE", "compressor_db"),
 }
 
-def create_database_connection():
-    """Create a database connection"""
-    try:
-        connection = mysql.connector.connect(**DB_CONFIG)
-        if connection.is_connected():
-            print("Successfully connected to MySQL database")
-            return connection
-    except Error as e:
-        print(f"Error connecting to MySQL database: {e}")
-        return None
+# Define model paths
+STATUS_MODEL_PATH = "backend/compressor_status_prediction_model.onnx"
+DART_MODEL_PATH = "backend/dart_model.onnx"
 
-def create_tables(connection):
-    """Create necessary tables if they don't exist"""
+# --- 2. App Initialization ---
+app = Flask(__name__)
+CORS(app) # Enable Cross-Origin Resource Sharing for the frontend
+
+# --- 3. API Endpoints ---
+@app.route('/')
+def home():
+    """Provides a welcome message and a list of available endpoints."""
+    return jsonify({
+        "message": "Compressor Digital Twin API is running.",
+        "available_endpoints": [
+            "/get_all_data",
+            "/predict_vibration",
+            "/predict_dart",
+            "/predict_status"
+        ]
+    })
+
+@app.route('/get_all_data', methods=['GET'])
+def get_all_data():
+    """Retrieve all data from the database."""
+    db = None
     try:
-        cursor = connection.cursor()
+        db = CompressorDatabase(**DB_CONFIG)
+        if not db.connect():
+            raise ConnectionError("Failed to connect to database")
         
-        # Create compressor_data table
-        create_table_query = """
-        CREATE TABLE IF NOT EXISTS compressor_data (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            timestamp DATETIME,
-            pressure_in FLOAT,
-            temperature_in FLOAT,
-            flow_rate FLOAT,
-            pressure_out FLOAT,
-            temperature_out FLOAT,
-            efficiency FLOAT,
-            power_consumption FLOAT,
-            vibration FLOAT,
-            status VARCHAR(20),
-            frequency FLOAT,
-            amplitude FLOAT,
-            phase_angle FLOAT,
-            mass FLOAT,
-            stiffness FLOAT,
-            damping FLOAT,
-            density FLOAT,
-            velocity FLOAT,
-            viscosity FLOAT
+        if not db.load_data():
+            raise ValueError("Failed to load data")
+
+        data = db._data
+        return jsonify(data)
+    except Exception as e:
+        logging.error(f"Error in /get_all_data: {e}")
+        return jsonify({"error": str(e)}), 500
+    finally:
+        if db:
+            db.close()
+
+@app.route('/predict_vibration', methods=['GET'])
+def predict_vibration():
+    """Returns all vibration predictions."""
+    try:
+        predictor = VibrationPredictor(db_config=DB_CONFIG)
+        if not predictor.initialize():
+            raise RuntimeError("Failed to initialize vibration predictor")
+        
+        results = predictor.predict_all()
+        return jsonify(results) if results else (jsonify({"message": "No predictions available"}), 404)
+    except Exception as e:
+        logging.error(f"Error in /predict_vibration: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/predict_dart', methods=['GET'])
+def predict_dart():
+    """Performs predictions using the DART model."""
+    try:
+        predictor = ONNXPredictor(
+            DART_MODEL_PATH, DB_CONFIG['host'], DB_CONFIG['user'], DB_CONFIG['password'],
+            DB_CONFIG['database'], "compressor_data"
         )
-        """
-        cursor.execute(create_table_query)
-        connection.commit()
-        print("Tables created successfully")
-    except Error as e:
-        print(f"Error creating tables: {e}")
+        predicted_values = predictor.predict_all_values()
 
-def insert_data(connection, data):
-    """Insert data into the compressor_data table"""
-    try:
-        cursor = connection.cursor()
+        if not predicted_values:
+            return jsonify({"message": "No predictions available"}), 404
         
-        insert_query = """
-        INSERT INTO compressor_data (
-            timestamp, pressure_in, temperature_in, flow_rate, pressure_out,
-            temperature_out, efficiency, power_consumption, vibration, status,
-            frequency, amplitude, phase_angle, mass, stiffness, damping,
-            density, velocity, viscosity
-        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-        """
-        
-        # Convert DataFrame to list of tuples for insertion
-        values = data.values.tolist()
-        cursor.executemany(insert_query, values)
-        connection.commit()
-        print(f"Successfully inserted {len(values)} records")
-    except Error as e:
-        print(f"Error inserting data: {e}")
+        predictions_list = [{"Entry": idx + 1, "Predicted Value": float(value)} for idx, value in enumerate(predicted_values)]
+        return jsonify({"Dart Predictions": predictions_list})
+    except Exception as e:
+        logging.error(f"Error in /predict_dart: {e}")
+        return jsonify({"error": str(e)}), 500
 
-def get_latest_data(connection, limit=100):
-    """Retrieve the latest data from the database"""
+@app.route('/predict_status', methods=['GET'])
+def predict_status():
+    """Predicts the compressor's overall status."""
     try:
-        query = """
-        SELECT * FROM compressor_data 
-        ORDER BY timestamp DESC 
-        LIMIT %s
-        """
-        df = pd.read_sql(query, connection, params=(limit,))
-        return df
-    except Error as e:
-        print(f"Error retrieving data: {e}")
-        return None
+        predictor = CompressorStatusPredictor(DB_CONFIG, STATUS_MODEL_PATH)
+        prediction = predictor.predict()
+        
+        if prediction is None:
+            return jsonify({"error": "Prediction failed"}), 500
+            
+        return jsonify({"Predicted Status": prediction})
+    except Exception as e:
+        logging.error(f"Error in /predict_status: {e}")
+        return jsonify({"error": str(e)}), 500
 
-def main():
-    # Create database connection
-    connection = create_database_connection()
-    
-    if connection:
-        try:
-            # Create tables
-            create_tables(connection)
-            
-            # Read the CSV file
-            df = pd.read_csv("balanced_compressor_time_series_data.csv")
-            
-            # Insert data into database
-            insert_data(connection, df)
-            
-            # Retrieve and display latest data
-            latest_data = get_latest_data(connection)
-            if latest_data is not None:
-                print("\nLatest data from database:")
-                print(latest_data.head())
-                
-        except Error as e:
-            print(f"Error in main execution: {e}")
-        finally:
-            if connection.is_connected():
-                connection.close()
-                print("Database connection closed")
-
-if __name__ == "__main__":
-    main()
+# --- 4. Main Execution Block ---
+if __name__ == '__main__':
+    if not DB_CONFIG['password']:
+        logging.warning("WARNING: DB_PASSWORD environment variable is not set. Database connections will likely fail.")
+    app.run(debug=True, port=5000, host='0.0.0.0')
