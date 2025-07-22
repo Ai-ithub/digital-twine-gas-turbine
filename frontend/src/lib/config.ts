@@ -9,4 +9,5 @@ export const config = {
 // Export individual values
 // export const API_BASE_URL = config.apiUrl
 export const WS_BASE_URL = config.wsUrl
-export const API_BASE_URL = "http://localhost:4000";
+export const API_BASE_URL = "http://localhost:3000";
+

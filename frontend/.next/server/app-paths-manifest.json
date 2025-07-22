@@ -1,11 +1,4 @@
 {
-  "/monitoring/page": "app/monitoring/page.js",
-  "/display/sensor/page": "app/display/sensor/page.js",
-  "/maintenance/page": "app/maintenance/page.js",
-  "/gsm/page": "app/gsm/page.js",
-  "/3d_analysis/page": "app/3d_analysis/page.js",
-  "/thermovision/page": "app/thermovision/page.js",
-  "/database/page": "app/database/page.js",
-  "/data_loggers/page": "app/data_loggers/page.js",
-  "/graph_analysis/page": "app/graph_analysis/page.js"
+  "/page": "app/page.js",
+  "/monitoring/page": "app/monitoring/page.js"
 }

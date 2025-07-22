@@ -12,60 +12,10 @@
       "static/css/app/layout.css",
       "static/chunks/app/layout.js"
     ],
-    "/display/real_time/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/display/real_time/page.js"
-    ],
     "/monitoring/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/monitoring/page.js"
-    ],
-    "/display/gauge/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/display/gauge/page.js"
-    ],
-    "/display/sensor/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/display/sensor/page.js"
-    ],
-    "/maintenance/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/maintenance/page.js"
-    ],
-    "/thermovision/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/thermovision/page.js"
-    ],
-    "/gsm/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/gsm/page.js"
-    ],
-    "/3d_analysis/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/3d_analysis/page.js"
-    ],
-    "/database/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/database/page.js"
-    ],
-    "/data_loggers/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/data_loggers/page.js"
-    ],
-    "/graph_analysis/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/graph_analysis/page.js"
     ]
   }
 }
