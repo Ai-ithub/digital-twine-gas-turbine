@@ -1,44 +1,47 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import "./global.css"
-import React from "react"
-import { StatusIndicator } from "../components/Status_indicator"
-import { CircularGauge } from "../components/CircularGauge"
-import { TemperatureBar } from "../components/Temprature_bar"
-import { RealtimeChart } from "../components/RealTime_chart"
+import { useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { AppDispatch, RootState } from "../store"; // adjust path accordingly
+import { connectWebSocket, disconnectWebSocket } from "../lib/websocket"; // adjust path accordingly
+import "./global.css";
+import React from "react";
+import { StatusIndicator } from "../components/Status_indicator";
+import { CircularGauge } from "../components/CircularGauge";
+import { TemperatureBar } from "../components/Temprature_bar";
+import { RealtimeChart } from "../components/RealTime_chart";
+
 export default function HomePage() {
-  const [sensorData, setSensorData] = useState({
-    pressure: 85,
-    temperature: 72,
-    vibration: 2.3,
-    flow: 450,
-    efficiency: 92,
-    power: 1250,
-  })
+  const dispatch = useDispatch<AppDispatch>();
+  const realTimeData = useSelector((state: RootState) => state.sensor.latest);
 
-  const [systemStatus, setSystemStatus] = useState({
+  useEffect(() => {
+    connectWebSocket(dispatch);
+    return () => {
+      disconnectWebSocket();
+    };
+  }, [dispatch]);
+
+  if (!realTimeData) {
+    return <div className="text-white p-4">Loading sensor data...</div>;
+  }
+
+  // Map your Redux state keys to local variables or directly use realTimeData:
+  const sensorData = {
+    pressure: realTimeData.pressure_in ?? 0,
+    temperature: realTimeData.temperature_in ?? 0,
+    vibration: realTimeData.vibration ?? 0,
+    flow: realTimeData.flow_rate ?? 0,
+    efficiency: realTimeData.efficiency ? realTimeData.efficiency * 100 : 0,
+    power: realTimeData.power_consumption ?? 0,
+  };
+
+  const systemStatus = {
     overall: "operational",
     compressor: "running",
     cooling: "normal",
     lubrication: "optimal",
-  })
-
-  // Simulate real-time data updates
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setSensorData((prev) => ({
-        pressure: Math.max(0, Math.min(100, prev.pressure + (Math.random() - 0.5) * 5)),
-        temperature: Math.max(0, Math.min(100, prev.temperature + (Math.random() - 0.5) * 3)),
-        vibration: Math.max(0, Math.min(10, prev.vibration + (Math.random() - 0.5) * 0.5)),
-        flow: Math.max(0, Math.min(1000, prev.flow + (Math.random() - 0.5) * 20)),
-        efficiency: Math.max(0, Math.min(100, prev.efficiency + (Math.random() - 0.5) * 2)),
-        power: Math.max(0, Math.min(2000, prev.power + (Math.random() - 0.5) * 50)),
-      }))
-    }, 2000)
-
-    return () => clearInterval(interval)
-  }, [])
+  };
 
   return (
     <div className="p-6 space-y-6">
@@ -115,5 +118,5 @@ export default function HomePage() {
         <RealtimeChart />
       </div>
     </div>
-  )
+  );
 }

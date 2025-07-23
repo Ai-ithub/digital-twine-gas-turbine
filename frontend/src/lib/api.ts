@@ -35,3 +35,9 @@ export async function fetchLatestSensorData(
   const data = await res.json();
   return data;
 }
+export async function getSensorData(): Promise<SensorData[]> {
+  const res = await fetch(`${API_BASE_URL}/sensor-data/latest`);
+  if (!res.ok) throw new Error("Failed to fetch sensor data");
+  return await res.json();
+}
+
