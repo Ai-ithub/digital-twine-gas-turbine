@@ -5,7 +5,7 @@ from ppo_model import Actor, Critic
 
 class PPOAgent:
     def __init__(self, state_dim, action_dim, actor_lr=1e-4, critic_lr=1e-3, gamma=0.99, eps_clip=0.2, device=None):
-        self.device = device if device is not None else torch.device("cpu")
+        self.device = device if device else torch.device("cpu")
         self.actor = Actor(state_dim, action_dim).to(self.device)
         self.critic = Critic(state_dim).to(self.device)
         self.actor_optimizer = torch.optim.Adam(self.actor.parameters(), lr=actor_lr)
@@ -14,11 +14,12 @@ class PPOAgent:
         self.eps_clip = eps_clip
 
     def select_action(self, state):
-        state = state.unsqueeze(0).to(self.device)  # Add batch dimension and move to device
+        state = state.unsqueeze(0).to(self.device)
         mean = self.actor(state)
-        std = torch.ones_like(mean).to(self.device) * 0.1  # Constant std on same device
-        dist = Normal(mean, std)  # Continuous distribution
-        action = dist.sample()
+        mean = (mean + 1) / 2  # Rescale from [-1, 1] to [0, 1]
+        std = torch.full_like(mean, 0.1)
+        dist = Normal(mean, std)
+        action = dist.sample().clamp(0.0, 1.0)
         log_prob = dist.log_prob(action).sum(dim=-1)
         value = self.critic(state)
         return action.squeeze(0), log_prob.squeeze(0), value.squeeze(0)
@@ -49,29 +50,28 @@ class PPOAgent:
         log_probs_old = torch.stack(log_probs_old).to(self.device)
         returns = returns.to(self.device).detach()
         advantages = advantages.to(self.device).detach()
-        
+    
         # Critic update
         self.critic_optimizer.zero_grad()
-        values = self.critic(states).squeeze()
-        returns = returns.squeeze()
-        critic_loss = F.mse_loss(values, returns)  # Make sure shapes match
+        values = self.critic(states).squeeze()  # Remove extra dims, shape: [batch_size]
+        returns = returns.squeeze()              # Make sure returns shape matches values
+        critic_loss = F.mse_loss(values, returns)
         critic_loss.backward()
         self.critic_optimizer.step()
-
+    
         # Actor update
         self.actor_optimizer.zero_grad()
         mean = self.actor(states)
         std = torch.ones_like(mean).to(self.device) * 0.1
         dist = Normal(mean, std)
-
-        # Make sure actions are properly shaped for log_prob
+    
         actions = actions.view_as(mean)
         log_probs_new = dist.log_prob(actions).sum(dim=-1)
-
+    
         ratios = torch.exp(log_probs_new - log_probs_old)
         surr1 = ratios * advantages
         surr2 = torch.clamp(ratios, 1 - self.eps_clip, 1 + self.eps_clip) * advantages
-
+    
         actor_loss = -torch.min(surr1, surr2).mean()
         actor_loss.backward()
         self.actor_optimizer.step()
