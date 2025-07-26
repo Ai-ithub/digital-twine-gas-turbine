@@ -1,9 +1,3 @@
-#!/usr/bin/env python
-# coding: utf-8
-
-# In[2]:
-
-
 import torch
 import torch.nn as nn
 
@@ -14,11 +8,11 @@ class Actor(nn.Module):
             nn.Linear(input_dim, hidden_dim),
             nn.ReLU(),
             nn.Linear(hidden_dim, output_dim),
-            nn.Tanh()  # For continuous action space
+            nn.Tanh()  # Output in [-1, 1]
         )
 
     def forward(self, state):
-        return self.net(state)
+        return self.net(state)  # This will be scaled later to [0, 1]
 
 class Critic(nn.Module):
     def __init__(self, input_dim, hidden_dim=64):
@@ -31,4 +25,3 @@ class Critic(nn.Module):
 
     def forward(self, state):
         return self.net(state)
-
