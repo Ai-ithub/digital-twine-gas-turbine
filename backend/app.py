@@ -3,6 +3,8 @@ import logging
 from flask import Flask, jsonify
 from flask_cors import CORS
 from dotenv import load_dotenv
+from influxdb_client import InfluxDBClient
+from influxdb_client.client.write_api import SYNCHRONOUS
 
 # Import your custom classes
 from database import CompressorDatabase
@@ -11,19 +13,22 @@ from onnxPredictor import ONNXPredictor
 from model_class import CompressorStatusPredictor
 
 # --- 1. Configuration ---
-# Load variables from .env file for security
 load_dotenv()
-
-# Setup logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
-# Get DB config from environment variables with defaults for local dev
+# MySQL DB Config
 DB_CONFIG = {
     "host": os.getenv("DB_HOST", "127.0.0.1"),
     "user": os.getenv("DB_USER", "root"),
-    "password": os.getenv("DB_PASSWORD"), # This MUST be set in your .env file
+    "password": os.getenv("DB_PASSWORD"),
     "database": os.getenv("DB_DATABASE", "compressor_db"),
 }
+
+# --- InfluxDB Config ---
+INFLUXDB_URL = os.getenv("INFLUXDB_URL", "http://localhost:8086")
+INFLUXDB_TOKEN = os.getenv("INFLUXDB_TOKEN")
+INFLUXDB_ORG = os.getenv("INFLUXDB_ORG")
+INFLUXDB_BUCKET = os.getenv("INFLUXDB_BUCKET")
 
 # Define model paths
 STATUS_MODEL_PATH = "backend/compressor_status_prediction_model.onnx"
@@ -40,12 +45,50 @@ def home():
     return jsonify({
         "message": "Compressor Digital Twin API is running.",
         "available_endpoints": [
-            "/get_all_data",
+            "/get_all_data", # From MySQL
+            "/get_live_data", # From InfluxDB
             "/predict_vibration",
             "/predict_dart",
             "/predict_status"
         ]
     })
+    
+    # --- Endpoint for InfluxDB Data ---
+@app.route('/get_live_data', methods=['GET'])
+def get_live_data():
+    """Retrieve the latest data points from InfluxDB."""
+    try:
+        with InfluxDBClient(url=INFLUXDB_URL, token=INFLUXDB_TOKEN, org=INFLUXDB_ORG) as client:
+            query_api = client.query_api()
+            
+            # Flux query to get the last 100 points of 'Vibration' data
+            flux_query = f'''
+                from(bucket: "{INFLUXDB_BUCKET}")
+                |> range(start: 2025-01-01T00:00:00Z)
+                |> filter(fn: (r) => r["_measurement"] == "compressor_metrics")
+                |> filter(fn: (r) => r["_field"] == "Vibration")
+                |> sort(columns: ["_time"], desc: true)
+                |> limit(n: 100)
+            '''
+            
+            tables = query_api.query(flux_query, org=INFLUXDB_ORG)
+            
+            # Convert the result to a simple list of dictionaries
+            results = []
+            for table in tables:
+                for record in table.records:
+                    results.append({
+                        "time": record.get_time().isoformat(),
+                        "field": record.get_field(),
+                        "value": record.get_value()
+                    })
+            
+            return jsonify(results)
+            
+    except Exception as e:
+        logging.error(f"Error in /get_live_data: {e}")
+        return jsonify({"error": str(e)}), 500
+# --- END ---
 
 @app.route('/get_all_data', methods=['GET'])
 def get_all_data():
@@ -118,6 +161,6 @@ def predict_status():
 
 # --- 4. Main Execution Block ---
 if __name__ == '__main__':
-    if not DB_CONFIG['password']:
-        logging.warning("WARNING: DB_PASSWORD environment variable is not set. Database connections will likely fail.")
+    if not DB_CONFIG['password'] or not INFLUXDB_TOKEN:
+        logging.warning("WARNING: Database credentials or InfluxDB token are not set in .env file.")
     app.run(debug=True, port=5000, host='0.0.0.0')
