@@ -6,11 +6,13 @@ let socket: Socket | null = null;
 
 export const connectWebSocket = (dispatch: AppDispatch) => {
   if (!socket) {
-    socket = io("http://localhost:5000");
+    const socket = io("http://localhost:5000", {
+      transports: ["websocket", "polling"],
+    });
 
     socket.on("connect", () => {
       console.log("WebSocket connected");
-      socket.emit("start_stream"); 
+      socket.emit("start_stream");
       // Optionally notify backend to start stream if needed
       // socket.emit("start_stream");
     });
@@ -19,7 +21,6 @@ export const connectWebSocket = (dispatch: AppDispatch) => {
       console.log("Received sensor data:", data);
       dispatch(setLatestSensor(data));
     });
-    
 
     socket.on("disconnect", () => {
       console.warn("WebSocket disconnected");

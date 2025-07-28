@@ -1,291 +1,123 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { AppDispatch, RootState } from "../../../store"; // adjust if needed
-import { connectWebSocket, disconnectWebSocket } from "../../../lib/websocket";
+import { io, type Socket } from "socket.io-client";
+import axios from "axios";
 
 import { HistogramChart } from "../../../components/Histogram_chart";
 import { NoiseChart } from "../../../components/Noise_chart";
 
-export default function RealtimePage() {
-  const dispatch = useDispatch<AppDispatch>();
-  const realTimeData = useSelector((state: RootState) => state.sensor.latest);
+interface SensorData {
+  id: number;
+  timestamp: string;
+  pressure_in: number;
+  temperature_in: number;
+  flow_rate: number;
+  pressure_out: number;
+  temperature_out: number;
+  efficiency: number;
+  power_consumption: number;
+  vibration: number;
+  status: string;
+}
 
-  // We'll store an array of vibration data entries over time here
+const API_BASE_URL = "http://localhost:5000";
+
+export default function RealtimePage() {
+  /* ------------ state ------------- */
+  const [sensorData, setSensorData] = useState<SensorData | null>(null);
+  const [connected, setConnected] = useState(false);
+
+  // rolling buffers of noise and histogram data states
   const [noiseData, setNoiseData] = useState<{ time: string; amplitude: number }[]>([]);
   const [histogramData, setHistogramData] = useState<{ range: string; frequency: number }[]>([]);
-  const [error, setError] = useState<string | null>(null);
 
+  /* ------------ real-time pipe (fetch once + socket) ------------- */
   useEffect(() => {
-    connectWebSocket(dispatch);
+    // 1. grab the most-recent snapshot
+    axios
+      .get<SensorData>(`${API_BASE_URL}/sensor-data/latest`)
+      .then((res) => setSensorData(res.data))
+      .catch(() => console.warn("No latest sensor data available yet"));
+
+    // 2. open socket for streaming updates
+    const socket: Socket = io(API_BASE_URL);
+
+    socket.on("connect", () => {
+      setConnected(true);
+      console.log("Socket.IO connected");
+    });
+
+    socket.on("sensor_data", (data: SensorData) => {
+      setSensorData(data); // update latest sensor data
+    });
+
+    socket.on("disconnect", () => {
+      setConnected(false);
+      console.log("Socket.IO disconnected");
+    });
+
     return () => {
-      disconnectWebSocket();
+      socket.disconnect();
     };
-  }, [dispatch]);
+  }, []);
 
-  // Update local noiseData whenever new realTimeData arrives
+  /* ------------ update noiseData and histogramData when sensorData changes ------------- */
   useEffect(() => {
-    if (!realTimeData) return;
+    if (!sensorData) return; // skip if no data yet
 
-    // Append latest vibration data to noiseData with timestamp
+    const noisePoint = {
+      time: sensorData.timestamp,
+      amplitude: sensorData.vibration ?? 0,
+    };
+
     setNoiseData((prev) => {
-      const newData = [
-        ...prev,
-        { time: new Date().toISOString(), amplitude: realTimeData.vibration ?? 0 },
-      ];
-      // Limit array size (e.g., last 100)
-      if (newData.length > 100) newData.shift();
-      return newData;
+      const updated = [...prev, noisePoint];
+      if (updated.length > 100) updated.shift(); // keep last 100 points
+      return updated;
     });
-  }, [realTimeData]);
 
-  // Compute histogram from noiseData
-  useEffect(() => {
-    if (noiseData.length === 0) {
-      setHistogramData([]);
-      return;
-    }
-
-    const bins = new Map<string, number>();
-    noiseData.forEach(({ amplitude }) => {
-      const bin = Math.floor(amplitude).toString();
+    setHistogramData((prev) => {
+      const bins = new Map(prev.map(({ range, frequency }) => [range, frequency]));
+      const bin = Math.floor(noisePoint.amplitude).toString();
       bins.set(bin, (bins.get(bin) || 0) + 1);
+
+      return Array.from(bins.entries())
+        .sort((a, b) => Number(a[0]) - Number(b[0]))
+        .map(([range, frequency]) => ({ range, frequency }));
     });
+  }, [sensorData]);
 
-    const histogram = Array.from(bins.entries())
-      .sort((a, b) => Number(a[0]) - Number(b[0]))
-      .map(([range, frequency]) => ({ range, frequency }));
-
-    setHistogramData(histogram);
-  }, [noiseData]);
-
-  if (!realTimeData) return <div className="text-white p-4">Loading sensor data...</div>;
+  /* ------------ UI rendering ------------- */
+  if (!connected) return <div className="text-white p-4">Connecting to WebSocket...</div>;
+  if (!sensorData) return <div className="text-white p-4">Loading sensor data...</div>;
 
   return (
     <div className="flex-1 bg-black text-white">
-      {/* Dropdowns for systemParam, gaugeParam, sensorParam can be added here if you want */}
-
-      {/* Error display */}
-      {error && <div className="p-4 text-red-500 font-semibold">Error: {error}</div>}
-
-      {/* Graph Header */}
+      {/* Header */}
       <div className="bg-gray-600 text-center py-3 border-b border-gray-500">
         <h2 className="font-medium text-lg">Graph</h2>
       </div>
 
       {/* Noise Signal Chart */}
       <div className="p-4 space-y-6 bg-gray-800 border border-gray-600 rounded mb-6">
-        <div className="p-3 border-b border-gray-600 flex justify-between">
-          <h3 className="font-medium">Noise Signal</h3>
-          {/* <div className="text-sm">
-            <span className="mr-4">20</span>
-            <span className="mr-16">Amplitude</span>
-            <span className="mr-4">0</span>
-            <span>-20</span>
-          </div> */}
+        <div className="p-3 border-b border-gray-600">
+          <h3 className="font-medium">Noise Signal (vibration)</h3>
         </div>
         <div className="p-4 relative h-48 bg-white border border-gray-400 rounded">
           <NoiseChart data={noiseData} />
-          <div className="absolute left-2 top-2 text-black text-xs">20</div>
-          <div className="absolute left-2 top-1/2 text-black text-xs">0</div>
-          <div className="absolute left-2 bottom-2 text-black text-xs">-20</div>
-        </div>
-        <div className="flex justify-between text-white text-xs mt-2 px-4">
-          {[...Array(26)].map((_, i) => (
-            <span key={i}>{(i * 0.04).toFixed(2)}</span>
-          ))}
         </div>
       </div>
 
       {/* Histogram Chart */}
       <div className="p-4 space-y-6 bg-gray-800 border border-gray-600 rounded">
-        <div className="p-3 border-b border-gray-600 flex justify-between">
+        <div className="p-3 border-b border-gray-600">
           <h3 className="font-medium">Histogram of Noise</h3>
-          {/* <div className="text-sm">
-            <span className="mr-4">3</span>
-            <span className="mr-16">Frequency</span>
-            <span>0</span>
-          </div> */}
         </div>
         <div className="p-4 relative h-48 bg-white border border-gray-400 rounded">
           <HistogramChart data={histogramData} />
-          <div className="absolute left-2 top-2 text-black text-xs">3</div>
-          <div className="absolute left-2 top-1/3 text-black text-xs">2</div>
-          <div className="absolute left-2 top-2/3 text-black text-xs">1</div>
-          <div className="absolute left-2 bottom-2 text-black text-xs">0</div>
-        </div>
-        <div className="flex justify-between text-white text-xs mt-2 px-4">
-          {histogramData.length > 0
-            ? histogramData.map((item) => <span key={item.range}>{item.range}</span>)
-            : Array.from({ length: 13 }, (_, i) => <span key={i}>{i - 6}</span>)}
         </div>
       </div>
     </div>
   );
 }
-
-
-
-
-
-
-// "use client";
-
-// import { useEffect, useState } from "react";
-// import { fetchLatestSensorData, SensorData } from "../../../lib/api";
-
-// import { HistogramChart } from "../../../components/Histogram_chart";
-// import { NoiseChart } from "../../../components/Noise_chart";
-
-// export default function RealtimePage() {
-//   const [systemParam, setSystemParam] = useState("system_1");
-//   const [gaugeParam, setGaugeParam] = useState("gauge_1");
-//   const [sensorParam, setSensorParam] = useState("sensor_1");
-
-//   const [noiseData, setNoiseData] = useState<{ time: string; amplitude: number }[]>([]);
-//   const [histogramData, setHistogramData] = useState<{ range: string; frequency: number }[]>([]);
-//   const [error, setError] = useState<string | null>(null);
-
-//   useEffect(() => {
-//     const interval = setInterval(() => {
-//       fetchLatestSensorData(systemParam, gaugeParam, sensorParam)
-//         .then((data) => {
-//           if (!data.length) {
-//             setError("No sensor data received");
-//             return;
-//           }
-
-//           const noise = data.map((d) => ({
-//             time: new Date(d.timestamp).toISOString(),
-//             amplitude: d.vibration,
-//           }));
-//           setNoiseData(noise);
-
-//           const bins = new Map<string, number>();
-//           noise.forEach(({ amplitude }) => {
-//             const bin = Math.floor(amplitude).toString();
-//             bins.set(bin, (bins.get(bin) || 0) + 1);
-//           });
-
-//           const histogram = Array.from(bins.entries())
-//             .sort((a, b) => Number(a[0]) - Number(b[0]))
-//             .map(([range, frequency]) => ({ range, frequency }));
-
-//           setHistogramData(histogram);
-//         })
-//         .catch((err) => {
-//           setError(err.message || "Failed to fetch sensor data");
-//         });
-//     }, 3000);
-
-//     return () => clearInterval(interval);
-//   }, [systemParam, gaugeParam, sensorParam]);
-
-//   return (
-//     <div className="flex-1 bg-black text-white">
-//       {/* Dropdowns */}
-//       <div className="p-4 border-b border-gray-700">
-//         <div className="grid grid-cols-3 gap-6 max-w-4xl">
-//           <div className="flex flex-col">
-//             <label className="text-sm mb-2 font-medium">System</label>
-//             <select
-//               value={systemParam}
-//               onChange={(e) => setSystemParam(e.target.value)}
-//               className="bg-white border border-gray-400 text-black px-3 py-2 text-sm rounded"
-//             >
-//               <option value="system_1">System 1</option>
-//               <option value="system_2">System 2</option>
-//               <option value="system_3">System 3</option>
-//             </select>
-//           </div>
-
-//           <div className="flex flex-col">
-//             <label className="text-sm mb-2 font-medium">Gauge</label>
-//             <select
-//               value={gaugeParam}
-//               onChange={(e) => setGaugeParam(e.target.value)}
-//               className="bg-white border border-gray-400 text-black px-3 py-2 text-sm rounded"
-//             >
-//               <option value="gauge_1">Gauge 1</option>
-//               <option value="gauge_2">Gauge 2</option>
-//               <option value="gauge_3">Gauge 3</option>
-//             </select>
-//           </div>
-
-//           <div className="flex flex-col">
-//             <label className="text-sm mb-2 font-medium">Sensor</label>
-//             <select
-//               value={sensorParam}
-//               onChange={(e) => setSensorParam(e.target.value)}
-//               className="bg-white border border-gray-400 text-black px-3 py-2 text-sm rounded"
-//             >
-//               <option value="sensor_1">Sensor 1</option>
-//               <option value="sensor_2">Sensor 2</option>
-//               <option value="sensor_3">Sensor 3</option>
-//             </select>
-//           </div>
-//         </div>
-//       </div>
-
-//       {/* Error Display */}
-//       {error && <div className="p-4 text-red-500 font-semibold">Error: {error}</div>}
-
-//       {/* Graph Header */}
-//       <div className="bg-gray-600 text-center py-3 border-b border-gray-500">
-//         <h2 className="font-medium text-lg">Graph</h2>
-//       </div>
-
-//       {/* Charts */}
-//       <div className="p-4 space-y-6">
-//         {/* Noise Signal */}
-//         <div className="bg-gray-800 border border-gray-600 rounded">
-//           <div className="p-3 border-b border-gray-600 flex justify-between">
-//             <h3 className="font-medium">Noise Signal</h3>
-//             <div className="text-sm">
-//               <span className="mr-4">20</span>
-//               <span className="mr-16">Amplitude</span>
-//               <span className="mr-4">0</span>
-//               <span>-20</span>
-//             </div>
-//           </div>
-//           <div className="p-4 relative h-48 bg-white border border-gray-400 rounded">
-//             <NoiseChart data={noiseData} />
-//             <div className="absolute left-2 top-2 text-black text-xs">20</div>
-//             <div className="absolute left-2 top-1/2 text-black text-xs">0</div>
-//             <div className="absolute left-2 bottom-2 text-black text-xs">-20</div>
-//           </div>
-//           <div className="flex justify-between text-white text-xs mt-2 px-4">
-//             {[...Array(26)].map((_, i) => (
-//               <span key={i}>{(i * 0.04).toFixed(2)}</span>
-//             ))}
-//           </div>
-//         </div>
-
-//         {/* Histogram */}
-//         <div className="bg-gray-800 border border-gray-600 rounded">
-//           <div className="p-3 border-b border-gray-600 flex justify-between">
-//             <h3 className="font-medium">Histogram of Noise</h3>
-//             <div className="text-sm">
-//               <span className="mr-4">3</span>
-//               <span className="mr-16">Frequency</span>
-//               <span>0</span>
-//             </div>
-//           </div>
-//           <div className="p-4 relative h-48 bg-white border border-gray-400 rounded">
-//             <HistogramChart data={histogramData} />
-//             <div className="absolute left-2 top-2 text-black text-xs">3</div>
-//             <div className="absolute left-2 top-1/3 text-black text-xs">2</div>
-//             <div className="absolute left-2 top-2/3 text-black text-xs">1</div>
-//             <div className="absolute left-2 bottom-2 text-black text-xs">0</div>
-//           </div>
-//           <div className="flex justify-between text-white text-xs mt-2 px-4">
-//             {histogramData.length > 0
-//               ? histogramData.map((item) => <span key={item.range}>{item.range}</span>)
-//               : Array.from({ length: 13 }, (_, i) => <span key={i}>{i - 6}</span>)}
-//           </div>
-//         </div>
-//       </div>
-//     </div>
-//   );
-// }

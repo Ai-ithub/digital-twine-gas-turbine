@@ -17,7 +17,7 @@ export function CircularGauge({ title, value, max, unit, color = "#10b981", size
 
   return (
     <div className="flex flex-col items-center">
-      <h3 className="text-md text-center m-3" style={{ color }}>{title}</h3>
+      <h3 className="text-md text-center m-3 font-bold" style={{ color }}>{title}</h3>
 
       <div className="relative" style={{ width: size, height: size }}>
         <svg width={size} height={size} viewBox="0 0 100 100" className="transform -rotate-90">

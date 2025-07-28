@@ -1,72 +1,105 @@
-"use client"
-import React from "react"
-import { useState } from "react"
-import { AlertTriangle, Bell, X } from "lucide-react"
+"use client";
+
+import React, { useEffect, useState } from "react";
+import { io, Socket } from "socket.io-client";
+import { AlertTriangle, Bell, X } from "lucide-react";
+import axios from "axios";
 
 interface Alarm {
-  id: number
-  title: string
-  description: string
-  severity: "critical" | "warning" | "info"
-  timestamp: Date
-  acknowledged: boolean
-  source: string
+  id: number;
+  title: string;
+  description: string;
+  severity: "critical" | "warning" | "info";
+  timestamp: string; // ISO string from backend
+  acknowledged: boolean;
+  source: string;
 }
 
+const API_BASE_URL = "http://localhost:5000";
+
 export default function AlarmsPage() {
-  const [alarms, setAlarms] = useState<Alarm[]>([
-    {
-      id: 1,
-      title: "High Vibration Detected",
-      description: "Vibration levels exceed 2.5 mm/s threshold",
-      severity: "critical",
-      timestamp: new Date(Date.now() - 300000),
-      acknowledged: false,
-      source: "Vibration Sensor 01",
-    },
-    {
-      id: 2,
-      title: "Temperature Warning",
-      description: "Outlet temperature approaching upper limit",
-      severity: "warning",
-      timestamp: new Date(Date.now() - 600000),
-      acknowledged: false,
-      source: "Temperature Probe 02",
-    },
-    {
-      id: 3,
-      title: "Pressure Fluctuation",
-      description: "Inlet pressure showing irregular patterns",
-      severity: "warning",
-      timestamp: new Date(Date.now() - 900000),
-      acknowledged: true,
-      source: "Pressure Sensor 01",
-    },
-    {
-      id: 4,
-      title: "System Information",
-      description: "Scheduled maintenance reminder",
-      severity: "info",
-      timestamp: new Date(Date.now() - 1200000),
-      acknowledged: false,
-      source: "Maintenance System",
-    },
-  ])
+  const [alarms, setAlarms] = useState<Alarm[]>([]);
+  const [connected, setConnected] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Fetch initial alarms from backend API
+    axios.get<Alarm[]>(`${API_BASE_URL}/alarms/latest`)
+      .then(res => {
+        setAlarms(res.data);
+        setError(null);
+      })
+      .catch(err => {
+        console.warn("Failed to fetch initial alarms:", err.message);
+        setError("Failed to fetch initial alarms");
+      });
+
+    // Setup Socket.IO connection for live alarm updates
+    const socket: Socket = io(API_BASE_URL, {
+      transports: ["websocket"],
+      reconnectionAttempts: 5,
+      timeout: 5000,
+    });
+
+    socket.on("connect", () => {
+      setConnected(true);
+      setError(null);
+      console.log("Socket.IO connected for alarms");
+    });
+
+    socket.on("new_alarm", (alarm: Alarm) => {
+      console.log("Received new alarm:", alarm);
+      setAlarms(prev => [alarm, ...prev]);
+    });
+
+    socket.on("disconnect", () => {
+      setConnected(false);
+      console.log("Socket.IO disconnected for alarms");
+    });
+
+    socket.on("connect_error", (err) => {
+      console.error("Socket.IO connection error:", err);
+      setError("Connection error: " + err.message);
+      setConnected(false);
+    });
+
+    return () => {
+      socket.disconnect();
+      console.log("Socket.IO disconnected (cleanup) from AlarmsPage");
+    };
+  }, []);
 
   const acknowledgeAlarm = (id: number) => {
-    setAlarms((prev) => prev.map((alarm) => (alarm.id === id ? { ...alarm, acknowledged: true } : alarm)))
-  }
+    setAlarms(prev =>
+      prev.map(alarm =>
+        alarm.id === id ? { ...alarm, acknowledged: true } : alarm
+      )
+    );
+  };
 
   const dismissAlarm = (id: number) => {
-    setAlarms((prev) => prev.filter((alarm) => alarm.id !== id))
+    setAlarms(prev => prev.filter(alarm => alarm.id !== id));
+  };
+
+  const activeAlarms = alarms.filter(alarm => !alarm.acknowledged);
+  const criticalCount = alarms.filter(alarm => alarm.severity === "critical" && !alarm.acknowledged).length;
+  const warningCount = alarms.filter(alarm => alarm.severity === "warning" && !alarm.acknowledged).length;
+
+  if (error) {
+    return (
+      <div className="text-red-400 p-4 bg-black">
+        <h2>Error loading alarms:</h2>
+        <p>{error}</p>
+      </div>
+    );
   }
 
-  const activeAlarms = alarms.filter((alarm) => !alarm.acknowledged)
-  const criticalCount = alarms.filter((alarm) => alarm.severity === "critical" && !alarm.acknowledged).length
-  const warningCount = alarms.filter((alarm) => alarm.severity === "warning" && !alarm.acknowledged).length
+  if (!connected && alarms.length === 0) {
+    return <div className="text-white p-4 bg-black">Connecting and loading alarms...</div>;
+  }
 
   return (
-    <div className="p-6">
+    <div className="p-6 bg-black min-h-screen">
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-white mb-4">Alarm Systems</h1>
         <div className="flex items-center gap-4">
@@ -127,7 +160,7 @@ export default function AlarmsPage() {
                       <p className="text-gray-300 text-sm mb-2">{alarm.description}</p>
                       <div className="flex items-center gap-4 text-xs text-gray-400">
                         <span>Source: {alarm.source}</span>
-                        <span>Time: {alarm.timestamp.toLocaleTimeString()}</span>
+                        <span>Time: {new Date(alarm.timestamp).toLocaleTimeString()}</span>
                       </div>
                     </div>
                     <div className="flex gap-2">
@@ -167,7 +200,7 @@ export default function AlarmsPage() {
                     </div>
                     <div className="text-right">
                       <span className="px-2 py-1 text-xs bg-green-600 text-white rounded-full">ACKNOWLEDGED</span>
-                      <div className="text-xs text-gray-400 mt-1">{alarm.timestamp.toLocaleString()}</div>
+                      <div className="text-xs text-gray-400 mt-1">{new Date(alarm.timestamp).toLocaleString()}</div>
                     </div>
                   </div>
                 </div>
@@ -176,5 +209,5 @@ export default function AlarmsPage() {
         </div>
       </div>
     </div>
-  )
+  );
 }

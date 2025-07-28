@@ -1,11 +1,10 @@
 "use client";
 
-import React, { useEffect } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { AppDispatch, RootState } from "../../../store"; // Adjust the path if needed
-import { connectWebSocket, disconnectWebSocket } from "../../../lib/websocket";
+import React, { useEffect, useState } from "react";
+import { io, Socket } from "socket.io-client";
+import axios from "axios";
 
-// You can replace these with your actual imported components
+// Gauge UI Components
 const CircularGauge = ({
   title,
   value,
@@ -44,68 +43,79 @@ const VerticalBar = ({
   </div>
 );
 
-export default function GaugePage() {
-  const dispatch = useDispatch<AppDispatch>();
-  const realTimeData = useSelector((state: RootState) => state.sensor.latest);
+// Data structure
+export interface SensorData {
+  frequency: number;
+  pressure_in: number;
+  pressure_out: number;
+  flow_rate: number;
+  power_consumption: number;
+  efficiency: number;
+  vibration: number;
+  // Add any new fields here
+}
+
+const API_BASE_URL = "http://localhost:5000";
+
+export default function SensorPage() {
+  const [sensorData, setSensorData] = useState<SensorData | null>(null);
+  const [connected, setConnected] = useState(false);
 
   useEffect(() => {
-    connectWebSocket(dispatch);
-    return () => {
-      disconnectWebSocket();
-    };
-  }, [dispatch]);
+    // Initial fetch for fallback
+    axios.get<SensorData>(`${API_BASE_URL}/sensor-data/latest`)
+      .then((res) => setSensorData(res.data))
+      .catch(() => console.warn("No latest sensor data available yet"));
 
-  if (!realTimeData) return <div className="text-white p-4">Loading sensor data...</div>;
+    const socket: Socket = io(API_BASE_URL);
+
+    socket.on("connect", () => {
+      setConnected(true);
+      console.log("Socket.IO connected to SensorPage");
+    });
+
+    socket.on("sensor_data", (data: SensorData) => {
+      setSensorData(data);
+    });
+
+    socket.on("disconnect", () => {
+      setConnected(false);
+      console.log("Socket.IO disconnected from SensorPage");
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, []);
+
+  if (!connected) return <div className="text-white p-4">Connecting to WebSocket...</div>;
+  if (!sensorData) return <div className="text-white p-4">Loading sensor data...</div>;
 
   return (
     <div className="flex-1 bg-black text-white p-4 min-h-screen">
+      <h1 className="text-xl font-bold mb-6">Sensor Overview</h1>
+
       {/* Top Gauges */}
       <div className="grid grid-cols-5 gap-4 mb-8">
-        <CircularGauge title="Frequency" value={realTimeData.frequency ?? 0} max={100} />
-        <CircularGauge title="Absolute Pressure" value={realTimeData.pressure_in ?? 0} max={1000} unit="psi" />
-        <CircularGauge title="Static Pressure" value={realTimeData.pressure_out ?? 0} max={1000} unit="psi_s" />
-        <CircularGauge title="Dynamic Pressure" value={realTimeData.flow_rate ?? 0} max={1000} unit="psi_d" />
+        <CircularGauge title="Frequency" value={sensorData.frequency ?? 0} max={100} unit="Hz" />
+        <CircularGauge title="Absolute Pressure" value={sensorData.pressure_in ?? 0} max={1000} unit="psi" />
+        <CircularGauge title="Static Pressure" value={sensorData.pressure_out ?? 0} max={1000} unit="psi_s" />
+        <CircularGauge title="Dynamic Pressure" value={sensorData.flow_rate ?? 0} max={1000} unit="psi_d" />
         <div className="bg-black p-4 rounded">
           <h3 className="text-white text-sm font-medium mb-4 text-center">Pressure</h3>
           <div className="flex gap-4 justify-center">
-            <VerticalBar title="P_C" value={realTimeData.pressure_in ?? 0} max={100} />
-            <VerticalBar title="P_T" value={realTimeData.pressure_out ?? 0} max={100} />
+            <VerticalBar title="P_C" value={sensorData.pressure_in ?? 0} max={100} />
+            <VerticalBar title="P_T" value={sensorData.pressure_out ?? 0} max={100} />
           </div>
         </div>
       </div>
 
       {/* Second Row */}
       <div className="grid grid-cols-5 gap-4 mb-8">
-        <CircularGauge title="Amplitude" value={realTimeData.vibration ?? 0} max={800} />
-        <CircularGauge title="Power" value={realTimeData.power_consumption ?? 0} max={2000} />
-        <CircularGauge title="Efficiency" value={realTimeData.efficiency ?? 0} max={100} unit="%" />
-        <CircularGauge title="Flow Rate" value={realTimeData.flow_rate ?? 0} max={1000} />
-        {/* <div className="bg-black p-4 rounded flex justify-center">
-          <VerticalBar title="θ" value={realTimeData.angle ?? 0} max={100} />
-        </div> */}
-      </div>
-
-      {/* TEMP Section
-      <div className="bg-gray-800 p-4 rounded mb-8">
-        <h2 className="text-white text-lg font-bold mb-4 text-center">TEMP</h2>
-        <div className="grid grid-cols-10 gap-2">
-          <VerticalBar title="Relative Temp" value={realTimeData.relative_temp ?? 0} max={100} />
-          <VerticalBar title="Surface Temp" value={realTimeData.surface_temp ?? 0} max={100} />
-          <VerticalBar title="Internal Temp" value={realTimeData.internal_temp ?? 0} max={100} />
-          <VerticalBar title="Point Temp" value={realTimeData.point_temp ?? 0} max={100} />
-          <VerticalBar title="Fluctuating Temp" value={realTimeData.temp_fluctuation ?? 0} max={100} />
-          <VerticalBar title="Freezing Point" value={realTimeData.temp_freezing ?? 0} max={100} />
-          <VerticalBar title="Dew Point" value={realTimeData.temp_dew_point ?? 0} max={100} />
-          <VerticalBar title="Temp_vis" value={realTimeData.temp_vis ?? 0} max={100} />
-          <VerticalBar title="Flash Point" value={realTimeData.flash_point ?? 0} max={100} />
-          <VerticalBar title="TBN" value={realTimeData.tbn ?? 0} max={100} />
-        </div>
-      </div> */}
-
-      {/* Viscosity */}
-      <div className="mt-4 text-center">
-        <h3 className="text-white text-lg font-medium">Viscosity</h3>
-        {/* Add more bars/graphs if needed */}
+        <CircularGauge title="Amplitude" value={sensorData.vibration ?? 0} max={800} unit="Hz" />
+        <CircularGauge title="Power" value={sensorData.power_consumption ?? 0} max={2000} unit="kW" />
+        <CircularGauge title="Efficiency" value={sensorData.efficiency ?? 0} max={100} unit="%" />
+        <CircularGauge title="Flow Rate" value={sensorData.flow_rate ?? 0} max={1000} unit="m³/min" />
       </div>
     </div>
   );
