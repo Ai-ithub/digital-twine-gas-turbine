@@ -1,10 +1,9 @@
 from kafka import KafkaConsumer, KafkaProducer
 import json
-import numpy as np
-from dvr_processor import DVRProcessor
 import pandas as pd
+from dvr_processor import DVRProcessor
 
-# Kafka Consumer to receive raw sensor data
+# Kafka consumer to receive raw messages
 consumer = KafkaConsumer(
     'sensors-raw',
     bootstrap_servers='localhost:9092',
@@ -14,34 +13,33 @@ consumer = KafkaConsumer(
     group_id='dvr-group'
 )
 
-# Kafka Producer to publish processed (validated) data
+# Kafka producer to send validated data
 producer = KafkaProducer(
     bootstrap_servers='localhost:9092',
     value_serializer=lambda m: json.dumps(m).encode('utf-8')
 )
 
-# Initialize DVRProcessor with sensor validation rules
-processor = DVRProcessor(rules_config={
-    "temperature": (0, 100),
-    "humidity": (0, 100),
-    "pressure": (900, 1100)
-})
+# Initialize processing logic
+processor = DVRProcessor()
 
-# Consume, process, and forward data in a loop
+# Buffer for batch processing
+buffer = []
+batch_size = 5  # Number of rows per processing window
+
 for message in consumer:
     raw_data = message.value
     print("Received raw:", raw_data)
+    buffer.append(raw_data)
 
-    # Convert raw JSON data to a pandas DataFrame
-    df = pd.DataFrame([raw_data])
+    # Process in batches of `batch_size`
+    if len(buffer) >= batch_size:
+        df = pd.DataFrame(buffer)
+        processed_df = processor.run_all_checks(df)
 
-    # Apply DVR logic to clean/validate the data
-    processed_df = processor.process(df)
+        for _, row in processed_df.iterrows():
+            cleaned_data = row.to_dict()
+            print("Processed and sending:", cleaned_data)
+            producer.send('sensors-validated', cleaned_data)
 
-    # Convert the processed DataFrame back to dict
-    cleaned_data = processed_df.to_dict(orient="records")[0]
-    print("Processed and sending:", cleaned_data)
-
-    # Send validated data to the 'sensors-validated' topic
-    producer.send('sensors-validated', cleaned_data)
-    producer.flush()
+        producer.flush()
+        buffer = []  # Clear buffer for next batch
