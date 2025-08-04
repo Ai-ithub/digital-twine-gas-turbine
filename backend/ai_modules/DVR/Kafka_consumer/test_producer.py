@@ -5,20 +5,33 @@ import time
 
 # Load dataset
 # df = pd.read_csv("C:/Users/98939/Downloads/MASTER_DATASET.csv")
+import os
+assert os.path.exists("datasets/MASTER_DATASET.csv"), "CSV file not found!"
+
 df = pd.read_csv("datasets/MASTER_DATASET.csv")
 
-# Filter required columns
 required_columns = [
-    'Pressure_In',
-    'Temperature_In',
-    'Flow_Rate',
-    'Pressure_Out',
-    'Efficiency',
-    'Vibration',
-    'Ambient_Temperature',
-    'Power_Consumption'
+    'Pressure_In', 'Temperature_In', 'Flow_Rate', 'Pressure_Out',
+    'Efficiency', 'Vibration', 'Ambient_Temperature', 'Power_Consumption'
 ]
-df = df[required_columns].dropna()
+
+missing = [col for col in required_columns if col not in df.columns]
+if missing:
+    raise ValueError(f"Missing columns in CSV: {missing}")
+
+
+# Filter required columns
+# required_columns = [
+#     'Pressure_In',
+#     'Temperature_In',
+#     'Flow_Rate',
+#     'Pressure_Out',
+#     'Efficiency',
+#     'Vibration',
+#     'Ambient_Temperature',
+#     'Power_Consumption'
+# ]
+# df = df[required_columns].dropna()
 
 # Setup Kafka producer
 producer = KafkaProducer(
