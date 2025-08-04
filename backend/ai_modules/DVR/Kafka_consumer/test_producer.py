@@ -1,23 +1,34 @@
+import pandas as pd
 from kafka import KafkaProducer
 import json
 import time
 
-try:
-    producer = KafkaProducer(
-        bootstrap_servers='localhost:9092',
-        value_serializer=lambda m: json.dumps(m).encode('utf-8')
-    )
+# Load dataset
+df = pd.read_csv("C:/Users/98939/Downloads/MASTER_DATASET.csv")
 
-    sample_data = {
-        "temperature": 23.5,
-        "humidity": 45.2,
-        "pressure": 1013.1
-    }
+# Filter required columns
+required_columns = [
+    'Pressure_In',
+    'Temperature_In',
+    'Flow_Rate',
+    'Pressure_Out',
+    'Efficiency',
+    'Vibration',
+    'Ambient_Temperature',
+    'Power_Consumption'
+]
+df = df[required_columns].dropna()
 
-    while True:
-        producer.send('sensors-raw', sample_data)
-        print("Sent:", sample_data)
-        time.sleep(2)
+# Setup Kafka producer
+producer = KafkaProducer(
+    bootstrap_servers='localhost:9092',
+    value_serializer=lambda v: json.dumps(v).encode('utf-8')
+)
 
-except Exception as e:
-    print("Kafka not available. Skipping producer test.")
+# Stream each row as an individual Kafka message
+for idx, row in df.iterrows():
+    data = row.to_dict()
+    print(f"Sending row {idx}: {data}")
+    producer.send('sensors-raw', value=data)
+    producer.flush()
+    time.sleep(1)  # Simulate real-time by adding delay
