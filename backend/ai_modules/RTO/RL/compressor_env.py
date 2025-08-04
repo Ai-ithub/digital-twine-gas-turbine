@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
-import gym
-from gym import spaces
+import gymnasium as gym
+from gymnasium import spaces
 from sklearn.linear_model import LinearRegression
 
 class CompressorEnv(gym.Env):
