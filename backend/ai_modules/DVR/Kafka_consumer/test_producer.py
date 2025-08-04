@@ -2,12 +2,18 @@ import pandas as pd
 from kafka import KafkaProducer
 import json
 import time
+import os
+
+def is_kafka_available(host='localhost', port=9092):
+    try:
+        with socket.create_connection((host, port), timeout=2):
+            return True
+    except OSError:
+        return False
 
 # Load dataset
 # df = pd.read_csv("C:/Users/98939/Downloads/MASTER_DATASET.csv")
-import os
 assert os.path.exists("backend/ai_modules/DVR/Kafka_consumer/kafka_test_sample.csv"), "CSV file not found!"
-
 df = pd.read_csv("backend/ai_modules/DVR/Kafka_consumer/kafka_test_sample.csv")
 print("CSV columns:", df.columns.tolist())
 
@@ -20,21 +26,10 @@ missing = [col for col in required_columns if col not in df.columns]
 if missing:
     raise ValueError(f"Missing columns in CSV: {missing}")
 
-
-# Filter required columns
-# required_columns = [
-#     'Pressure_In',
-#     'Temperature_In',
-#     'Flow_Rate',
-#     'Pressure_Out',
-#     'Efficiency',
-#     'Vibration',
-#     'Ambient_Temperature',
-#     'Power_Consumption'
-# ]
-# df = df[required_columns].dropna()
+df = df[required_columns].dropna()
 
 # Setup Kafka producer
+@unittest.skipUnless(is_kafka_available(), "Kafka is not available")
 producer = KafkaProducer(
     bootstrap_servers='localhost:9092',
     value_serializer=lambda v: json.dumps(v).encode('utf-8')
