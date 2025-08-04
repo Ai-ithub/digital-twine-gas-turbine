@@ -1,96 +1,122 @@
-import numpy as np
 import pandas as pd
+import numpy as np
+from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
+import statsmodels.api as sm
 from scipy import stats
 
 class DVRProcessor:
-    def __init__(self, rules_config=None):
-        """
-        Initialize DVRProcessor with optional rule-based config.
-        :param rules_config: dict containing thresholds for sensors
-        """
-        self.rules_config = rules_config or {}
+    def __init__(self):
+        self.scaler = StandardScaler()
+        self.pca = PCA()
 
-    def rule_based_check(self, df):
+    def apply_rule_based_checks(self, df):
         """
-        Apply rule-based filtering on the data.
-        Remove or mark sensor values that are out of expected range.
+        Applies rule-based validation on physical ranges and rate-of-change.
+        Adds boolean columns for each rule and overall pass/fail flags.
         """
-        for column, (min_val, max_val) in self.rules_config.items():
-            df[column] = df[column].where((df[column] >= min_val) & (df[column] <= max_val), np.nan)
+        # Pointwise physical limits
+        df['rule_pressure_in'] = df['Pressure_In'].between(3.0, 4.0)
+        df['rule_temperature_in'] = df['Temperature_In'].between(10, 30)
+        df['rule_flow_rate'] = df['Flow_Rate'].between(11.0, 13.0)
+        df['rule_pressure_diff'] = (df['Pressure_Out'] - df['Pressure_In']).between(12, 16)
+        df['rule_efficiency'] = df['Efficiency'].between(0, 1)
+        df['rule_vibration'] = df['Vibration'].between(0.5, 1.3)
+        df['rule_ambient_temp'] = df['Ambient_Temperature'].between(15, 35)
+        df['rule_power'] = df['Power_Consumption'].between(4000, 7000)
+
+        # Rate-of-change rules using diff
+        df['delta_temperature'] = df['Temperature_In'].diff().abs()
+        df['delta_vibration'] = df['Vibration'].diff().abs()
+        df['delta_pressure'] = df['Pressure_In'].diff().abs()
+
+        df['rule_temp_roc'] = df['delta_temperature'] < 2.5
+        df['rule_vib_roc'] = df['delta_vibration'] < 0.15
+        df['rule_pressure_roc'] = df['delta_pressure'] < 0.3
+
+        # Handle first row with NaN diffs
+        df[['rule_temp_roc', 'rule_vib_roc', 'rule_pressure_roc']] = \
+            df[['rule_temp_roc', 'rule_vib_roc', 'rule_pressure_roc']].fillna(True)
+
+        # Combine all boolean rule checks
+        rule_cols = [col for col in df.columns if col.startswith('rule_')]
+        df['all_rules_pass'] = df[rule_cols].all(axis=1)
+        df['rule_violation_flag'] = ~df['all_rules_pass']
+
         return df
 
-    def apply_pca(self, df, n_components=0.95):
+    def apply_pca_check(self, df):
         """
-        Apply PCA to detect deviations in sensor patterns.
+        Applies PCA-based anomaly detection based on reconstruction error.
+        Adds 'Reconstruction_Error' and 'Gross_Error' columns.
         """
-        df_clean = df.dropna(axis=1, how='any')  # Drop sensors with NaN
-        if df_clean.empty or df_clean.shape[1] < 2 or df_clean.shape[0] < 2:
-            return df  # Not enough data for PCA
-    
-        try:
-            pca = PCA(n_components=n_components)
-            pca.fit(df_clean)
-            reconstructed = pca.inverse_transform(pca.transform(df_clean))
-            reconstruction_error = np.abs(df_clean - reconstructed)
-            outlier_mask = (reconstruction_error > reconstruction_error.mean() + 2 * reconstruction_error.std())
-            df[df_clean.columns] = df_clean.mask(outlier_mask)
-        except Exception as e:
-            print(f"PCA failed: {e}")
-    
+        df_clean = df.dropna()
+        features = df_clean.select_dtypes(include=[np.number])
+        if features.empty:
+            df['Reconstruction_Error'] = np.nan
+            df['Gross_Error'] = False
+            return df
+
+        X_scaled = self.scaler.fit_transform(features)
+        self.pca.fit(X_scaled)
+        X_pca = self.pca.transform(X_scaled)
+        X_reconstructed = self.pca.inverse_transform(X_pca)
+        reconstruction_error = np.mean((X_scaled - X_reconstructed) ** 2, axis=1)
+
+        df.loc[df_clean.index, 'Reconstruction_Error'] = reconstruction_error
+        threshold = np.percentile(reconstruction_error, 95)
+        
+        df['Gross_Error'] = False
+        df.loc[df_clean.index, 'Gross_Error'] = reconstruction_error > threshold
+
+
         return df
 
-    def grubbs_test(self, df, alpha=0.05):
+    def apply_grubbs_test(self, df, column='Temperature_In', alpha=0.05):
         """
-        Apply Grubbs' Test on each column to detect outliers.
+        Detects outliers in a specific column using Grubbs' test.
+        Adds 'Grubbs_Outlier' column.
         """
-        for col in df.columns:
-            series = df[col].dropna()
-            if len(series) < 3:
-                continue
-            test = True
-            while test:
-                n = len(series)
-                mean = series.mean()
-                std = series.std()
-                G = abs(series - mean).max() / std
-                t_crit = stats.t.ppf(1 - alpha / (2 * n), n - 2)
-                G_crit = ((n - 1) / np.sqrt(n)) * np.sqrt(t_crit**2 / (n - 2 + t_crit**2))
-                if G > G_crit:
-                    series = series[series != abs(series - mean).idxmax()]
-                else:
-                    test = False
-            df[col] = df[col].where(df[col].isin(series))
+        data = df[column].dropna().values
+        mask = np.ones(len(data), dtype=bool)
+        while True:
+            current_data = data[mask]
+            if len(current_data) < 3:
+                break
+            mean = np.mean(current_data)
+            std = np.std(current_data, ddof=1)
+            diffs = np.abs(current_data - mean)
+            max_idx = np.argmax(diffs)
+            G = diffs[max_idx] / std
+            t_crit = stats.t.ppf(1 - alpha / (2 * len(current_data)), df=len(current_data) - 2)
+            G_crit = ((len(current_data) - 1) / np.sqrt(len(current_data))) * \
+                     np.sqrt(t_crit ** 2 / (len(current_data) - 2 + t_crit ** 2))
+            if G > G_crit:
+                mask[np.where(mask)[0][max_idx]] = False
+            else:
+                break
+        df['Grubbs_Outlier'] = True
+        df.loc[df[column].dropna().index[mask], 'Grubbs_Outlier'] = False
         return df
 
-    def weighted_least_squares(self, df):
+    def apply_wls_model(self, df):
         """
-        Replace missing or faulty values using Weighted Least Squares.
+        Fits a WLS model to predict Power_Consumption (used for diagnostics).
         """
-        df_filled = df.copy()
-        for col in df.columns:
-            y = df[col]
-            X = df.drop(columns=col)
-            mask = y.notna()
-            if mask.sum() < 3:
-                continue
-            try:
-                # Solve WLS using pseudoinverse
-                weights = np.ones_like(y[mask])
-                beta = np.linalg.pinv(X[mask].values) @ y[mask].values
-                y_pred = X.values @ beta
-                y[~mask] = y_pred[~mask]
-                df_filled[col] = y
-            except Exception as e:
-                print(f"WLS failed for {col}: {e}")
-        return df_filled
+        df = df.dropna()
+        X = df[['Pressure_In', 'Temperature_In', 'Flow_Rate', 'Efficiency']]
+        y = df['Power_Consumption']
+        X = sm.add_constant(X)
+        residual_std = y.rolling(10).std().bfill()
+        weights = 1 / (residual_std ** 2)
+        model = sm.WLS(y, X, weights=weights)
+        return model.fit()
 
-    def process(self, df):
+    def run_all_checks(self, df):
         """
-        Full pipeline to clean and validate raw sensor data.
+        Runs all DVR validation steps and enriches the DataFrame.
         """
-        df = self.rule_based_check(df)
-        df = self.apply_pca(df)
-        df = self.grubbs_test(df)
-        df = self.weighted_least_squares(df)
+        df = self.apply_rule_based_checks(df)
+        df = self.apply_pca_check(df)
+        df = self.apply_grubbs_test(df)
         return df
