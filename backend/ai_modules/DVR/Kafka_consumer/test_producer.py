@@ -6,9 +6,9 @@ import time
 # Load dataset
 # df = pd.read_csv("C:/Users/98939/Downloads/MASTER_DATASET.csv")
 import os
-assert os.path.exists("datasets/MASTER_DATASET.csv"), "CSV file not found!"
+assert os.path.exists("backend/ai_modules/DVR/Kafka_consumer/kafka_test_sample.csv"), "CSV file not found!"
 
-df = pd.read_csv("datasets/MASTER_DATASET.csv")
+df = pd.read_csv("backend/ai_modules/DVR/Kafka_consumer/kafka_test_sample.csv")
 print("CSV columns:", df.columns.tolist())
 
 required_columns = [
