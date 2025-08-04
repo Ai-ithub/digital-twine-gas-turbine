@@ -9,6 +9,7 @@ import os
 assert os.path.exists("datasets/MASTER_DATASET.csv"), "CSV file not found!"
 
 df = pd.read_csv("datasets/MASTER_DATASET.csv")
+print("CSV columns:", df.columns.tolist())
 
 required_columns = [
     'Pressure_In', 'Temperature_In', 'Flow_Rate', 'Pressure_Out',
