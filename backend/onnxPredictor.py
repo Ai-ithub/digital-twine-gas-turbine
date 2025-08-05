@@ -98,13 +98,17 @@ class ONNXPredictor:
 
 # Example usage of the class
 if __name__ == "__main__":
-    onnx_model_path = "backend/dart_model.onnx"  # Path to the ONNX model
-    
-    # Database configuration
-    db_host = "MYSQL1001.site4now.net"
-    db_user = "ab377b_faridka"
-    db_password = "f1309D1309"
-    db_name = "db_ab377b_faridka"
+    import os
+    from dotenv import load_dotenv
+    load_dotenv() # Load variables from .env file
+
+    onnx_model_path = "backend/dart_model.onnx"
+
+    # Database configuration loaded from environment variables
+    db_host = os.getenv("DB_HOST")
+    db_user = os.getenv("DB_USER")
+    db_password = os.getenv("DB_PASSWORD")
+    db_name = os.getenv("DB_DATABASE")
     db_table = "compressor_data"
     
     # Create a predictor object
