@@ -53,7 +53,6 @@ def home():
         ]
     })
     
-    # --- Endpoint for InfluxDB Data ---
 @app.route('/get_live_data', methods=['GET'])
 def get_live_data():
     """Retrieve the latest data points from InfluxDB."""
@@ -88,7 +87,6 @@ def get_live_data():
     except Exception as e:
         logging.error(f"Error in /get_live_data: {e}")
         return jsonify({"error": str(e)}), 500
-# --- END ---
 
 @app.route('/get_all_data', methods=['GET'])
 def get_all_data():
