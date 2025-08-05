@@ -1,21 +1,29 @@
-from kafka import KafkaConsumer, KafkaProducer
+import os
 import json
 import pandas as pd
 from dvr_processor import DVRProcessor
+from kafka import KafkaConsumer, KafkaProducer
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
+
+KAFKA_SERVERS = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092")
+GROUP_ID = os.getenv("KAFKA_DVR_GROUP_ID", "dvr-group")
 
 # Kafka consumer to receive raw messages
 consumer = KafkaConsumer(
     'sensors-raw',
-    bootstrap_servers='localhost:9092',
+    bootstrap_servers=KAFKA_SERVERS,
     value_deserializer=lambda m: json.loads(m.decode('utf-8')),
     auto_offset_reset='earliest',
     enable_auto_commit=True,
-    group_id='dvr-group'
+    group_id=GROUP_ID
 )
 
 # Kafka producer to send validated data
 producer = KafkaProducer(
-    bootstrap_servers='localhost:9092',
+    bootstrap_servers=KAFKA_SERVERS,
     value_serializer=lambda m: json.dumps(m).encode('utf-8')
 )
 
