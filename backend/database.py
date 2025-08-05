@@ -6,11 +6,11 @@ class CompressorDatabase:
     """Class for managing connection and reading compressor data"""
     
     def __init__(self, 
-                 host: str = "localhost",
-                 user: str = "root",
-                 password: str = "Amir@123456",
-                 database: str = "compressor_db",
-                 table: str = "compressor_data"):
+             host: str, # No default value, must be provided
+             user: str,
+             password: str, # No default value, must be provided
+             database: str,
+             table: str = "compressor_data"): # table can have a default
         
         self.host = host
         self.user = user
