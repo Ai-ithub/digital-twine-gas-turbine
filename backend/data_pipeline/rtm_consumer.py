@@ -1,6 +1,6 @@
 import json
 from kafka import KafkaConsumer, KafkaProducer
-from rtm_module import AnomalyDetector
+from ml.rtm_module import AnomalyDetector
 
 # --- Configuration ---
 KAFKA_SERVER = 'localhost:9092'

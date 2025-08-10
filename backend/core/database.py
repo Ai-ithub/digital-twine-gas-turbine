@@ -5,24 +5,26 @@ import logging
 class CompressorDatabase:
     """Class for managing connection and reading compressor data"""
     
+    # CHANGED: Added 'port' to the __init__ method
     def __init__(self, 
-             host: str, # No default value, must be provided
-             user: str,
-             password: str, # No default value, must be provided
-             database: str,
-             table: str = "compressor_data"): # table can have a default
+                 host: str,
+                 user: str,
+                 password: str,
+                 database: str,
+                 port: int, # <-- NEW
+                 table: str = "compressor_data"):
         
         self.host = host
         self.user = user
         self.password = password
         self.database = database
+        self.port = port # <-- NEW
         self.table = table
         self.connection = None
         self.cursor = None
         self._data = []
         self.index = 0
         
-        # Logging setup
         logging.basicConfig(level=logging.INFO)
         self.logger = logging.getLogger("CompressorDB")
 
@@ -34,6 +36,7 @@ class CompressorDatabase:
                 user=self.user,
                 password=self.password,
                 database=self.database,
+                port=self.port, # <-- NEW: Pass the port to the connection function
                 cursorclass=pymysql.cursors.DictCursor
             )
             self.cursor = self.connection.cursor()
@@ -43,18 +46,13 @@ class CompressorDatabase:
             self.logger.error(f"Error connecting to the database: {str(e)}")
             return False
 
+    # ... (متدهای دیگر مانند load_data, get_next_record و ... بدون تغییر باقی می‌مانند)
     def load_data(self, query: str = None) -> bool:
         """Load data from the table"""
         if not self.connection:
             self.logger.error("You must connect to the database first")
             return False
-
-        # Default query to select all records
-        base_query = f"""
-            SELECT * FROM {self.table}
-            ORDER BY timestamp ASC LIMIT 100
-        """
-        
+        base_query = f"SELECT * FROM {self.table} ORDER BY Time ASC LIMIT 100"
         try:
             self.cursor.execute(query or base_query)
             self._data = self.cursor.fetchall()
@@ -63,7 +61,7 @@ class CompressorDatabase:
         except pymysql.Error as e:
             self.logger.error(f"Error reading data: {str(e)}")
             return False
-
+    
     def get_next_record(self) -> Optional[Dict]:
         """Get the next record"""
         if self.index < len(self._data):

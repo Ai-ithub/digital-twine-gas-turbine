@@ -57,6 +57,8 @@ services:
       - .:/app
     env_file:
       - .env
+    environment:
+      - PYTHONPATH=/app
     depends_on:
       mysql:
         condition: service_healthy

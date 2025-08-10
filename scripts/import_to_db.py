@@ -17,9 +17,9 @@ DB_USER = os.getenv("DB_USER")
 DB_PASSWORD = os.getenv("DB_PASSWORD")
 DB_HOST = os.getenv("DB_HOST")
 DB_DATABASE = os.getenv("DB_DATABASE")
-DB_PORT = os.getenv("DB_PORT", "3306") # Default to 3306 if not set
+DB_PORT = os.getenv("DB_PORT", "3306") 
 
-# Other configurations
+# CORRECTED: Point to the new 'data' directory
 CSV_FILE_PATH = "datasets/MASTER_DATASET.csv"
 TABLE_NAME = "compressor_data"
 
@@ -27,41 +27,28 @@ def load_data_to_db():
     """
     Reads data from a CSV file in chunks and loads it into the specified MySQL table.
     """
-    # Check if all required DB variables are present
     if not all([DB_USER, DB_PASSWORD, DB_HOST, DB_DATABASE]):
         logger.critical("❌ Database credentials are not fully set in the .env file. Exiting.")
         return
 
     try:
         logger.info(f"Reading data from '{CSV_FILE_PATH}'...")
-        # NEW: Read the CSV in chunks to handle very large files without running out of memory.
         chunk_iter = pd.read_csv(CSV_FILE_PATH, chunksize=10000)
         logger.info("Successfully started reading CSV data.")
         
-        # Encode password for safe use in the connection URL
         encoded_password = quote_plus(DB_PASSWORD)
         connection_str = (
             f"mysql+pymysql://{DB_USER}:{encoded_password}"
             f"@{DB_HOST}:{DB_PORT}/{DB_DATABASE}"
         )
-        
-        logger.info("--- DEBUGGING CONNECTION VARS ---")
-        logger.info(f"Attempting to connect to HOST: {DB_HOST}")
-        logger.info(f"Attempting to connect on PORT: {DB_PORT}")
-        logger.info(f"Attempting to connect as USER: {DB_USER}")
-        logger.info("---------------------------------")
-        
         engine = create_engine(connection_str)
         
         logger.info(f"Loading data into table '{TABLE_NAME}'... This may take a while.")
         
         is_first_chunk = True
         for chunk in chunk_iter:
-            # For the first chunk, replace the table. For subsequent chunks, append.
             if_exists_strategy = 'replace' if is_first_chunk else 'append'
-            
             chunk.to_sql(TABLE_NAME, con=engine, if_exists=if_exists_strategy, index=False)
-            
             is_first_chunk = False
             logger.info(f"Loaded a chunk of {len(chunk)} rows.")
 
