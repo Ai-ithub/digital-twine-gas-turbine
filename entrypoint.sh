@@ -3,10 +3,10 @@
 # Exit immediately if a command exits with a non-zero status.
 set -e
 
-# Run the database import script first
+# Run the database import script from its new location
 echo "--- Running Database Import Script ---"
-python backend/import_to_db.py
+python scripts/import_to_db.py
 
-# Then, execute the main application command
+# CORRECTED: Execute the main application command from its new location
 echo "--- Starting Flask Application ---"
-exec "$@"
+exec python -m backend.api.app

@@ -1,4 +1,4 @@
-from backend.utils import format_status_for_dashboard
+from core.utils import format_status_for_dashboard
 
 def test_format_status_normal():
     """Tests the function with a normal status string."""

@@ -6,8 +6,8 @@ import pickle
 import os
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.model_selection import train_test_split
-from compressor_env import CompressorEnv
-from ppo_agent import PPOAgent
+from ml.rto_env import CompressorEnv
+from ml.rto_agent import PPOAgent
 from tqdm import tqdm # NEW: For a nice progress bar
 
 def train_rto_model(config: dict):

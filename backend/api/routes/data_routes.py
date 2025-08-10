@@ -3,7 +3,7 @@ import logging
 from flask import Blueprint, jsonify, current_app, request
 from influxdb_client import InfluxDBClient
 from influxdb_client.rest import ApiException
-from database import CompressorDatabase
+from backend.core.database import CompressorDatabase
 import pymysql
 
 data_bp = Blueprint('data_routes', __name__)

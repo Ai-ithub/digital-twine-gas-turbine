@@ -4,7 +4,7 @@ import numpy as np
 
 # ماژولی که می‌خواهیم تست کنیم را وارد می‌کنیم
 # مسیر را بر اساس ساختار پروژه خود تنظیم کنید
-from backend.ai_modules.DVR.Kafka_consumer.dvr_processor import DVRProcessor
+from ml.dvr_processor import DVRProcessor
 
 @pytest.fixture
 def dvr_processor() -> DVRProcessor:
