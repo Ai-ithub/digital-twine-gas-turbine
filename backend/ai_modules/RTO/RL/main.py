@@ -3,118 +3,141 @@ import pandas as pd
 import numpy as np
 import random
 import pickle
-import onnx
 import os
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.model_selection import train_test_split
 from compressor_env import CompressorEnv
 from ppo_agent import PPOAgent
+from tqdm import tqdm # NEW: For a nice progress bar
 
-def train_rto_model():
+def train_rto_model(config: dict):
     """
-    Main function to load data, initialize the environment and agent,
-    and run the PPO training loop.
+    Main function to run the PPO training and evaluation loop based on a config dictionary.
     """
-    # -------- Fix randomness for reproducibility --------
-    SEED = 42
+    # -------- 1. Setup and Reproducibility --------
+    SEED = config.get("seed", 42)
     np.random.seed(SEED)
     random.seed(SEED)
     torch.manual_seed(SEED)
-
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}")
 
-    # -------- Load and normalize data --------
+    # -------- 2. Load and Preprocess Data --------
     print("Loading and preprocessing data...")
-    # The path now goes up three levels to reach the project root.
-    # Build a robust path to the dataset file
     SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-    PROJECT_ROOT = os.path.abspath(os.path.join(SCRIPT_DIR, "../../../.."))
+    PROJECT_ROOT = os.path.abspath(os.path.join(SCRIPT_DIR, "../../..")) # Adjusted path
     DATASET_PATH = os.path.join(PROJECT_ROOT, "datasets", "MASTER_DATASET.csv")
-
-    print(f"Attempting to load dataset from: {DATASET_PATH}")
     df = pd.read_csv(DATASET_PATH)
     
-    state_features = [
-        'Pressure_In', 'Temperature_In', 'Flow_Rate', 'Pressure_Out', 'Temperature_Out',
-        'Efficiency', 'Power_Consumption', 'Vibration', 'Ambient_Temperature',
-        'Humidity', 'Air_Pollution', 'Fuel_Quality', 'Load_Factor',
-        'vib_std', 'vib_max', 'vib_mean', 'vib_min', 'vib_rms',
-        'Velocity', 'Viscosity', 'Phase_Angle'
-    ]
+    # Define state features from the environment class for consistency
+    temp_env = CompressorEnv(df.head(1))
+    state_features = temp_env.state_features
+    del temp_env
+    
+    # Split data BEFORE scaling
+    df_train, df_test = train_test_split(df, test_size=0.2, shuffle=False)
+    
+    # Fit scaler ONLY on training data to prevent data leakage
     scaler = MinMaxScaler()
-    df[state_features] = scaler.fit_transform(df[state_features])
-    df_train, _ = train_test_split(df, test_size=0.2, shuffle=False)
-    print("Data loaded successfully.")
+    scaler.fit(df_train[state_features])
+    print("Data loaded and scaler fitted on training data.")
 
-    # -------- Initialize environment and agent --------
-    print("Initializing environment and agent...")
-    env = CompressorEnv(df_train)
-    agent = PPOAgent(len(state_features), 1, device=device)
+    # -------- 3. Initialize Environments and Agent --------
+    print("Initializing environments and agent...")
+    # Create the training environment
+    train_env = CompressorEnv(df_train, scaler=scaler, reward_weights=config["reward_weights"])
+    
+    # Create the evaluation environment, injecting the dynamics models from the training env
+    eval_env = CompressorEnv(df_test, scaler=scaler, dynamics_models=train_env.dynamics_models)
+    
+    agent = PPOAgent(
+        state_dim=len(state_features),
+        action_dim=1,
+        actor_hidden_dims=config["actor_hidden_dims"],
+        critic_hidden_dims=config["critic_hidden_dims"],
+        actor_lr=config["actor_lr"],
+        critic_lr=config["critic_lr"],
+        gamma=config["gamma"],
+        eps_clip=config["eps_clip"],
+        device=device
+    )
     print("Initialization complete.")
 
-    # -------- Training loop --------
-    n_epochs = 10
-    timesteps_per_epoch = 1000
-    best_reward = float('-inf')
+    # -------- 4. Training and Evaluation Loop --------
+    best_eval_reward = float('-inf')
     
-    print("\n--- Starting Training Loop ---")
-    for epoch in range(n_epochs):
-        state = env.reset()
-        episode_reward = 0
-        timestep = 0
+    print("\n--- Starting Training & Evaluation Loop ---")
+    for epoch in range(config["n_epochs"]):
+        # --- Training Phase ---
+        state, _ = train_env.reset()
         states, actions, log_probs, rewards, values, dones = [], [], [], [], [], []
 
-        while timestep < timesteps_per_epoch:
+        for t in range(config["timesteps_per_epoch"]):
             state_tensor = torch.tensor(state, dtype=torch.float32).to(device)
             action, log_prob, value = agent.select_action(state_tensor)
-            action_np = np.clip(action.cpu().numpy(), 0.0, 1.0)
-            next_state, reward, done, _ = env.step(action_np)
+            
+            next_state, reward, terminated, truncated, _ = train_env.step(action.cpu().numpy())
 
             # Store experience
             states.append(state_tensor)
-            actions.append(torch.tensor(action_np, dtype=torch.float32).to(device))
+            actions.append(action)
             log_probs.append(log_prob)
             values.append(value)
             rewards.append(torch.tensor(reward, dtype=torch.float32).to(device))
-            dones.append(torch.tensor(done, dtype=torch.float32).to(device))
+            dones.append(torch.tensor(terminated, dtype=torch.float32).to(device))
 
             state = next_state
-            episode_reward += reward
-            timestep += 1
-
-            if done:
-                state = env.reset()
-
-        print(f"Epoch {epoch + 1}/{n_epochs}, Total Reward: {episode_reward:.2f}")
+            if terminated:
+                state, _ = train_env.reset()
+        
+        # Learn from the collected experience
         returns, advantages = agent.compute_gae(rewards, values, dones)
         agent.update(states, actions, log_probs, returns, advantages)
 
-        # Save best model
-        if episode_reward > best_reward:
-            best_reward = episode_reward
+        # --- Evaluation Phase ---
+        total_eval_reward = 0
+        eval_state, _ = eval_env.reset()
+        eval_done = False
+        while not eval_done:
+            eval_state_tensor = torch.tensor(eval_state, dtype=torch.float32).to(device)
+            # In eval, we can act more deterministically by taking the mean
+            action, _, _ = agent.select_action(eval_state_tensor) # We don't need log_prob or value
             
-            # --- MODIFIED SECTION: Save in both formats ---
-            # Save original pickle file
-            best_model_pkl = {
-                'actor': agent.actor.state_dict(),
-                'critic': agent.critic.state_dict(),
-                'scaler': scaler
-            }
-            with open('best_ppo_model.pkl', 'wb') as f:
-                pickle.dump(best_model_pkl, f)
-            print(f"New best model (.pkl) saved with reward: {best_reward:.2f}")
+            next_eval_state, reward, terminated, truncated, _ = eval_env.step(action.cpu().numpy())
+            total_eval_reward += reward
+            eval_state = next_eval_state
+            eval_done = terminated
 
-            # Export the actor model to ONNX
+        print(f"Epoch {epoch + 1}/{config['n_epochs']} | Evaluation Reward: {total_eval_reward:.2f}")
+
+        # Save best model based on evaluation reward
+        if total_eval_reward > best_eval_reward:
+            best_eval_reward = total_eval_reward
+            
+            best_model_data = {'actor': agent.actor.state_dict(), 'critic': agent.critic.state_dict(), 'scaler': scaler}
+            with open('best_ppo_model.pkl', 'wb') as f:
+                pickle.dump(best_model_data, f)
+            print(f"  -> New best model (.pkl) saved with reward: {best_eval_reward:.2f}")
+
             dummy_input = torch.randn(1, len(state_features), device=device)
             onnx_path = "best_ppo_actor.onnx"
-            torch.onnx.export(agent.actor, dummy_input, onnx_path, 
-                              input_names=['state'], output_names=['action'])
-            print(f"Best actor model also exported to {onnx_path}")
-            # --- END MODIFIED SECTION ---
+            torch.onnx.export(agent.actor, dummy_input, onnx_path, input_names=['state'], output_names=['action'])
+            print(f"  -> Best actor exported to {onnx_path}")
 
     print("\n--- Training complete. ---")
 
-# This block allows the script to be run directly
 if __name__ == '__main__':
-    train_rto_model()
+    # NEW: All hyperparameters are centralized in a config dictionary
+    CONFIG = {
+        "seed": 42,
+        "n_epochs": 20,
+        "timesteps_per_epoch": 2048,
+        "actor_lr": 3e-4,
+        "critic_lr": 1e-3,
+        "gamma": 0.99,
+        "eps_clip": 0.2,
+        "actor_hidden_dims": [128, 128],
+        "critic_hidden_dims": [128, 128],
+        "reward_weights": {'efficiency': 1.5, 'power': -0.01, 'vibration': -0.1}
+    }
+    train_rto_model(CONFIG)

@@ -1,47 +1,76 @@
+import os
+import logging
 import pandas as pd
 from sqlalchemy import create_engine
-import pymysql
-from urllib.parse import quote_plus # <-- ایمپورت جدید
+from urllib.parse import quote_plus
+from dotenv import load_dotenv
 
-# --- لطفاً این بخش را ویرایش کنید ---
-DB_CONFIG = {
-    'user': 'root',
-    'password': 'Ali23880rez@',  # <- رمز عبور root خود را اینجا وارد کنید
-    'host': '127.0.0.1', # استفاده از 127.0.0.1 امن‌تر است
-    'database': 'compressor_db'
-}
-# --- پایان بخش ویرایش ---
+# --- 1. Setup Logging and Configuration ---
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 
+# Load environment variables from .env file
+load_dotenv()
+
+# Read database configuration from environment variables
+DB_USER = os.getenv("DB_USER")
+DB_PASSWORD = os.getenv("DB_PASSWORD")
+DB_HOST = os.getenv("DB_HOST")
+DB_DATABASE = os.getenv("DB_DATABASE")
+DB_PORT = os.getenv("DB_PORT", "3306") # Default to 3306 if not set
+
+# Other configurations
 CSV_FILE_PATH = "datasets/MASTER_DATASET.csv"
 TABLE_NAME = "compressor_data"
 
 def load_data_to_db():
-    try:
-        print(f"در حال خواندن داده از '{CSV_FILE_PATH}'...")
-        df = pd.read_csv(CSV_FILE_PATH)
-        if 'Timestamp' in df.columns:
-            df['Timestamp'] = pd.to_datetime(df['Timestamp'])
-        print(f"تعداد {len(df)} ردیف و {len(df.columns)} ستون با موفقیت خوانده شد.")
+    """
+    Reads data from a CSV file in chunks and loads it into the specified MySQL table.
+    """
+    # Check if all required DB variables are present
+    if not all([DB_USER, DB_PASSWORD, DB_HOST, DB_DATABASE]):
+        logger.critical("❌ Database credentials are not fully set in the .env file. Exiting.")
+        return
 
-        # --- بخش تغییر یافته ---
-        # رمز عبور را برای استفاده امن در URL انکود می‌کنیم
-        encoded_password = quote_plus(DB_CONFIG['password'])
+    try:
+        logger.info(f"Reading data from '{CSV_FILE_PATH}'...")
+        # NEW: Read the CSV in chunks to handle very large files without running out of memory.
+        chunk_iter = pd.read_csv(CSV_FILE_PATH, chunksize=10000)
+        logger.info("Successfully started reading CSV data.")
+        
+        # Encode password for safe use in the connection URL
+        encoded_password = quote_plus(DB_PASSWORD)
         connection_str = (
-            f"mysql+pymysql://{DB_CONFIG['user']}:{encoded_password}"
-            f"@{DB_CONFIG['host']}/{DB_CONFIG['database']}"
+            f"mysql+pymysql://{DB_USER}:{encoded_password}"
+            f"@{DB_HOST}:{DB_PORT}/{DB_DATABASE}"
         )
+        
+        logger.info("--- DEBUGGING CONNECTION VARS ---")
+        logger.info(f"Attempting to connect to HOST: {DB_HOST}")
+        logger.info(f"Attempting to connect on PORT: {DB_PORT}")
+        logger.info(f"Attempting to connect as USER: {DB_USER}")
+        logger.info("---------------------------------")
+        
         engine = create_engine(connection_str)
-        # --- پایان بخش تغییر یافته ---
         
-        print(f"در حال بارگذاری داده در جدول '{TABLE_NAME}'... ممکن است کمی زمان ببرد.")
-        df.to_sql(TABLE_NAME, con=engine, if_exists='replace', index=False)
+        logger.info(f"Loading data into table '{TABLE_NAME}'... This may take a while.")
         
-        print("\n✅ داده‌ها با موفقیت در پایگاه داده بارگذاری شد!")
+        is_first_chunk = True
+        for chunk in chunk_iter:
+            # For the first chunk, replace the table. For subsequent chunks, append.
+            if_exists_strategy = 'replace' if is_first_chunk else 'append'
+            
+            chunk.to_sql(TABLE_NAME, con=engine, if_exists=if_exists_strategy, index=False)
+            
+            is_first_chunk = False
+            logger.info(f"Loaded a chunk of {len(chunk)} rows.")
+
+        logger.info("\n✅ Data loaded successfully into the database!")
 
     except FileNotFoundError:
-        print(f"❌ خطا: فایل '{CSV_FILE_PATH}' پیدا نشد.")
+        logger.error(f"❌ ERROR: The file '{CSV_FILE_PATH}' was not found.")
     except Exception as e:
-        print(f"❌ خطایی رخ داد: {e}")
+        logger.error(f"❌ An error occurred: {e}")
 
 if __name__ == "__main__":
     load_data_to_db()

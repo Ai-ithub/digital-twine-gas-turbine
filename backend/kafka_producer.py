@@ -3,60 +3,63 @@ from kafka import KafkaProducer
 import json
 import time
 import os
+import argparse
+import logging
+from dotenv import load_dotenv
 
-# --- Configuration ---
-KAFKA_SERVER = 'localhost:9092'
-KAFKA_TOPIC = 'sensors-raw'
-CSV_FILE_PATH = 'datasets/MASTER_DATASET.csv'
+# --- 1. Configuration and Setup ---
+load_dotenv()
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 
-def create_producer():
+def create_producer(server: str) -> KafkaProducer:
     """Creates a Kafka Producer instance."""
     try:
         producer = KafkaProducer(
-            bootstrap_servers=[KAFKA_SERVER],
+            bootstrap_servers=[server],
             value_serializer=lambda v: json.dumps(v).encode('utf-8')
         )
-        print("✅ Kafka Producer connected successfully.")
+        logger.info("✅ Kafka Producer connected successfully.")
         return producer
     except Exception as e:
-        print(f"❌ Could not connect to Kafka server: {e}")
+        logger.critical(f"❌ Could not connect to Kafka server: {e}")
         return None
 
-def stream_data(producer, file_path):
+def stream_data(producer: KafkaProducer, file_path: str, topic: str):
     """Reads data from a CSV and streams it to a Kafka topic."""
     try:
-        print(f"Reading data from {file_path}...")
+        logger.info(f"Reading data from {file_path}...")
         df = pd.read_csv(file_path)
-        print("Starting to stream data to Kafka topic '{}'...".format(KAFKA_TOPIC))
+        logger.info(f"Starting to stream data to Kafka topic '{topic}'...")
         
-        # Loop through each row of the dataframe
         for index, row in df.iterrows():
-            # Convert row to dictionary
             message = row.to_dict()
-            
-            # Send message to Kafka
-            producer.send(KAFKA_TOPIC, value=message)
-            
-            print(f"Sent message #{index + 1}: {message}")
-            
-            # Wait for 1 second to simulate a real-time stream
+            producer.send(topic, value=message)
+            logger.info(f"Sent message #{index + 1}")
             time.sleep(1)
             
-        producer.flush() # Ensure all messages are sent
-        print("\n✅ Finished streaming all data.")
+        producer.flush()
+        logger.info("\n✅ Finished streaming all data.")
 
     except FileNotFoundError:
-        print(f"❌ ERROR: The file '{file_path}' was not found.")
+        logger.error(f"❌ ERROR: The file '{file_path}' was not found.")
     except Exception as e:
-        print(f"❌ An error occurred during streaming: {e}")
+        logger.error(f"❌ An error occurred during streaming: {e}")
 
 if __name__ == "__main__":
-    # Ensure the script is run from the project's root directory
-    # by checking if the 'datasets' folder exists.
-    if not os.path.exists('datasets'):
-        print("❌ This script must be run from the project's root directory.")
+    parser = argparse.ArgumentParser(description="Kafka producer to stream CSV data.")
+    parser.add_argument("--server", default=os.getenv("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092"), help="Kafka bootstrap server")
+    parser.add_argument("--topic", default=os.getenv("KAFKA_RAW_TOPIC", "sensors-raw"), help="Kafka topic to produce to")
+    parser.add_argument("--file", default="datasets/MASTER_DATASET.csv", help="Path to the CSV file to stream")
+    args = parser.parse_args()
+
+    if not os.path.exists(args.file):
+        logger.error(f"❌ The specified file does not exist: {args.file}")
     else:
-        kafka_producer = create_producer()
+        kafka_producer = create_producer(args.server)
         if kafka_producer:
-            stream_data(kafka_producer, CSV_FILE_PATH)
-            kafka_producer.close()
+            try:
+                stream_data(kafka_producer, args.file, args.topic)
+            finally:
+                kafka_producer.close()
+                logger.info("Kafka producer closed.")
