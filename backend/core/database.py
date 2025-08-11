@@ -2,29 +2,31 @@ import pymysql
 from typing import Dict, Optional
 import logging
 
+
 class CompressorDatabase:
     """Class for managing connection and reading compressor data"""
-    
+
     # CHANGED: Added 'port' to the __init__ method
-    def __init__(self, 
-                 host: str,
-                 user: str,
-                 password: str,
-                 database: str,
-                 port: int, # <-- NEW
-                 table: str = "compressor_data"):
-        
+    def __init__(
+        self,
+        host: str,
+        user: str,
+        password: str,
+        database: str,
+        port: int,  # <-- NEW
+        table: str = "compressor_data",
+    ):
         self.host = host
         self.user = user
         self.password = password
         self.database = database
-        self.port = port # <-- NEW
+        self.port = port  # <-- NEW
         self.table = table
         self.connection = None
         self.cursor = None
         self._data = []
         self.index = 0
-        
+
         logging.basicConfig(level=logging.INFO)
         self.logger = logging.getLogger("CompressorDB")
 
@@ -36,8 +38,8 @@ class CompressorDatabase:
                 user=self.user,
                 password=self.password,
                 database=self.database,
-                port=self.port, # <-- NEW: Pass the port to the connection function
-                cursorclass=pymysql.cursors.DictCursor
+                port=self.port,  # <-- NEW: Pass the port to the connection function
+                cursorclass=pymysql.cursors.DictCursor,
             )
             self.cursor = self.connection.cursor()
             self.logger.info("Successfully connected to the database")
@@ -61,7 +63,7 @@ class CompressorDatabase:
         except pymysql.Error as e:
             self.logger.error(f"Error reading data: {str(e)}")
             return False
-    
+
     def get_next_record(self) -> Optional[Dict]:
         """Get the next record"""
         if self.index < len(self._data):
