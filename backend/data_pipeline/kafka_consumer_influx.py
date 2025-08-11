@@ -1,0 +1,104 @@
+import os
+import json
+import logging
+from kafka import KafkaConsumer
+from influxdb_client import InfluxDBClient, Point
+from influxdb_client.client.write_api import SYNCHRONOUS
+from dotenv import load_dotenv
+
+# --- 1. Configuration and Setup ---
+load_dotenv()
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
+logger = logging.getLogger(__name__)
+
+# Kafka Configuration
+KAFKA_SERVER = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092")
+KAFKA_TOPIC = os.getenv("KAFKA_RAW_TOPIC", "sensors-raw")
+GROUP_ID = "influxdb-writer-group"
+
+# InfluxDB Configuration
+INFLUXDB_URL = os.getenv("INFLUXDB_URL")
+INFLUXDB_TOKEN = os.getenv("INFLUXDB_TOKEN")
+INFLUXDB_ORG = os.getenv("INFLUXDB_ORG")
+INFLUXDB_BUCKET = os.getenv("INFLUXDB_BUCKET")
+
+
+def main():
+    """Main function to consume from Kafka and write to InfluxDB."""
+    if not all([INFLUXDB_URL, INFLUXDB_TOKEN, INFLUXDB_ORG, INFLUXDB_BUCKET]):
+        logger.critical("❌ InfluxDB credentials not found in .env file. Exiting.")
+        return
+
+    try:
+        consumer = KafkaConsumer(
+            KAFKA_TOPIC,
+            bootstrap_servers=[KAFKA_SERVER],
+            auto_offset_reset="earliest",
+            enable_auto_commit=False,  # Disable auto-commit for manual control
+            group_id=GROUP_ID,
+        )
+        logger.info("✅ Kafka Consumer connected successfully.")
+    except Exception as e:
+        logger.critical(f"❌ Could not connect to Kafka: {e}. Exiting.")
+        return
+
+    try:
+        with InfluxDBClient(
+            url=INFLUXDB_URL, token=INFLUXDB_TOKEN, org=INFLUXDB_ORG
+        ) as client:
+            write_api = client.write_api(write_options=SYNCHRONOUS)
+            logger.info(
+                f"✅ InfluxDB client connected. Writing to bucket '{INFLUXDB_BUCKET}'."
+            )
+
+            logger.info(f"Listening for messages from topic '{KAFKA_TOPIC}'...")
+            for message in consumer:
+                try:
+                    data = json.loads(message.value.decode("utf-8"))
+
+                    point = (
+                        Point("compressor_metrics")
+                        .tag("status", data.get("Status", "Unknown"))
+                        .time(data.get("Timestamp"))
+                    )  # Assumes Timestamp is in a format InfluxDB understands
+
+                    for key, value in data.items():
+                        if key.lower() not in [
+                            "timestamp",
+                            "status",
+                            "device_id",
+                        ] and isinstance(value, (int, float)):
+                            point = point.field(key, value)
+
+                    write_api.write(
+                        bucket=INFLUXDB_BUCKET, org=INFLUXDB_ORG, record=point
+                    )
+                    logger.info(
+                        f"Written message with Timestamp={data.get('Timestamp')} to InfluxDB."
+                    )
+
+                    # Commit the offset to Kafka ONLY after a successful write
+                    consumer.commit()
+
+                except json.JSONDecodeError:
+                    logger.warning(
+                        f"Skipping message with invalid JSON: {message.value}"
+                    )
+                    consumer.commit()  # Commit even if message is bad to avoid getting stuck
+                except Exception as e:
+                    logger.error(
+                        f"❌ Failed to process message: {e}. Data: {message.value}"
+                    )
+                    # We do not commit here, so we will retry this message later.
+
+    except Exception as e:
+        logger.critical(f"❌ A critical error occurred in the main loop: {e}")
+    finally:
+        consumer.close()
+        logger.info("Kafka consumer closed.")
+
+
+if __name__ == "__main__":
+    main()
