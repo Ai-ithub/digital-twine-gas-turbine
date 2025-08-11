@@ -1,9 +1,7 @@
-import os
 import numpy as np
 import onnxruntime as ort
 import logging
 from typing import Dict, List
-from dotenv import load_dotenv
 
 # CORRECTED: Use an absolute import from the 'backend' package root
 from backend.core.database import CompressorDatabase

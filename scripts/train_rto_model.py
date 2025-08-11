@@ -8,7 +8,6 @@ from sklearn.preprocessing import MinMaxScaler
 from sklearn.model_selection import train_test_split
 from ml.rto_env import CompressorEnv
 from ml.rto_agent import PPOAgent
-from tqdm import tqdm # NEW: For a nice progress bar
 
 def train_rto_model(config: dict):
     """

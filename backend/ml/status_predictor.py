@@ -1,7 +1,6 @@
 import pymysql
 import numpy as np
 import onnxruntime as ort
-import torch
 from sklearn.preprocessing import StandardScaler
 import pandas as pd
 

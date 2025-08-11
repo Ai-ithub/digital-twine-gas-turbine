@@ -4,7 +4,7 @@ import gymnasium as gym
 from gymnasium import spaces
 from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import StandardScaler
-from typing import Dict, List, Optional
+from typing import Dict, Optional
 
 class CompressorEnv(gym.Env):
     """

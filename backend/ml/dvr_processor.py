@@ -3,7 +3,6 @@ import numpy as np
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
 import statsmodels.api as sm
-from scipy import stats
 from typing import Dict, Any
 
 class DVRProcessor:

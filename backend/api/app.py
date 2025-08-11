@@ -7,7 +7,6 @@ from flask_cors import CORS
 from dotenv import load_dotenv
 
 # --- Imports with CORRECTED paths ---
-from backend.core.database import CompressorDatabase
 from backend.ml.vibration_predictor import VibrationPredictor
 from backend.ml.onnx_predictor import ONNXPredictor
 from backend.ml.status_predictor import CompressorStatusPredictor

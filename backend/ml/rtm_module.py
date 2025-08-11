@@ -48,7 +48,7 @@ class AnomalyDetector:
             return int(prediction)
 
         except KeyError:
-             print(f"❌ Error during prediction: One or more required features are missing from the input data.")
+             print("❌ Error during prediction: One or more required features are missing from the input data.")
              return None
         except Exception as e:
             print(f"❌ Error during prediction: {e}")
@@ -70,6 +70,6 @@ if __name__ == '__main__':
         prediction = detector.predict(sample_data)
         
         if prediction is not None:
-            print(f"\n--- Test Prediction ---")
+            print("\n--- Test Prediction ---")
             print(f"Input feature count: {len(sample_data)}")
             print(f"Output: {prediction} ({'Anomaly' if prediction == -1 else 'Normal'})")

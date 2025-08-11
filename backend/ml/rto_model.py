@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from typing import List, Tuple
+from typing import List
 
 # NEW: A helper function to dynamically create a network from a list of layer sizes
 def create_mlp(layer_dims: List[int], activation: nn.Module = nn.ReLU, output_activation: nn.Module = nn.Identity()) -> nn.Sequential:
