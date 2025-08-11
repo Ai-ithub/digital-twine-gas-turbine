@@ -1,5 +1,5 @@
 import pymysql
-from typing import Dict, List, Optional
+from typing import Dict, Optional
 import logging
 
 class CompressorDatabase:
