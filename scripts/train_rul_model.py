@@ -7,14 +7,12 @@ from sklearn.impute import KNNImputer
 from pykalman import KalmanFilter
 import pickle
 import tensorflow as tf
-from tensorflow import keras
 from keras.models import Sequential
 from keras.layers import LSTM, Dense, Input
 from keras.callbacks import EarlyStopping
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_absolute_error, r2_score
 import tf2onnx
-import onnx
 from tqdm import tqdm
 
 # --- 1. Setup Logging and Configuration ---
@@ -43,7 +41,7 @@ def load_and_preprocess_data(config: dict):
     df = pd.read_csv(config['data_path'])
     logger.info("Dataset read successfully. Starting preprocessing...")
 
-    logger.info(f"Applying Kalman Filter...")
+    logger.info("Applying Kalman Filter...")
     for col in tqdm(config['kalman_filter_columns'], desc="Applying Kalman Filter"):
         kf = KalmanFilter(initial_state_mean=df[col].mean(), n_dim_obs=1)
         em_kf = kf.em(df[col].values)
