@@ -94,11 +94,11 @@ class DVRProcessor:
         df["delta_vibration"] = df["Vibration"].diff().abs()
         df["delta_pressure"] = df["Pressure_In"].diff().abs()
 
-        # THE FIX: Fill NaN values in the delta columns with 0 BEFORE comparison.
-        # This ensures the first row is always considered valid for RoC checks.
-        df["delta_temperature"].fillna(0, inplace=True)
-        df["delta_vibration"].fillna(0, inplace=True)
-        df["delta_pressure"].fillna(0, inplace=True)
+        # --- THE FIX for FutureWarning ---
+        # Use the recommended assignment method instead of inplace=True on a slice
+        df["delta_temperature"] = df["delta_temperature"].fillna(0)
+        df["delta_vibration"] = df["delta_vibration"].fillna(0)
+        df["delta_pressure"] = df["delta_pressure"].fillna(0)
 
         df["rule_temp_roc"] = (
             df["delta_temperature"] < self.RULE_THRESHOLDS["TEMP_ROC_LIMIT"]
