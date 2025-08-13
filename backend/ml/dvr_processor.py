@@ -90,9 +90,9 @@ class DVRProcessor:
         )
 
         # Rate-of-change rules using defined constants
-        df['delta_temperature'] = df['Temperature_In'].diff().abs()
-        df['delta_vibration'] = df['Vibration'].diff().abs()
-        df['delta_pressure'] = df['Pressure_In'].diff().abs()
+        df["delta_temperature"] = df["Temperature_In"].diff().abs()
+        df["delta_vibration"] = df["Vibration"].diff().abs()
+        df["delta_pressure"] = df["Pressure_In"].diff().abs()
 
         # --- THE FIX for FutureWarning ---
         # Use the recommended assignment method instead of inplace=True on a slice
@@ -100,8 +100,8 @@ class DVRProcessor:
         df["delta_vibration"] = df["delta_vibration"].fillna(0)
         df["delta_pressure"] = df["delta_pressure"].fillna(0)
 
-        df['rule_temp_roc'] = (
-            df['delta_temperature'] < self.RULE_THRESHOLDS['TEMP_ROC_LIMIT']
+        df["rule_temp_roc"] = (
+            df["delta_temperature"] < self.RULE_THRESHOLDS["TEMP_ROC_LIMIT"]
         )
         df["rule_vib_roc"] = (
             df["delta_vibration"] < self.RULE_THRESHOLDS["VIB_ROC_LIMIT"]
