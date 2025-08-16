@@ -2,74 +2,83 @@ import os
 import numpy as np
 import onnxruntime as ort
 from dotenv import load_dotenv
-from typing import Dict
+from typing import Dict, List
 import logging
-
 # CORRECTED: Use an absolute import from the 'backend' package root
 from backend.core.database import CompressorDatabase
 
+DART_MODEL_FEATURES = [
+    'Pressure_In', 'Temperature_In', 'Flow_Rate', 'Pressure_Out',
+    'Efficiency', 'Vibration', 'Ambient_Temperature', 'Power_Consumption'
+]
 
 class ONNXPredictor:
     """A generic class to run predictions using an ONNX model and data from the database."""
 
-    # CHANGED: __init__ now accepts a single db_config dictionary
     def __init__(self, onnx_model_path: str, db_config: Dict):
-        """
-        Args:
-            onnx_model_path (str): The full path to the ONNX model file.
-            db_config (Dict): A dictionary containing database connection details.
-        """
         self.logger = logging.getLogger("ONNXPredictor")
 
-        # Load the ONNX model
         try:
             self.session = ort.InferenceSession(onnx_model_path)
             self.input_name = self.session.get_inputs()[0].name
+            # Check if model input shape matches our feature list
+            model_input_shape = self.session.get_inputs()[0].shape
+            self.expected_features = model_input_shape[1]
+            if self.expected_features != len(DART_MODEL_FEATURES):
+                self.logger.warning(
+                    f"Model expects {self.expected_features} features, but {len(DART_MODEL_FEATURES)} are provided."
+                )
+
             self.logger.info(f"Model loaded successfully from {onnx_model_path}")
         except Exception as e:
             self.logger.error(f"Error loading ONNX model from {onnx_model_path}: {e}")
             raise
 
-        # CHANGED: Use the db_config dictionary to initialize the database connection
         if not db_config:
             raise ValueError("db_config is required for ONNXPredictor.")
         self.db = CompressorDatabase(**db_config)
+        self.scaler = None
 
-        self.scaler = None  # This class might need a scaler in the future
+    def _preprocess_data(self, records: List[Dict]) -> np.ndarray:
+        """
+        Extracts the required features from a list of records and converts them to a numpy array.
+        """
+        processed_data = []
+        for record in records:
+            try:
+                # Extract features in the correct order
+                feature_vector = [record[feature] for feature in DART_MODEL_FEATURES]
+                processed_data.append(feature_vector)
+            except KeyError as e:
+                self.logger.error(f"Required feature {e} not found in data record. Skipping record.")
+                continue
+        
+        return np.array(processed_data, dtype=np.float32)
+
 
     def predict_all_values(self) -> np.ndarray:
         """
         Loads data from the database, preprocesses it, and runs prediction for all entries.
-
-        Returns:
-            np.ndarray: A numpy array of predicted values.
         """
-        # Connect to the database and fetch data
         if not self.db.connect():
             raise ConnectionError("Failed to connect to the database")
 
-        if not self.db.load_data():  # This loads the first 100 records by default
+        if not self.db.load_data():
             raise ValueError("Failed to load data from the database")
 
-        # This part of the logic is a placeholder and needs to be adapted to your DART model's specific inputs.
-        # For now, it assumes the model needs 'Vibration' data.
-        try:
-            # Assuming 'Vibration' is the main feature. Adjust if other features are needed.
-            data_points = [record["Vibration"] for record in self.db._data]
-            if not data_points:
-                return np.array([])  # Return empty array if no data
-        except KeyError:
-            self.logger.error(
-                "'Vibration' column not found in data for DART prediction."
-            )
+        # THE FIX: Use the new preprocessing function
+        input_data = self._preprocess_data(self.db._data)
+
+        if input_data.shape[0] == 0:
+            self.logger.warning("No valid data records found for prediction after preprocessing.")
             return np.array([])
+        
+        # Check if the number of features matches the model's expectation
+        if input_data.shape[1] != self.expected_features:
+             self.logger.error(f"Input data has {input_data.shape[1]} features, but model expects {self.expected_features}.")
+             return np.array([])
 
-        input_data = np.array(data_points).astype(np.float32).reshape(-1, 1)
-
-        # The prediction logic should be adapted based on the actual model's requirements
-        # For now, this is a simplified loop.
         predictions = self.session.run(None, {self.input_name: input_data})[0]
-
         return predictions.flatten()
 
 
