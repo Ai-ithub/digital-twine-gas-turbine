@@ -4,13 +4,21 @@ import onnxruntime as ort
 from dotenv import load_dotenv
 from typing import Dict, List
 import logging
+
 # CORRECTED: Use an absolute import from the 'backend' package root
 from backend.core.database import CompressorDatabase
 
 DART_MODEL_FEATURES = [
-    'Pressure_In', 'Temperature_In', 'Flow_Rate', 'Pressure_Out',
-    'Efficiency', 'Vibration', 'Ambient_Temperature', 'Power_Consumption'
+    "Pressure_In",
+    "Temperature_In",
+    "Flow_Rate",
+    "Pressure_Out",
+    "Efficiency",
+    "Vibration",
+    "Ambient_Temperature",
+    "Power_Consumption",
 ]
+
 
 class ONNXPredictor:
     """A generic class to run predictions using an ONNX model and data from the database."""
@@ -50,11 +58,12 @@ class ONNXPredictor:
                 feature_vector = [record[feature] for feature in DART_MODEL_FEATURES]
                 processed_data.append(feature_vector)
             except KeyError as e:
-                self.logger.error(f"Required feature {e} not found in data record. Skipping record.")
+                self.logger.error(
+                    f"Required feature {e} not found in data record. Skipping record."
+                )
                 continue
-        
-        return np.array(processed_data, dtype=np.float32)
 
+        return np.array(processed_data, dtype=np.float32)
 
     def predict_all_values(self) -> np.ndarray:
         """
@@ -70,13 +79,17 @@ class ONNXPredictor:
         input_data = self._preprocess_data(self.db._data)
 
         if input_data.shape[0] == 0:
-            self.logger.warning("No valid data records found for prediction after preprocessing.")
+            self.logger.warning(
+                "No valid data records found for prediction after preprocessing."
+            )
             return np.array([])
-        
+
         # Check if the number of features matches the model's expectation
         if input_data.shape[1] != self.expected_features:
-             self.logger.error(f"Input data has {input_data.shape[1]} features, but model expects {self.expected_features}.")
-             return np.array([])
+            self.logger.error(
+                f"Input data has {input_data.shape[1]} features, but model expects {self.expected_features}."
+            )
+            return np.array([])
 
         predictions = self.session.run(None, {self.input_name: input_data})[0]
         return predictions.flatten()
