@@ -1,6 +1,5 @@
 # backend/api/routes/data_routes.py
 import logging
-import os
 from flask import Blueprint, jsonify, current_app, request
 from influxdb_client import InfluxDBClient
 from influxdb_client.rest import ApiException
@@ -95,9 +94,9 @@ def get_latest_validated_data():
     try:
         limit = int(request.args.get("limit", 10))
         if not 1 <= limit <= 100:
-            limit = 10 # Reset to default if out of bounds
+            limit = 10  # Reset to default if out of bounds
     except (ValueError, TypeError):
-        limit = 10 # Reset to default if not a valid integer
+        limit = 10  # Reset to default if not a valid integer
 
     # The name of the new bucket for validated data.
     validated_bucket = "compressor-data-validated"
@@ -109,7 +108,7 @@ def get_latest_validated_data():
             org=config["INFLUXDB_ORG"],
         ) as client:
             query_api = client.query_api()
-            
+
             # This Flux query fetches the latest data and pivots it into a more
             # API-friendly format (one JSON object per timestamp).
             flux_query = f'''
@@ -120,19 +119,21 @@ def get_latest_validated_data():
                   |> limit(n: {limit})
                   |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
             '''
-            
+
             logging.info(f"Executing Flux query on bucket '{validated_bucket}'")
             tables = query_api.query(flux_query, org=config["INFLUXDB_ORG"])
-            
+
             # Convert query result to a list of dictionaries
             results = [record.values for table in tables for record in table.records]
-            
+
             return jsonify(results)
 
     except ApiException as e:
         logging.error(f"InfluxDB API Error in /dvr/latest: {e.body}")
         return jsonify(
-            {"error": f"Service unavailable: Could not connect to InfluxDB bucket '{validated_bucket}'"}
+            {
+                "error": f"Service unavailable: Could not connect to InfluxDB bucket '{validated_bucket}'"
+            }
         ), 503
     except Exception as e:
         logging.error(f"Unexpected error in /dvr/latest: {e}")
