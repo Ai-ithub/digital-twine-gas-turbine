@@ -23,8 +23,5 @@ RUN chmod +x entrypoint.sh
 # --- Stage 5: Define the Command to Run the App ---
 EXPOSE 5000
 
-# NEW: Set the entrypoint to our custom script
-ENTRYPOINT ["./entrypoint.sh"]
-
 # The CMD will be passed as arguments to the entrypoint script
 CMD ["python", "backend/app.py"]
