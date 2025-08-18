@@ -81,28 +81,33 @@ def main():
     # --- Main Loop to Process Messages ---
     logging.info("Waiting for messages from Kafka...")
     for message in consumer:
-        # (The message processing logic remains the same)
         try:
             data = message.value
             logging.info(f"New message received: {data}")
 
-            point = (
-                Point("validated_sensors")
-                .tag("source", "dvr")
-                .time(data.get("timestamp"))
-            )
+            point = Point("validated_sensors")
 
+            # Use the 'Timestamp' field for the InfluxDB timestamp
+            point.time(data.get("Timestamp"))
+
+            # Iterate through the data and add fields and tags
             for key, value in data.items():
-                if key != "timestamp":
-                    point = point.field(key, float(value))
+                # Skip the key that we already used for the timestamp
+                if key == "Timestamp":
+                    continue
+
+                # If the value is a string, add it as a tag
+                if isinstance(value, str):
+                    point.tag(key, value)
+                # If the value is a number (int, float, bool), add it as a field
+                elif isinstance(value, (int, float, bool)):
+                    point.field(key, value)
 
             write_api.write(
                 bucket=INFLUXDB_BUCKET_VALIDATED, org=INFLUXDB_ORG, record=point
             )
-            logging.info("Data point successfully written to InfluxDB.")
+            logging.info("✅ Data point successfully written to InfluxDB.")
 
-        except json.JSONDecodeError:
-            logging.warning(f"Could not decode message (invalid JSON): {message.value}")
         except Exception as e:
             logging.error(f"Error processing message or writing to InfluxDB: {e}")
 

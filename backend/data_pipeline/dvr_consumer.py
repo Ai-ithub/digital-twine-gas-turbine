@@ -2,7 +2,8 @@ import os
 import json
 import logging  # NEW: Import logging module
 import pandas as pd
-from ml.dvr_processor import DVRProcessor
+import numpy as np
+from backend.ml.dvr_processor import DVRProcessor
 from kafka import KafkaConsumer, KafkaProducer
 from dotenv import load_dotenv
 
@@ -53,34 +54,44 @@ logger.info(
     f"Starting DVR consumer for topic '{RAW_TOPIC}' with batch size {BATCH_SIZE}..."
 )
 
-for message in consumer:
-    try:
-        # NEW: Manually deserialize JSON inside a try-except block
-        raw_data = json.loads(message.value.decode("utf-8"))
-        logger.debug(f"Received raw message: {raw_data}")  # Use debug for verbose logs
-        buffer.append(raw_data)
+# CHANGED: Use a while True loop with consumer.poll() for better control
+while True:
+    # Poll for new messages with a timeout of 1 second (1000 ms)
+    message_batch = consumer.poll(timeout_ms=1000, max_records=BATCH_SIZE)
 
-    except json.JSONDecodeError:
-        logger.warning(f"Skipping message with invalid JSON: {message.value}")
-        continue  # Skip to the next message
+    # If no messages are returned, the loop continues
+    if not message_batch:
+        continue
 
-    # Process in batches
-    if len(buffer) >= BATCH_SIZE:
+    # Process messages for each partition
+    for topic_partition, messages in message_batch.items():
+        for message in messages:
+            try:
+                raw_data = json.loads(message.value.decode("utf-8"))
+                logger.debug(f"Received raw message: {raw_data}")
+                buffer.append(raw_data)
+            except json.JSONDecodeError:
+                logger.warning(f"Skipping message with invalid JSON: {message.value}")
+                continue
+
+    # If buffer has data, process it (it might not be a full batch)
+    if buffer:
         try:
             logger.info(f"Processing a batch of {len(buffer)} records...")
             df = pd.DataFrame(buffer)
             processed_df = processor.run_all_checks(df)
 
-            # Send processed data to the new topic
             for _, row in processed_df.iterrows():
                 cleaned_data = row.to_dict()
+                # Convert numpy types to native Python types for JSON serialization
+                for key, value in cleaned_data.items():
+                    if isinstance(value, np.bool_):
+                        cleaned_data[key] = bool(value)
+
                 logger.debug(f"Producing validated message: {cleaned_data}")
                 producer.send(VALIDATED_TOPIC, cleaned_data)
 
-            # Flush the producer to ensure all messages are sent
             producer.flush()
-
-            # NEW: Manually commit the offset after successful processing and producing
             consumer.commit()
 
             logger.info(
@@ -88,11 +99,8 @@ for message in consumer:
             )
 
         except Exception as e:
-            # NEW: Catch any error during processing and log it
             logger.error(f"Failed to process a batch. Error: {e}")
             logger.error(f"Problematic data batch: {buffer}")
-            # The offset is NOT committed, so this batch will be re-processed later.
 
         finally:
-            # NEW: Always clear the buffer, whether it succeeded or failed
             buffer = []
