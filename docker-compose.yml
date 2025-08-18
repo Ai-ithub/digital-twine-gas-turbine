@@ -48,6 +48,18 @@ services:
       retries: 10
       start_period: 10s
 
+  dvr-consumer:
+    build: .
+    container_name: dvr-consumer 
+    command: python -u backend/data_pipeline/dvr_consumer.py 
+    environment:
+      - PYTHONPATH=/app
+    depends_on:
+      - kafka
+    env_file:
+      - .env
+    restart: on-failure
+
   backend:
     build: .
     container_name: backend
@@ -72,6 +84,8 @@ services:
     build: .
     container_name: validated-data-consumer
     command: python -u backend/data_pipeline/validated_data_consumer.py
+    environment:
+      - PYTHONPATH=/app
     depends_on:
       - kafka
       - influxdb
