@@ -11,7 +11,8 @@ from ml.rto_model import Actor, Critic
 # -----------------------------
 KAFKA_TOPIC = "sensors-validated"
 KAFKA_SERVERS = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "kafka:9092")
-MODEL_PATH = os.getenv("RTO_MODEL_PATH", "/app/artifacts/best_ppo_model.pkl")
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+MODEL_PATH = os.getenv("RTO_MODEL_PATH", os.path.join(BASE_DIR, "..", "artifacts", "best_ppo_model.pkl"))
 
 # Redis
 REDIS_HOST = os.getenv("REDIS_HOST", "redis")
@@ -21,7 +22,9 @@ REDIS_KEY = "latest_rto_suggestion"
 STATE_DIM = int(os.getenv("RTO_STATE_DIM", 10))  
 ACTION_DIM = int(os.getenv("RTO_ACTION_DIM", 3)) 
 
+# GPU if available
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print(f"Using device: {DEVICE}")
 
 # -----------------------------
 # Initialize Redis
@@ -32,8 +35,14 @@ r = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, decode_responses=True)
 # Initialize PPO Agent
 # -----------------------------
 agent = PPOAgent(state_dim=STATE_DIM, action_dim=ACTION_DIM)
+
 if os.path.exists(MODEL_PATH):
-    checkpoint = torch.load(MODEL_PATH, map_location=DEVICE)
+    try:
+        checkpoint = torch.load(MODEL_PATH, map_location=DEVICE, weights_only=False)
+    except Exception as e:
+        print("Warning: Could not load model on GPU/CPU directly. Trying CPU fallback...")
+        checkpoint = torch.load(MODEL_PATH, map_location="cpu")
+    
     agent.actor.load_state_dict(checkpoint["actor"])
     agent.critic.load_state_dict(checkpoint["critic"])
     print("RTO model loaded successfully.")
