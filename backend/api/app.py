@@ -1,10 +1,4 @@
-# backend/api/app.py (Final Corrected Version)
-
-# THIS IS THE CRITICAL FIX: eventlet and monkey_patch MUST be the first imports
 import eventlet
-
-eventlet.monkey_patch()
-
 import os
 import sys
 import logging
@@ -15,11 +9,9 @@ from flask_socketio import SocketIO
 from dotenv import load_dotenv
 from kafka import KafkaConsumer
 from kafka.errors import NoBrokersAvailable
-
-# --- Imports for project modules ---
 from .routes.data_routes import data_bp
 from .routes.prediction_routes import prediction_bp
-
+eventlet.monkey_patch()
 
 def kafka_raw_data_listener():
     """Listens to the 'sensors-raw' topic and pushes messages to clients."""
