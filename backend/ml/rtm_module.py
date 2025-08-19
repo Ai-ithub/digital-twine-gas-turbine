@@ -4,19 +4,32 @@ import onnxruntime as ort
 import numpy as np
 import pandas as pd
 import logging
-from sklearn.preprocessing import StandardScaler # <--- Import StandardScaler
+from sklearn.preprocessing import StandardScaler  # <--- Import StandardScaler
+
 
 class AnomalyDetector:
     def __init__(self, model_path="artifacts/isolation_forest_model.onnx"):
         self.model_path = model_path
         self.session = None
-        self.scaler = StandardScaler() # <--- Initialize a new scaler
-        self.is_scaler_fitted = False # <--- Add a flag to check if scaler is fitted
+        self.scaler = StandardScaler()  # <--- Initialize a new scaler
+        self.is_scaler_fitted = False  # <--- Add a flag to check if scaler is fitted
         self.features = [
-            "Pressure_In", "Temperature_In", "Flow_Rate", "Pressure_Out",
-            "Temperature_Out", "Efficiency", "Power_Consumption", "Vibration",
-            "Ambient_Temperature", "Humidity", "Air_Pollution", "Frequency",
-            "Amplitude", "Phase_Angle", "Velocity", "Stiffness",
+            "Pressure_In",
+            "Temperature_In",
+            "Flow_Rate",
+            "Pressure_Out",
+            "Temperature_Out",
+            "Efficiency",
+            "Power_Consumption",
+            "Vibration",
+            "Ambient_Temperature",
+            "Humidity",
+            "Air_Pollution",
+            "Frequency",
+            "Amplitude",
+            "Phase_Angle",
+            "Velocity",
+            "Stiffness",
         ]
         self.load_model()
 
@@ -42,7 +55,7 @@ class AnomalyDetector:
             if not self.is_scaler_fitted:
                 self.scaler.fit(input_data)
                 self.is_scaler_fitted = True
-            
+
             # Now, transform the data using the fitted scaler
             input_scaled = self.scaler.transform(input_data)
             # --------------------------------
@@ -53,7 +66,9 @@ class AnomalyDetector:
             return int(prediction)
 
         except KeyError:
-            logging.error("❌ Prediction Error: One or more required features are missing.")
+            logging.error(
+                "❌ Prediction Error: One or more required features are missing."
+            )
             return None
         except Exception as e:
             logging.error(f"❌ Prediction Error: {e}")

@@ -7,15 +7,18 @@ from kafka.errors import NoBrokersAvailable
 from backend.ml.rtm_module import AnomalyDetector
 
 # --- Setup Logging ---
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+)
 
 # --- Configuration ---
 KAFKA_SERVER = os.getenv("KAFKA_BROKER_URL", "kafka:9092")
 KAFKA_TOPIC_IN = "sensors-raw"
 KAFKA_TOPIC_OUT = "alerts"
 
+
 def connect_to_kafka():
-    """ Tries to connect to Kafka in a loop until successful. """
+    """Tries to connect to Kafka in a loop until successful."""
     while True:
         try:
             consumer = KafkaConsumer(
@@ -31,21 +34,28 @@ def connect_to_kafka():
             logging.info("✅ RTM Kafka Consumer and Producer connected successfully.")
             return consumer, producer
         except NoBrokersAvailable:
-            logging.warning("Could not connect to Kafka for RTM. Retrying in 5 seconds...")
+            logging.warning(
+                "Could not connect to Kafka for RTM. Retrying in 5 seconds..."
+            )
             time.sleep(5)
         except Exception as e:
-            logging.error(f"An unexpected error occurred while connecting to Kafka: {e}")
+            logging.error(
+                f"An unexpected error occurred while connecting to Kafka: {e}"
+            )
             time.sleep(5)
 
+
 def main():
-    """ Consumes from Kafka, runs anomaly detection, and publishes alerts. """
+    """Consumes from Kafka, runs anomaly detection, and publishes alerts."""
     detector = AnomalyDetector()
     if not detector.session:
-        logging.critical("Stopping RTM consumer: Anomaly detector model could not be loaded.")
+        logging.critical(
+            "Stopping RTM consumer: Anomaly detector model could not be loaded."
+        )
         return
 
     consumer, producer = connect_to_kafka()
-    
+
     logging.info("Listening for messages to analyze...")
 
     for message in consumer:
@@ -67,6 +77,7 @@ def main():
                 )
         except Exception as e:
             logging.error(f"An error occurred in the RTM consumer loop: {e}")
+
 
 if __name__ == "__main__":
     main()

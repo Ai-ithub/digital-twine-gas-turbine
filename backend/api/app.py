@@ -2,6 +2,7 @@
 
 # THIS IS THE CRITICAL FIX: eventlet and monkey_patch MUST be the first imports
 import eventlet
+
 eventlet.monkey_patch()
 
 import os
@@ -16,9 +17,6 @@ from kafka import KafkaConsumer
 from kafka.errors import NoBrokersAvailable
 
 # --- Imports for project modules ---
-from backend.ml.vibration_predictor import VibrationPredictor
-from backend.ml.onnx_predictor import ONNXPredictor
-from backend.ml.status_predictor import CompressorStatusPredictor
 from .routes.data_routes import data_bp
 from .routes.prediction_routes import prediction_bp
 
@@ -30,26 +28,31 @@ def kafka_raw_data_listener():
     while not consumer:
         try:
             consumer = KafkaConsumer(
-                'sensors-raw',
+                "sensors-raw",
                 bootstrap_servers=os.getenv("KAFKA_BROKER_URL", "kafka:9092"),
-                value_deserializer=lambda x: json.loads(x.decode('utf-8')),
-                auto_offset_reset='latest'
+                value_deserializer=lambda x: json.loads(x.decode("utf-8")),
+                auto_offset_reset="latest",
             )
-            logging.info("✅ Raw data WebSocket bridge connected to 'sensors-raw' topic.")
+            logging.info(
+                "✅ Raw data WebSocket bridge connected to 'sensors-raw' topic."
+            )
         except NoBrokersAvailable:
-            logging.warning("Raw data bridge could not connect to Kafka. Retrying in 5 seconds...")
+            logging.warning(
+                "Raw data bridge could not connect to Kafka. Retrying in 5 seconds..."
+            )
             eventlet.sleep(5)
-            
+
     for message in consumer:
         raw_data = message.value
         # Emit raw data on a different event, e.g., 'new_data'
-        socketio.emit('new_data', raw_data)
+        socketio.emit("new_data", raw_data)
+
 
 def create_app():
-    """ Creates and configures the Flask application. """
+    """Creates and configures the Flask application."""
     app = Flask(__name__)
     # CORS is now handled by SocketIO, but we can keep it for regular HTTP routes
-    CORS(app) 
+    CORS(app)
     load_dotenv()
     logging.basicConfig(
         level=logging.INFO,
@@ -77,9 +80,11 @@ def create_app():
         # ...
         logging.info("✅ All models loaded successfully.")
     except Exception as e:
-        logging.critical(f"❌ Critical error: Failed to load ML models on startup. Error: {e}")
+        logging.critical(
+            f"❌ Critical error: Failed to load ML models on startup. Error: {e}"
+        )
         sys.exit(1)
-        
+
     # --- Register Blueprints ---
     app.register_blueprint(data_bp, url_prefix="/data")
     app.register_blueprint(prediction_bp, url_prefix="/predict")
@@ -90,10 +95,14 @@ def create_app():
 
     return app
 
+
 # --- Initialize App and SocketIO ---
 app = create_app()
 # The frontend URL is explicitly allowed to handle CORS for WebSocket
-socketio = SocketIO(app, cors_allowed_origins="http://localhost:5173", async_mode='eventlet')
+socketio = SocketIO(
+    app, cors_allowed_origins="http://localhost:5173", async_mode="eventlet"
+)
+
 
 # --- Kafka Consumer for Alerts (Background Task) ---
 def kafka_alert_listener():
@@ -103,28 +112,33 @@ def kafka_alert_listener():
     while not consumer:
         try:
             consumer = KafkaConsumer(
-                'alerts',
+                "alerts",
                 bootstrap_servers=os.getenv("KAFKA_BROKER_URL", "kafka:9092"),
-                value_deserializer=lambda x: json.loads(x.decode('utf-8')),
-                auto_offset_reset='latest'
+                value_deserializer=lambda x: json.loads(x.decode("utf-8")),
+                auto_offset_reset="latest",
             )
             logging.info("✅ WebSocket bridge connected to 'alerts' topic.")
         except NoBrokersAvailable:
-            logging.warning("WebSocket bridge could not connect to Kafka. Retrying in 5 seconds...")
+            logging.warning(
+                "WebSocket bridge could not connect to Kafka. Retrying in 5 seconds..."
+            )
             eventlet.sleep(5)
 
     for message in consumer:
         alert_data = message.value
-        logging.info(f"WebSocket bridge received alert: {alert_data}, pushing to clients...")
-        socketio.emit('new_alert', alert_data)
+        logging.info(
+            f"WebSocket bridge received alert: {alert_data}, pushing to clients..."
+        )
+        socketio.emit("new_alert", alert_data)
+
 
 # --- Main Execution Block ---
 if __name__ == "__main__":
     # Start the Kafka listener as a background GreenThread
     eventlet.spawn(kafka_alert_listener)
-    eventlet.spawn(kafka_raw_data_listener) 
-    
+    eventlet.spawn(kafka_raw_data_listener)
+
     # Run the app using the SocketIO server
-    port = int(os.getenv('PORT', 5000))
+    port = int(os.getenv("PORT", 5000))
     logging.info(f"Starting SocketIO server on port {port}...")
-    socketio.run(app, host='0.0.0.0', port=port)
+    socketio.run(app, host="0.0.0.0", port=port)
