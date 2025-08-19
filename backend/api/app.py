@@ -11,7 +11,9 @@ from kafka import KafkaConsumer
 from kafka.errors import NoBrokersAvailable
 from .routes.data_routes import data_bp
 from .routes.prediction_routes import prediction_bp
+
 eventlet.monkey_patch()
+
 
 def kafka_raw_data_listener():
     """Listens to the 'sensors-raw' topic and pushes messages to clients."""
