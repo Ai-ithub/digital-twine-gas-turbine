@@ -1,56 +1,76 @@
-// src/components/RTMDashboard.js (Updated Version)
-import React, { useEffect } from 'react';
+// src/components/RTMDashboard.jsx (Final Corrected Version)
+import React, { useEffect, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { addDataPoint, addAlert } from '../features/rtm/rtmSlice';
+// Import the new action
+import { addDataPoint, addAlert, markAsAnomaly } from '../features/rtm/rtmSlice';
 import LiveChart from './LiveChart';
 import AlertsList from './AlertsList';
+import io from 'socket.io-client';
 
 const RTMDashboard = () => {
-  // Use useSelector to get data from the Redux store
-  const liveData = useSelector((state) => state.rtm.liveData);
-  const alerts = useSelector((state) => state.rtm.alerts);
-  
-  // Use useDispatch to be able to send actions to the store
+  const { liveData, alerts } = useSelector((state) => state.rtm);
   const dispatch = useDispatch();
+  const [isConnected, setIsConnected] = useState(false);
 
-  // useEffect to simulate a live data stream
   useEffect(() => {
-    const interval = setInterval(() => {
-      // --- Data Simulation Logic (same as before) ---
-      const now = new Date();
-      const newTime = now.toLocaleTimeString();
-      const newPoint = {
-        time: newTime,
-        Pressure_In: (3.5 + Math.random() * 0.2).toFixed(2),
-        Temperature_In: (20 + Math.random() * 5).toFixed(2),
-        isAnomaly: false,
+    const socket = io('http://localhost:5000');
+
+    socket.on('connect', () => {
+      console.log('✅ WebSocket Connected!');
+      setIsConnected(true);
+    });
+
+    // Listener for ALL live data points
+    socket.on('new_data', (dataPoint) => {
+      const newPointForChart = {
+        // --- CHANGE: Add the unique ID to the data point ---
+        time_id: dataPoint.Time, 
+        time: new Date(dataPoint.Timestamp).toLocaleTimeString(),
+        Pressure_In: dataPoint.Pressure_In,
+        Temperature_In: dataPoint.Temperature_In,
+        isAnomaly: false, // Always default to false
       };
+      dispatch(addDataPoint(newPointForChart));
+    });
 
-      if (Math.random() < 0.1) {
-        newPoint.isAnomaly = true;
-        newPoint.Pressure_In = (3.8 + Math.random() * 0.2).toFixed(2);
-        const newAlert = {
-          id: now.getTime(),
-          timestamp: newTime,
-          message: `High pressure spike detected: ${newPoint.Pressure_In} bar`,
-        };
-        // Instead of setState, we dispatch an action to Redux
-        dispatch(addAlert(newAlert));
+    // Listener for ONLY anomaly alerts
+    socket.on('new_alert', (alertData) => {
+      console.log('Received new alert:', alertData);
+      
+      const newAlert = {
+          id: alertData.time_id,
+          timestamp: new Date(alertData.timestamp).toLocaleTimeString(),
+          message: alertData.details,
+      };
+      
+      dispatch(addAlert(newAlert));
+      
+      // --- NEW: Dispatch the action to mark the point on the chart ---
+      if (alertData.time_id) {
+        dispatch(markAsAnomaly(alertData.time_id));
       }
-      // Dispatch an action to add the new point to the Redux store
-      dispatch(addDataPoint(newPoint));
+    });
 
-    }, 2000);
+    socket.on('disconnect', () => {
+      console.log('❌ WebSocket Disconnected!');
+      setIsConnected(false);
+    });
 
-    return () => clearInterval(interval);
-  }, [dispatch]); // Add dispatch to the dependency array
+    return () => {
+      socket.disconnect();
+    };
+  }, [dispatch]);
 
   return (
+    // ... JSX remains the same ...
     <div style={{ display: 'flex', padding: '20px', gap: '20px' }}>
       <div style={{ flex: 3 }}>
         <LiveChart data={liveData} />
       </div>
       <div style={{ flex: 1 }}>
+        <div style={{ marginBottom: '10px', padding: '5px', borderRadius: '4px', backgroundColor: isConnected ? '#28a745' : '#dc3545', color: 'white', textAlign: 'center' }}>
+          {isConnected ? 'Connected' : 'Disconnected'}
+        </div>
         <AlertsList alerts={alerts} />
       </div>
     </div>
