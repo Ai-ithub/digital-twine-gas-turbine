@@ -1,27 +1,33 @@
-# Dockerfile (Final Automated Version)
+# Dockerfile (Final Version for Flexible Commands)
 
-# --- Stage 1: Base Image ---
-FROM python:3.11-slim
+# --- Stage 1: The "Builder" stage ---
+FROM python:3.11-slim as builder
 
-# --- Stage 2: Set up Environment ---
 WORKDIR /app
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
 
-# --- Stage 3: Install Dependencies ---
+# Create a virtual environment
+ENV VIRTUAL_ENV=/opt/venv
+RUN python -m venv $VIRTUAL_ENV
+ENV PATH="$VIRTUAL_ENV/bin:$PATH"
+
+# Copy and install requirements
 COPY requirements.txt .
-RUN python -m pip install --upgrade pip
 RUN pip install --no-cache-dir -r requirements.txt
 
-# --- Stage 4: Copy Application Code and Entrypoint Script ---
+
+# --- Stage 2: The "Final" lightweight stage ---
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Copy the virtual environment from the builder stage
+COPY --from=builder /opt/venv /opt/venv
+
+# Activate the virtual environment
+ENV PATH="/opt/venv/bin:$PATH"
+
+# Copy all application code
 COPY . .
 
-# NEW: Copy the entrypoint script and make it executable
-COPY entrypoint.sh .
+# Make entrypoint script executable (in case it's used)
 RUN chmod +x entrypoint.sh
-
-# --- Stage 5: Define the Command to Run the App ---
-EXPOSE 5000
-
-# The CMD will be passed as arguments to the entrypoint script
-CMD ["python", "backend/app.py"]
