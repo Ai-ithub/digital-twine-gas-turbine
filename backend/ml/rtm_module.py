@@ -4,27 +4,39 @@ import onnxruntime as ort
 import numpy as np
 import pandas as pd
 import logging
-import os # Import os for path joining
+
 
 class AnomalyDetector:
     def __init__(
         self,
         model_path="artifacts/isolation_forest_model.onnx",
         mean_path="artifacts/rtm_scaler_mean.npy",
-        scale_path="artifacts/rtm_scaler_scale.npy"
+        scale_path="artifacts/rtm_scaler_scale.npy",
     ):
         self.model_path = model_path
         self.session = None
-        
+
         # --- CHANGE: Load scaler parameters instead of initializing a new scaler ---
         self.scaler_mean = None
         self.scaler_scale = None
-        
+
         self.features = [
-            "Pressure_In", "Temperature_In", "Flow_Rate", "Pressure_Out",
-            "Temperature_Out", "Efficiency", "Power_Consumption", "Vibration",
-            "Ambient_Temperature", "Humidity", "Air_Pollution", "Frequency",
-            "Amplitude", "Phase_Angle", "Velocity", "Stiffness",
+            "Pressure_In",
+            "Temperature_In",
+            "Flow_Rate",
+            "Pressure_Out",
+            "Temperature_Out",
+            "Efficiency",
+            "Power_Consumption",
+            "Vibration",
+            "Ambient_Temperature",
+            "Humidity",
+            "Air_Pollution",
+            "Frequency",
+            "Amplitude",
+            "Phase_Angle",
+            "Velocity",
+            "Stiffness",
         ]
 
         self.load_model()
@@ -44,7 +56,9 @@ class AnomalyDetector:
             self.scaler_scale = np.load(scale_path)
             logging.info("✅ RTM scaler parameters loaded successfully.")
         except FileNotFoundError:
-            logging.error(f"❌ Scaler parameter files not found at {mean_path} or {scale_path}.")
+            logging.error(
+                f"❌ Scaler parameter files not found at {mean_path} or {scale_path}."
+            )
             logging.error("Please run 'scripts/generate_rtm_scaler.py' to create them.")
 
     def predict(self, data_row: dict):
@@ -58,14 +72,16 @@ class AnomalyDetector:
 
             # --- CHANGE: Apply normalization using loaded parameters ---
             input_scaled = (input_data - self.scaler_mean) / self.scaler_scale
-            
+
             input_name = self.session.get_inputs()[0].name
             prediction = self.session.run(None, {input_name: input_scaled})[0][0]
-            
+
             return int(prediction)
 
         except KeyError:
-            logging.error("❌ Prediction Error: One or more required features are missing.")
+            logging.error(
+                "❌ Prediction Error: One or more required features are missing."
+            )
             return None
         except Exception as e:
             logging.error(f"❌ Prediction Error: {e}")

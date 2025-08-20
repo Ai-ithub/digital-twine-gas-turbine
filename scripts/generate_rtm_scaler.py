@@ -13,15 +13,28 @@ logging.basicConfig(
 logger = logging.getLogger("RTM_Scaler_Generator")
 
 CSV_FILE_PATH = "datasets/MASTER_DATASET.csv"
-OUTPUT_DIR = "artifacts" # We'll save scaler artifacts here
+OUTPUT_DIR = "artifacts"  # We'll save scaler artifacts here
 
 # IMPORTANT: These features MUST match the 'self.features' list in rtm_module.py
 FEATURE_COLUMNS = [
-    "Pressure_In", "Temperature_In", "Flow_Rate", "Pressure_Out",
-    "Temperature_Out", "Efficiency", "Power_Consumption", "Vibration",
-    "Ambient_Temperature", "Humidity", "Air_Pollution", "Frequency",
-    "Amplitude", "Phase_Angle", "Velocity", "Stiffness",
+    "Pressure_In",
+    "Temperature_In",
+    "Flow_Rate",
+    "Pressure_Out",
+    "Temperature_Out",
+    "Efficiency",
+    "Power_Consumption",
+    "Vibration",
+    "Ambient_Temperature",
+    "Humidity",
+    "Air_Pollution",
+    "Frequency",
+    "Amplitude",
+    "Phase_Angle",
+    "Velocity",
+    "Stiffness",
 ]
+
 
 def generate_and_save_scaler():
     logger.info("--- Starting RTM Scaler Generation ---")
@@ -55,6 +68,7 @@ def generate_and_save_scaler():
         logger.error(f"❌ ERROR: A required column was not found in the dataset: {e}")
     except Exception as e:
         logger.error(f"❌ An unexpected error occurred: {e}")
+
 
 if __name__ == "__main__":
     generate_and_save_scaler()

@@ -6,6 +6,7 @@ import logging
 # Create a Blueprint
 overview_bp = Blueprint("overview_routes", __name__)
 
+
 @overview_bp.route("/overview", methods=["GET"])
 def get_system_overview():
     """
