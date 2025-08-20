@@ -1,8 +1,11 @@
+// src/api/apiClient.js
+
 import axios from 'axios';
 
 // Create a pre-configured instance of axios
 const apiClient = axios.create({
-  baseURL: process.env.REACT_APP_API_URL || 'http://localhost:5000/api',
+  // Use import.meta.env for Vite environment variables
+  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api',
   headers: {
     'Content-Type': 'application/json',
   },

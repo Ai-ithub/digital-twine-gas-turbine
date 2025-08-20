@@ -11,6 +11,7 @@ from kafka import KafkaConsumer
 from kafka.errors import NoBrokersAvailable
 from .routes.data_routes import data_bp
 from .routes.prediction_routes import prediction_bp
+from .routes.overview_routes import overview_bp
 
 eventlet.monkey_patch()
 
@@ -82,6 +83,7 @@ def create_app():
     # --- Register Blueprints ---
     app.register_blueprint(data_bp, url_prefix="/data")
     app.register_blueprint(prediction_bp, url_prefix="/predict")
+    app.register_blueprint(overview_bp, url_prefix="/api/status")
 
     @app.route("/")
     def home():

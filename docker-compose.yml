@@ -48,6 +48,53 @@ services:
       retries: 10
       start_period: 10s
 
+  db-importer:
+    build: .
+    container_name: db-importer
+    command: python scripts/import_to_db.py
+    environment:
+      - PYTHONPATH=/app
+    depends_on:
+      mysql:
+        condition: service_healthy
+    env_file:
+      - .env
+
+  # --- THIS IS THE ONLY WEB SERVER ---
+  backend:
+    build: .
+    container_name: backend
+    command: gunicorn --worker-class eventlet --workers 1 --bind 0.0.0.0:5000 backend.api.app:app
+    ports:
+      - "5000:5000"
+    volumes:
+      - .:/app
+    env_file:
+      - .env
+    environment:
+      - PYTHONPATH=/app
+    depends_on:
+      db-importer:
+        condition: service_completed_successfully
+      kafka:
+        condition: service_started
+    restart: on-failure
+
+  db-streamer:
+    build: .
+    container_name: db-streamer
+    command: python -u backend/data_pipeline/db_streamer.py
+    environment:
+      - PYTHONPATH=/app
+    depends_on:
+      db-importer:
+        condition: service_completed_successfully
+      kafka:
+        condition: service_started
+    env_file:
+      - .env
+    restart: on-failure
+
   dvr-consumer:
     build: .
     container_name: dvr-consumer 
@@ -59,26 +106,6 @@ services:
     env_file:
       - .env
     restart: on-failure
-
-  backend:
-    build: .
-    container_name: backend
-    entrypoint: ./entrypoint.sh
-    ports:
-      - "5000:5000"
-    volumes:
-      - .:/app
-    env_file:
-      - .env
-    environment:
-      - PYTHONPATH=/app
-    depends_on:
-      mysql:
-        condition: service_healthy
-      kafka:
-        condition: service_started
-      influxdb:
-        condition: service_started
 
   validated-data-consumer:
     build: .
