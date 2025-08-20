@@ -29,7 +29,7 @@ distro==1.9.0
 dnspython==2.7.0
 entrypoints==0.4
 Farama-Notifications==0.0.4
-flatbuffers==2.5.3
+flatbuffers==25.2.10
 fsspec==2025.7.0
 gast==0.6.0
 google-pasta==0.2.0
