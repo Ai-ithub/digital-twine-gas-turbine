@@ -26,7 +26,9 @@ def create_kafka_producer():
         try:
             producer = KafkaProducer(
                 bootstrap_servers=os.getenv("KAFKA_BOOTSTRAP_SERVERS", "kafka:9092"),
-                value_serializer=lambda v: json.dumps(v, default=str).encode("utf-8"), # Handle datetime if any
+                value_serializer=lambda v: json.dumps(v, default=str).encode(
+                    "utf-8"
+                ),  # Handle datetime if any
             )
             logger.info("✅ Kafka Producer connected successfully.")
             return producer
@@ -51,14 +53,14 @@ def stream_data_from_db():
         "password": os.getenv("DB_PASSWORD"),
         "database": os.getenv("DB_DATABASE"),
     }
-    
+
     db = CompressorDatabase(**db_config)
-    
+
     # Retry connecting to the database until successful
     while not db.connect():
         logger.warning("Failed to connect to the database. Retrying in 5 seconds...")
         time.sleep(5)
-        
+
     if not db.load_data(query="SELECT * FROM compressor_data ORDER BY Time ASC"):
         logger.error("❌ Failed to load data from the database. Exiting.")
         return
@@ -76,11 +78,11 @@ def stream_data_from_db():
             producer.send(topic, value=record)
             logger.info(f"Sent record with Time={record.get('Time')}")
             # Control the speed of the stream
-            time.sleep(1) 
-        
+            time.sleep(1)
+
         producer.flush()
         logger.info("\n✅ Finished streaming all records from the database.")
-        
+
     except Exception as e:
         logger.error(f"❌ An error occurred during streaming: {e}")
     finally:
@@ -90,7 +92,7 @@ def stream_data_from_db():
         # Loop indefinitely to keep the container running if needed, or exit
         logger.info("Streamer has completed its task. It will now idle.")
         while True:
-            time.sleep(3600) # Sleep for an hour
+            time.sleep(3600)  # Sleep for an hour
 
 
 if __name__ == "__main__":
