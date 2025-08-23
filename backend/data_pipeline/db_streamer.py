@@ -1,4 +1,7 @@
-import os, json, time, logging
+import os
+import json
+import time
+import logging
 from kafka import KafkaProducer
 from kafka.errors import NoBrokersAvailable
 from dotenv import load_dotenv
@@ -43,13 +46,13 @@ def stream_data_from_db():
         "password": os.getenv("DB_PASSWORD"),
         "database": os.getenv("DB_DATABASE"),
     }
-    
+
     db = CompressorDatabase(**db_config)
-    
+
     while not db.connect():
         logger.warning("Failed to connect to the database. Retrying in 5 seconds...")
         time.sleep(5)
-        
+
     if not db.load_data(query="SELECT * FROM compressor_data ORDER BY Time ASC"):
         logger.error("❌ Failed to load data from the database. Exiting.")
         return
@@ -60,15 +63,15 @@ def stream_data_from_db():
 
     logger.info(f"Starting to stream data to Kafka topic '{topic}'...")
     try:
-        while True: # Loop forever to make the stream continuous
+        while True:  # Loop forever to make the stream continuous
             for record in db._data:
                 # --- CHANGE: We no longer modify the timestamp here ---
                 producer.send(topic, value=record)
                 logger.info(f"Sent record with original Time={record.get('Time')}")
-                time.sleep(2) # Keep the stream slow and observable
-            
+                time.sleep(2)  # Keep the stream slow and observable
+
             logger.info("✅ Finished one full loop of the dataset. Restarting...")
-            
+
     except Exception as e:
         logger.error(f"❌ An error occurred during streaming: {e}")
     finally:
