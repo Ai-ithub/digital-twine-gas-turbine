@@ -1,12 +1,5 @@
-# backend/api/app.py (Final version with full logging)
-
 import eventlet
-
-# This must be the very first line
-eventlet.monkey_patch()
-
 import os
-import sys
 import logging
 import json
 import uuid
@@ -17,10 +10,13 @@ from dotenv import load_dotenv
 from kafka import KafkaConsumer
 from kafka.errors import NoBrokersAvailable
 from datetime import datetime, timezone
+
 # Import blueprints
 from .routes.data_routes import data_bp
 from .routes.prediction_routes import prediction_bp
 from .routes.overview_routes import overview_bp
+
+eventlet.monkey_patch()
 
 
 def kafka_raw_data_listener():
@@ -29,7 +25,7 @@ def kafka_raw_data_listener():
     logging.info("Starting Kafka listener for raw data stream...")
     while not consumer:
         try:
-            random_group_id = f'backend-raw-{uuid.uuid4()}'
+            random_group_id = f"backend-raw-{uuid.uuid4()}"
             consumer = KafkaConsumer(
                 "sensors-raw",
                 bootstrap_servers=os.getenv("KAFKA_BROKER_URL", "kafka:9092"),
@@ -37,21 +33,29 @@ def kafka_raw_data_listener():
                 auto_offset_reset="earliest",
                 group_id=random_group_id,
             )
-            logging.info(f"✅ Raw data WebSocket bridge connected with group_id: {random_group_id}")
+            logging.info(
+                f"✅ Raw data WebSocket bridge connected with group_id: {random_group_id}"
+            )
         except NoBrokersAvailable:
-            logging.warning("Raw data bridge could not connect to Kafka. Retrying in 5 seconds...")
+            logging.warning(
+                "Raw data bridge could not connect to Kafka. Retrying in 5 seconds..."
+            )
             eventlet.sleep(5)
 
     # --- THE FIX: Add logging inside the loop ---
     for message in consumer:
         try:
             raw_data = message.value
-            
+
             # --- THIS IS THE FIX for LIVE data ---
             # Overwrite the timestamp just before sending to the frontend
-            raw_data['Timestamp'] = datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')
-            
-            logging.info(f"Received raw data (Time={raw_data.get('Time')}). Emitting to frontend with LIVE timestamp...")
+            raw_data["Timestamp"] = (
+                datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+            )
+
+            logging.info(
+                f"Received raw data (Time={raw_data.get('Time')}). Emitting to frontend with LIVE timestamp..."
+            )
             socketio.emit("new_data", raw_data)
         except Exception as e:
             logging.error(f"Error processing raw message: {e}")
@@ -63,7 +67,7 @@ def kafka_alert_listener():
     logging.info("Starting Kafka listener for WebSocket bridge...")
     while not consumer:
         try:
-            random_group_id = f'backend-alert-{uuid.uuid4()}'
+            random_group_id = f"backend-alert-{uuid.uuid4()}"
             consumer = KafkaConsumer(
                 "alerts",
                 bootstrap_servers=os.getenv("KAFKA_BROKER_URL", "kafka:9092"),
@@ -71,11 +75,15 @@ def kafka_alert_listener():
                 auto_offset_reset="earliest",
                 group_id=random_group_id,
             )
-            logging.info(f"✅ WebSocket bridge connected to 'alerts' topic with group_id: {random_group_id}")
+            logging.info(
+                f"✅ WebSocket bridge connected to 'alerts' topic with group_id: {random_group_id}"
+            )
         except NoBrokersAvailable:
-            logging.warning("WebSocket bridge could not connect to Kafka. Retrying in 5 seconds...")
+            logging.warning(
+                "WebSocket bridge could not connect to Kafka. Retrying in 5 seconds..."
+            )
             eventlet.sleep(5)
-            
+
     # --- THE FIX: Add logging inside the loop ---
     for message in consumer:
         try:
@@ -94,11 +102,13 @@ def create_app():
         level=logging.INFO,
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     )
-    
+
     # Configuration loading...
     app.config["DB_CONFIG"] = {
-        "host": os.getenv("DB_HOST"), "port": int(os.getenv("DB_PORT", 3306)),
-        "user": os.getenv("DB_USER"), "password": os.getenv("DB_PASSWORD"),
+        "host": os.getenv("DB_HOST"),
+        "port": int(os.getenv("DB_PORT", 3306)),
+        "user": os.getenv("DB_USER"),
+        "password": os.getenv("DB_PASSWORD"),
         "database": os.getenv("DB_DATABASE"),
     }
     app.config["INFLUXDB_URL"] = os.getenv("INFLUXDB_URL")
@@ -119,6 +129,7 @@ def create_app():
         return jsonify({"message": "Compressor Digital Twin API is running."})
 
     return app
+
 
 # --- Initialize App and SocketIO ---
 app = create_app()

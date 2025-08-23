@@ -12,13 +12,12 @@ data_bp = Blueprint("data_routes", __name__)
 @data_bp.route("/get_live_data", methods=["GET"])
 def get_live_data():
     """
-    Retrieve data points from InfluxDB. 
+    Retrieve data points from InfluxDB.
     For this demo, instead of a time range, we'll fetch the latest N records.
     """
     config = current_app.config
     # We will ignore the 'start' and 'stop' parameters for now
     # and always fetch the last 500 records as a sample.
-    limit = 500
 
     try:
         with InfluxDBClient(
@@ -27,7 +26,7 @@ def get_live_data():
             org=config["INFLUXDB_ORG"],
         ) as client:
             query_api = client.query_api()
-            
+
             # --- THIS IS THE FIX ---
             # This new query ignores the time range and just gets the most recent data points.
             flux_query = f'''
@@ -38,9 +37,9 @@ def get_live_data():
                 |> limit(n: 500)
                 |> sort(columns: ["_time"])
             '''
-            
+
             tables = query_api.query(flux_query, org=config["INFLUXDB_ORG"])
-            
+
             results = [
                 {
                     "time": record.get_time().isoformat(),
@@ -51,7 +50,7 @@ def get_live_data():
                 for record in table.records
             ]
             return jsonify(results)
-            
+
     except Exception as e:
         logging.error(f"Unexpected error in /get_live_data: {e}")
         return jsonify({"error": "An internal server error occurred"}), 500
