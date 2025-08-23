@@ -12,12 +12,13 @@ data_bp = Blueprint("data_routes", __name__)
 @data_bp.route("/get_live_data", methods=["GET"])
 def get_live_data():
     """
-    Retrieve data points from InfluxDB within a specified time range.
-    Accepts 'start' (e.g., -1h, -10m) and 'stop' query parameters.
+    Retrieve data points from InfluxDB. 
+    For this demo, instead of a time range, we'll fetch the latest N records.
     """
     config = current_app.config
-    start_time = request.args.get("start", "-1h")  # Default to last 1 hour
-    stop_time = request.args.get("stop", "now()")  # Default to now
+    # We will ignore the 'start' and 'stop' parameters for now
+    # and always fetch the last 500 records as a sample.
+    limit = 500
 
     try:
         with InfluxDBClient(
@@ -26,14 +27,20 @@ def get_live_data():
             org=config["INFLUXDB_ORG"],
         ) as client:
             query_api = client.query_api()
+            
+            # --- THIS IS THE FIX ---
+            # This new query ignores the time range and just gets the most recent data points.
             flux_query = f'''
                 from(bucket: "{config["INFLUXDB_BUCKET"]}")
-                  |> range(start: {start_time}, stop: {stop_time})
-                  |> filter(fn: (r) => r["_measurement"] == "compressor_metrics")
-                  |> sort(columns: ["_time"])
-                  |> limit(n: 500)
+                |> range(start: 0)
+                |> filter(fn: (r) => r["_measurement"] == "compressor_metrics")
+                |> sort(columns: ["_time"], desc: true)
+                |> limit(n: 500)
+                |> sort(columns: ["_time"])
             '''
+            
             tables = query_api.query(flux_query, org=config["INFLUXDB_ORG"])
+            
             results = [
                 {
                     "time": record.get_time().isoformat(),
@@ -44,11 +51,7 @@ def get_live_data():
                 for record in table.records
             ]
             return jsonify(results)
-    except ApiException as e:
-        logging.error(f"InfluxDB API Error in /get_live_data: {e.body}")
-        return jsonify(
-            {"error": "Service unavailable: Could not connect to InfluxDB"}
-        ), 503
+            
     except Exception as e:
         logging.error(f"Unexpected error in /get_live_data: {e}")
         return jsonify({"error": "An internal server error occurred"}), 500

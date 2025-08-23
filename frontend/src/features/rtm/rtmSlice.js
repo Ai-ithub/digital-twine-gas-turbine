@@ -1,20 +1,19 @@
 // src/features/rtm/rtmSlice.js
 
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-// --- Import the new API function ---
 import { getHistoricalData } from '../../api/rtmApi';
 
-// --- NEW: Create an async thunk for fetching historical data ---
+// Async thunk for fetching historical data
 export const fetchHistoricalData = createAsyncThunk(
   'rtm/fetchHistoricalData',
   async (timeRange, { rejectWithValue }) => {
     try {
       const response = await getHistoricalData(timeRange);
-      // The backend returns a flat list, we need to pivot it for the chart
+      // Pivot the flat data structure from the API into a format suitable for Recharts
       const pivotedData = response.data.reduce((acc, point) => {
         let entry = acc.find(item => item.time === point.time);
         if (!entry) {
-          entry = { time: point.time, time_id: point.time }; // Use time as a unique key
+          entry = { time: point.time, time_id: point.time };
           acc.push(entry);
         }
         entry[point.field] = point.value;
@@ -27,13 +26,12 @@ export const fetchHistoricalData = createAsyncThunk(
   }
 );
 
-
 const initialState = {
   liveData: [],
   alerts: [],
-  historicalData: [], // --- NEW: State for historical data ---
+  historicalData: [],
   status: 'idle', // 'idle' | 'loading' | 'succeeded' | 'failed'
-  maxDataPoints: 50,
+  maxDataPoints: 43200,
 };
 
 export const rtmSlice = createSlice({
@@ -56,13 +54,11 @@ export const rtmSlice = createSlice({
         pointToMark.isAnomaly = true;
       }
     },
-    // --- NEW: A reducer to clear historical data when switching back to live ---
     clearHistoricalData: (state) => {
         state.historicalData = [];
         state.status = 'idle';
     }
   },
-  // --- NEW: Handle the async thunk actions ---
   extraReducers: (builder) => {
     builder
       .addCase(fetchHistoricalData.pending, (state) => {
