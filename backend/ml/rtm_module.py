@@ -1,4 +1,4 @@
-# backend/ml/rtm_module.py (Corrected with pre-loaded scaler)
+# backend/ml/rtm_module.py (Final version with 20 features)
 
 import onnxruntime as ort
 import numpy as np
@@ -15,11 +15,10 @@ class AnomalyDetector:
     ):
         self.model_path = model_path
         self.session = None
-
-        # --- CHANGE: Load scaler parameters instead of initializing a new scaler ---
         self.scaler_mean = None
         self.scaler_scale = None
 
+        # --- THIS IS THE FIX: The feature list now includes all 20 features ---
         self.features = [
             "Pressure_In",
             "Temperature_In",
@@ -37,6 +36,10 @@ class AnomalyDetector:
             "Phase_Angle",
             "Velocity",
             "Stiffness",
+            "Vibration_roll_mean",
+            "Power_Consumption_roll_mean",
+            "Vibration_roll_std",
+            "Power_Consumption_roll_std",
         ]
 
         self.load_model()
@@ -50,7 +53,6 @@ class AnomalyDetector:
             logging.error(f"❌ Error loading model: {e}")
 
     def load_scaler_params(self, mean_path, scale_path):
-        """Loads the pre-computed mean and scale vectors for normalization."""
         try:
             self.scaler_mean = np.load(mean_path)
             self.scaler_scale = np.load(scale_path)
@@ -59,7 +61,6 @@ class AnomalyDetector:
             logging.error(
                 f"❌ Scaler parameter files not found at {mean_path} or {scale_path}."
             )
-            logging.error("Please run 'scripts/generate_rtm_scaler.py' to create them.")
 
     def predict(self, data_row: dict):
         if not self.session or self.scaler_mean is None:
@@ -67,20 +68,26 @@ class AnomalyDetector:
             return None
 
         try:
+            # Create a DataFrame from the single row of data
             df_point = pd.DataFrame([data_row])
-            input_data = df_point[self.features].values.astype(np.float32)
 
-            # --- CHANGE: Apply normalization using loaded parameters ---
+            # Select the features in the correct order
+            input_data = df_point[self.features].values
+
+            # Apply normalization
             input_scaled = (input_data - self.scaler_mean) / self.scaler_scale
 
+            # Convert data type to float32 for the ONNX model
+            input_tensor = input_scaled.astype(np.float32)
+
             input_name = self.session.get_inputs()[0].name
-            prediction = self.session.run(None, {input_name: input_scaled})[0][0]
+            prediction = self.session.run(None, {input_name: input_tensor})[0][0]
 
             return int(prediction)
 
-        except KeyError:
+        except KeyError as e:
             logging.error(
-                "❌ Prediction Error: One or more required features are missing."
+                f"❌ Prediction Error: Feature {e} is missing from the data row."
             )
             return None
         except Exception as e:

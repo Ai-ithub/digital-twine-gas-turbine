@@ -132,6 +132,19 @@ services:
       - .env
     restart: on-failure
 
+  influx-writer:
+    build: .
+    container_name: influx-writer
+    command: python -u backend/data_pipeline/kafka_consumer_influx.py
+    environment:
+      - PYTHONPATH=/app
+    depends_on:
+      - kafka
+      - influxdb
+    env_file:
+      - .env
+    restart: on-failure
+
 volumes:
   influxdb_data:
   mysql_data:
