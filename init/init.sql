@@ -11,7 +11,6 @@ USE compressor_db;
 
 -- Create the main data table
 CREATE TABLE IF NOT EXISTS compressor_data (
-    -- ... (تمام ستون‌ها مثل قبل، بدون تغییر)
     `Time` INT PRIMARY KEY,
     `Device_ID` VARCHAR(20),
     `Pressure_In` FLOAT,
@@ -43,4 +42,13 @@ CREATE TABLE IF NOT EXISTS compressor_data (
     `vib_mean` FLOAT,
     `vib_min` FLOAT,
     `vib_rms` FLOAT
+);
+-- Add this at the end of init/init.sql
+
+CREATE TABLE IF NOT EXISTS rul_predictions (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    machine_id VARCHAR(50) DEFAULT 'SGT-400-Main',
+    rul_value FLOAT NOT NULL,
+    confidence FLOAT,
+    prediction_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

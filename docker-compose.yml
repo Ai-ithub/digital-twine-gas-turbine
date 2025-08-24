@@ -145,6 +145,20 @@ services:
       - .env
     restart: on-failure
 
+  pdm-batch-runner:
+    build: .
+    container_name: pdm-batch-runner
+    command: python backend/data_pipeline/pdm_batch.py
+    environment:
+      - PYTHONPATH=/app
+    depends_on:
+      db-streamer:
+        condition: service_started
+      db-importer:
+        condition: service_completed_successfully
+    env_file:
+      - .env
+
 volumes:
   influxdb_data:
   mysql_data:
