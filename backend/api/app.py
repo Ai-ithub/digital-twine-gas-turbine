@@ -15,6 +15,7 @@ from datetime import datetime, timezone
 from .routes.data_routes import data_bp
 from .routes.prediction_routes import prediction_bp
 from .routes.overview_routes import overview_bp
+from .routes.pdm_routes import pdm_bp
 
 eventlet.monkey_patch()
 
@@ -123,6 +124,7 @@ def create_app():
     app.register_blueprint(data_bp, url_prefix="/api/data")
     app.register_blueprint(prediction_bp, url_prefix="/api/predict")
     app.register_blueprint(overview_bp, url_prefix="/api/status")
+    app.register_blueprint(pdm_bp, url_prefix="/api/predict")
 
     @app.route("/")
     def home():
