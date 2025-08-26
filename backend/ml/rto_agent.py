@@ -2,9 +2,7 @@ import torch
 import torch.nn.functional as F
 from torch.distributions import Normal
 from typing import List, Tuple, Optional
-
-# مدل‌های انعطاف‌پذیر از فایل قبلی
-from ml.rto_model import Actor, Critic
+from backend.ml.rto_model import Actor, Critic
 
 
 class PPOAgent:
@@ -107,7 +105,7 @@ class PPOAgent:
         advantages = advantages.detach()
 
         # Update Critic
-        values = self.critic(states).squeeze()
+        values = self.critic(states)
         critic_loss = F.mse_loss(values, returns)
 
         self.critic_optimizer.zero_grad()

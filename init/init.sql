@@ -52,3 +52,9 @@ CREATE TABLE IF NOT EXISTS rul_predictions (
     confidence FLOAT,
     prediction_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE IF NOT EXISTS rto_suggestions (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    suggestion_text VARCHAR(255) NOT NULL,
+    generated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
