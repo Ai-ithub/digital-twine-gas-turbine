@@ -6,9 +6,10 @@ import pymysql
 
 rto_bp = Blueprint("rto_routes", __name__)
 
-@rto_bp.route("/suggestion", methods=['GET'])
+
+@rto_bp.route("/suggestion", methods=["GET"])
 def get_latest_rto_suggestion():
-    """ Fetches the latest RTO suggestion from the database. """
+    """Fetches the latest RTO suggestion from the database."""
     db_config = current_app.config["DB_CONFIG"]
     conn = None
     try:
@@ -19,10 +20,12 @@ def get_latest_rto_suggestion():
             suggestion = cursor.fetchone()
 
         if not suggestion:
-            return jsonify({"suggestion_text": "No optimization suggestion available yet."}), 404
+            return jsonify(
+                {"suggestion_text": "No optimization suggestion available yet."}
+            ), 404
 
         # Convert datetime to string for JSON
-        suggestion['generated_at'] = suggestion['generated_at'].isoformat()
+        suggestion["generated_at"] = suggestion["generated_at"].isoformat()
 
         return jsonify(suggestion)
 

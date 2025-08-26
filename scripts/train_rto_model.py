@@ -5,13 +5,14 @@ import random
 import pickle
 import os
 import sys
-project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
-from sklearn.preprocessing import MinMaxScaler
-from sklearn.model_selection import train_test_split
-from backend.ml.rto_env import CompressorEnv
-from backend.ml.rto_agent import PPOAgent
+    from sklearn.preprocessing import MinMaxScaler
+    from sklearn.model_selection import train_test_split
+    from backend.ml.rto_env import CompressorEnv
+    from backend.ml.rto_agent import PPOAgent
 
 
 def train_rto_model(config: dict):
@@ -29,9 +30,7 @@ def train_rto_model(config: dict):
     # -------- 2. Load and Preprocess Data --------
     print("Loading and preprocessing data...")
     SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-    PROJECT_ROOT = os.path.abspath(
-    os.path.join(SCRIPT_DIR, "..") 
-    ) 
+    PROJECT_ROOT = os.path.abspath(os.path.join(SCRIPT_DIR, ".."))
     DATASET_PATH = os.path.join(PROJECT_ROOT, "datasets", "MASTER_DATASET.csv")
     df = pd.read_csv(DATASET_PATH)  # Adjusted path
     DATASET_PATH = os.path.join(PROJECT_ROOT, "datasets", "MASTER_DATASET.csv")

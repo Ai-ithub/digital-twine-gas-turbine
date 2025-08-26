@@ -31,18 +31,36 @@ class CompressorEnv(gym.Env):
             self.reward_weights = reward_weights
 
         self.state_features = [
-            "Pressure_In", "Temperature_In", "Flow_Rate", "Pressure_Out",
-            "Temperature_Out", "Efficiency", "Power_Consumption", "Vibration",
-            "Ambient_Temperature", "Humidity", "Air_Pollution", "Fuel_Quality",
-            "Load_Factor", "vib_std", "vib_max", "vib_mean", "vib_min",
-            "vib_rms", "Velocity", "Viscosity", "Phase_Angle",
+            "Pressure_In",
+            "Temperature_In",
+            "Flow_Rate",
+            "Pressure_Out",
+            "Temperature_Out",
+            "Efficiency",
+            "Power_Consumption",
+            "Vibration",
+            "Ambient_Temperature",
+            "Humidity",
+            "Air_Pollution",
+            "Fuel_Quality",
+            "Load_Factor",
+            "vib_std",
+            "vib_max",
+            "vib_mean",
+            "vib_min",
+            "vib_rms",
+            "Velocity",
+            "Viscosity",
+            "Phase_Angle",
         ]
         self.output_features = ["Efficiency", "Power_Consumption", "Vibration"]
 
         self.action_space = spaces.Box(low=0.0, high=1.0, shape=(1,), dtype=np.float32)
         self.observation_space = spaces.Box(
-            low=-np.inf, high=np.inf,
-            shape=(len(self.state_features),), dtype=np.float32,
+            low=-np.inf,
+            high=np.inf,
+            shape=(len(self.state_features),),
+            dtype=np.float32,
         )
 
         if dynamics_models:
@@ -67,16 +85,16 @@ class CompressorEnv(gym.Env):
 
     def _get_state(self, step: int) -> np.ndarray:
         """Retrieves and optionally normalizes the state for a given step."""
-        
+
         # --- THIS IS THE FIX ---
         # Get the row as a DataFrame to preserve column names
         state_df = self.df.loc[[step], self.state_features]
-        
+
         if self.scaler:
             # Pass the DataFrame to the scaler, then get the numpy values
             scaled_state = self.scaler.transform(state_df)
             return scaled_state.flatten().astype(np.float32)
-            
+
         return state_df.values.flatten().astype(np.float32)
 
     def reset(self, seed: Optional[int] = None, options: Optional[dict] = None):
@@ -101,7 +119,7 @@ class CompressorEnv(gym.Env):
 
         self.current_step += 1
         done = self.current_step >= len(self.df) - 1
-        
+
         next_state = (
             self._get_state(self.current_step)
             if not done
@@ -109,11 +127,15 @@ class CompressorEnv(gym.Env):
         )
 
         info = {
-            "efficiency": efficiency, "power": power,
-            "vibration": vibration, "load_factor": load_factor,
+            "efficiency": efficiency,
+            "power": power,
+            "vibration": vibration,
+            "load_factor": load_factor,
         }
 
         return next_state, reward, done, False, info
 
     def render(self, mode="human"):
-        print(f"Step: {self.current_step}, Load Factor: {self.df.loc[self.current_step, 'Load_Factor']:.2f}")
+        print(
+            f"Step: {self.current_step}, Load Factor: {self.df.loc[self.current_step, 'Load_Factor']:.2f}"
+        )
