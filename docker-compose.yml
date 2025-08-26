@@ -159,6 +159,21 @@ services:
     env_file:
       - .env
 
+  rto-consumer:
+    build: .
+    container_name: rto-consumer
+    command: python -u backend/data_pipeline/rto_consumer.py
+    environment:
+      - PYTHONPATH=/app
+    depends_on:
+      kafka:
+        condition: service_started
+      mysql:
+        condition: service_healthy
+    env_file:
+      - .env
+    restart: on-failure
+
 volumes:
   influxdb_data:
   mysql_data:
