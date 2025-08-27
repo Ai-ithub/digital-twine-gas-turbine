@@ -1,7 +1,8 @@
 // src/features/rto/rtoSlice.js
 
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { getLatestRtoSuggestion } from '../../api/predictionApi';
+// Import from the new rtoApi.js file
+import { getLatestRtoSuggestion, getEfficiencyHistory } from '../../api/rtoApi'; 
 
 export const fetchLatestRtoSuggestion = createAsyncThunk(
   'rto/fetchLatestRtoSuggestion',
@@ -10,14 +11,29 @@ export const fetchLatestRtoSuggestion = createAsyncThunk(
       const response = await getLatestRtoSuggestion();
       return response.data;
     } catch (error) {
-      return rejectWithValue(error.response?.data || { suggestion_text: 'Could not fetch suggestion.' });
+      return rejectWithValue(error.response?.data);
+    }
+  }
+);
+
+// --- This is the missing export ---
+export const fetchEfficiencyHistory = createAsyncThunk(
+  'rto/fetchEfficiencyHistory',
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await getEfficiencyHistory();
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data);
     }
   }
 );
 
 const initialState = {
   suggestion: null,
+  history: [], // For chart data
   status: 'idle',
+  historyStatus: 'idle',
   error: null,
 };
 
@@ -27,6 +43,7 @@ export const rtoSlice = createSlice({
   reducers: {},
   extraReducers: (builder) => {
     builder
+      // Cases for suggestion
       .addCase(fetchLatestRtoSuggestion.pending, (state) => {
         state.status = 'loading';
       })
@@ -37,6 +54,17 @@ export const rtoSlice = createSlice({
       .addCase(fetchLatestRtoSuggestion.rejected, (state, action) => {
         state.status = 'failed';
         state.error = action.payload;
+      })
+      // Cases for chart history
+      .addCase(fetchEfficiencyHistory.pending, (state) => {
+        state.historyStatus = 'loading';
+      })
+      .addCase(fetchEfficiencyHistory.fulfilled, (state, action) => {
+        state.historyStatus = 'succeeded';
+        state.history = action.payload;
+      })
+      .addCase(fetchEfficiencyHistory.rejected, (state) => {
+        state.historyStatus = 'failed';
       });
   },
 });

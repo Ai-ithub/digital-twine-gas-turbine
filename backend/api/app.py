@@ -48,16 +48,8 @@ def kafka_raw_data_listener():
     for message in consumer:
         try:
             raw_data = message.value
-
-            # --- THIS IS THE FIX for LIVE data ---
-            # Overwrite the timestamp just before sending to the frontend
-            raw_data["Timestamp"] = (
-                datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
-            )
-
-            logging.info(
-                f"Received raw data (Time={raw_data.get('Time')}). Emitting to frontend with LIVE timestamp..."
-            )
+            # The timestamp is already live, so we just pass it through
+            logging.info(f"Received raw data (Time={raw_data.get('Time')}). Emitting to frontend...")
             socketio.emit("new_data", raw_data)
         except Exception as e:
             logging.error(f"Error processing raw message: {e}")

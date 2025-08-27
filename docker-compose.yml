@@ -60,26 +60,6 @@ services:
     env_file:
       - .env
 
-  # --- THIS IS THE ONLY WEB SERVER ---
-  backend:
-    build: .
-    container_name: backend
-    command: gunicorn --worker-class eventlet --workers 1 --bind 0.0.0.0:5000 backend.api.app:app
-    ports:
-      - "5000:5000"
-    volumes:
-      - .:/app
-    env_file:
-      - .env
-    environment:
-      - PYTHONPATH=/app
-    depends_on:
-      db-importer:
-        condition: service_completed_successfully
-      kafka:
-        condition: service_started
-    restart: on-failure
-
   db-streamer:
     build: .
     container_name: db-streamer
@@ -95,27 +75,30 @@ services:
       - .env
     restart: on-failure
 
-  dvr-consumer:
+  influx-writer:
     build: .
-    container_name: dvr-consumer 
-    command: python -u backend/data_pipeline/dvr_consumer.py 
+    container_name: influx-writer
+    command: python -u backend/data_pipeline/kafka_consumer_influx.py
     environment:
       - PYTHONPATH=/app
     depends_on:
-      - kafka
+      db-streamer:
+        condition: service_started
+      influxdb:
+        condition: service_started
     env_file:
       - .env
     restart: on-failure
 
-  validated-data-consumer:
+  dvr-consumer:
     build: .
-    container_name: validated-data-consumer
-    command: python -u backend/data_pipeline/validated_data_consumer.py
+    container_name: dvr-consumer
+    command: python -u backend/data_pipeline/dvr_consumer.py
     environment:
       - PYTHONPATH=/app
     depends_on:
-      - kafka
-      - influxdb
+      db-streamer:
+        condition: service_started
     env_file:
       - .env
     restart: on-failure
@@ -127,37 +110,11 @@ services:
     environment:
       - PYTHONPATH=/app
     depends_on:
-      - kafka
-    env_file:
-      - .env
-    restart: on-failure
-
-  influx-writer:
-    build: .
-    container_name: influx-writer
-    command: python -u backend/data_pipeline/kafka_consumer_influx.py
-    environment:
-      - PYTHONPATH=/app
-    depends_on:
-      - kafka
-      - influxdb
-    env_file:
-      - .env
-    restart: on-failure
-
-  pdm-batch-runner:
-    build: .
-    container_name: pdm-batch-runner
-    command: python backend/data_pipeline/pdm_batch.py
-    environment:
-      - PYTHONPATH=/app
-    depends_on:
       db-streamer:
         condition: service_started
-      db-importer:
-        condition: service_completed_successfully
     env_file:
       - .env
+    restart: on-failure
 
   rto-consumer:
     build: .
@@ -166,12 +123,43 @@ services:
     environment:
       - PYTHONPATH=/app
     depends_on:
-      kafka:
+      dvr-consumer:
         condition: service_started
       mysql:
         condition: service_healthy
     env_file:
       - .env
+    restart: on-failure
+      
+  pdm-batch-runner:
+    build: .
+    container_name: pdm-batch-runner
+    command: python backend/data_pipeline/pdm_batch.py
+    environment:
+      - PYTHONPATH=/app
+    depends_on:
+      influx-writer:
+        condition: service_started
+    env_file:
+      - .env
+
+  backend:
+    build: .
+    container_name: backend
+    command: gunicorn --worker-class eventlet --workers 1 --bind 0.0.0.0:5000 backend.api.app:app
+    ports:
+      - "5000:5000"
+    volumes:
+      - .:/app
+    env_file:
+      - .env
+    environment:
+      - PYTHONPATH=/app
+    depends_on:
+      rto-consumer:
+        condition: service_started
+      pdm-batch-runner:
+        condition: service_completed_successfully
     restart: on-failure
 
 volumes:
