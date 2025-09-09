@@ -9,7 +9,6 @@ from flask_socketio import SocketIO
 from dotenv import load_dotenv
 from kafka import KafkaConsumer
 from kafka.errors import NoBrokersAvailable
-from datetime import datetime, timezone
 
 # Import blueprints
 from .routes.data_routes import data_bp
@@ -50,7 +49,9 @@ def kafka_raw_data_listener():
         try:
             raw_data = message.value
             # The timestamp is already live, so we just pass it through
-            logging.info(f"Received raw data (Time={raw_data.get('Time')}). Emitting to frontend...")
+            logging.info(
+                f"Received raw data (Time={raw_data.get('Time')}). Emitting to frontend..."
+            )
             socketio.emit("new_data", raw_data)
         except Exception as e:
             logging.error(f"Error processing raw message: {e}")

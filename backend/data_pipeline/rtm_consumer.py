@@ -10,11 +10,13 @@ from backend.ml.rtm_module import AnomalyDetector
 import pandas as pd
 from collections import deque
 from backend.core.prediction_logger import log_prediction
-from dotenv import load_dotenv # <-- Import load_dotenv
+from dotenv import load_dotenv  # <-- Import load_dotenv
 
 # --- 1. Configuration and Setup ---
-load_dotenv() # <-- Load variables from .env file
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+load_dotenv()  # <-- Load variables from .env file
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+)
 
 # --- Kafka Config ---
 KAFKA_SERVER = os.getenv("KAFKA_BROKER_URL", "kafka:9092")
@@ -49,14 +51,18 @@ def connect_to_kafka():
             logging.info("✅ RTM Kafka Consumer and Producer connected successfully.")
             return consumer, producer
         except NoBrokersAvailable:
-            logging.warning("Could not connect to Kafka for RTM. Retrying in 5 seconds...")
+            logging.warning(
+                "Could not connect to Kafka for RTM. Retrying in 5 seconds..."
+            )
             time.sleep(5)
 
 
 def main():
     detector = AnomalyDetector()
     if not detector.session:
-        logging.critical("Stopping RTM consumer: Anomaly detector model could not be loaded.")
+        logging.critical(
+            "Stopping RTM consumer: Anomaly detector model could not be loaded."
+        )
         return
 
     consumer, producer = connect_to_kafka()
@@ -71,27 +77,49 @@ def main():
             data_buffer.append(data_row)
 
             if len(data_buffer) < WINDOW_SIZE:
-                logging.info(f"Buffer is filling up... ({len(data_buffer)}/{WINDOW_SIZE})")
+                logging.info(
+                    f"Buffer is filling up... ({len(data_buffer)}/{WINDOW_SIZE})"
+                )
                 continue
 
             df_window = pd.DataFrame(list(data_buffer))
-            
+
             last_row_index = len(df_window) - 1
-            data_row["Vibration_roll_mean"] = df_window["Vibration"].rolling(window=WINDOW_SIZE).mean().iloc[last_row_index]
-            data_row["Power_Consumption_roll_mean"] = df_window["Power_Consumption"].rolling(window=WINDOW_SIZE).mean().iloc[last_row_index]
-            data_row["Vibration_roll_std"] = df_window["Vibration"].rolling(window=WINDOW_SIZE).std().iloc[last_row_index]
-            data_row["Power_Consumption_roll_std"] = df_window["Power_Consumption"].rolling(window=WINDOW_SIZE).std().iloc[last_row_index]
+            data_row["Vibration_roll_mean"] = (
+                df_window["Vibration"]
+                .rolling(window=WINDOW_SIZE)
+                .mean()
+                .iloc[last_row_index]
+            )
+            data_row["Power_Consumption_roll_mean"] = (
+                df_window["Power_Consumption"]
+                .rolling(window=WINDOW_SIZE)
+                .mean()
+                .iloc[last_row_index]
+            )
+            data_row["Vibration_roll_std"] = (
+                df_window["Vibration"]
+                .rolling(window=WINDOW_SIZE)
+                .std()
+                .iloc[last_row_index]
+            )
+            data_row["Power_Consumption_roll_std"] = (
+                df_window["Power_Consumption"]
+                .rolling(window=WINDOW_SIZE)
+                .std()
+                .iloc[last_row_index]
+            )
 
             prediction = detector.predict(data_row)
             latency = (time.time() - start_time) * 1000
-            
+
             # Now DB_CONFIG is defined and can be passed
             log_prediction(
                 db_config=DB_CONFIG,
                 model_version="RandomForest_RTM_v1.0",
                 input_data=data_row,
                 prediction={"anomaly": int(prediction)},
-                latency_ms=latency
+                latency_ms=latency,
             )
 
             if prediction == -1:
@@ -103,7 +131,9 @@ def main():
                 }
                 producer.send(KAFKA_TOPIC_OUT, value=alert_message)
                 producer.flush()
-                logging.warning(f"🚨 ANOMALY DETECTED and published to '{KAFKA_TOPIC_OUT}'. (Time={data_row.get('Time')})")
+                logging.warning(
+                    f"🚨 ANOMALY DETECTED and published to '{KAFKA_TOPIC_OUT}'. (Time={data_row.get('Time')})"
+                )
 
         except Exception as e:
             logging.error(f"An error occurred in the RTM consumer loop: {e}")

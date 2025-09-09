@@ -68,14 +68,18 @@ def stream_data_from_db():
             for record in db._data:
                 # --- THIS IS THE FIX ---
                 # Update the timestamp to the current time to make it "live"
-                record['Timestamp'] = datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')
-                
+                record["Timestamp"] = (
+                    datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+                )
+
                 producer.send(topic, value=record)
-                logger.info(f"Sent record with new LIVE timestamp for Time={record.get('Time')}")
+                logger.info(
+                    f"Sent record with new LIVE timestamp for Time={record.get('Time')}"
+                )
                 time.sleep(2)
-            
+
             logger.info("✅ Finished one full loop of the dataset. Restarting...")
-            
+
     except Exception as e:
         logger.error(f"❌ An error occurred during streaming: {e}")
     finally:

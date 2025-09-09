@@ -166,7 +166,7 @@ if __name__ == "__main__":
     CONFIG = {
         "seed": 42,
         # --- CHANGE 1: Increase training time ---
-        "n_epochs": 100, 
+        "n_epochs": 100,
         "timesteps_per_epoch": 2048,
         "actor_lr": 3e-4,
         "critic_lr": 1e-3,

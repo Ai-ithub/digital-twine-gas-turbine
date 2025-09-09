@@ -93,10 +93,11 @@ class AnomalyDetector:
         except Exception as e:
             logging.error(f"❌ Prediction Error: {e}")
             return None
-    
+
     def get_status(self):
         """Returns the loading status of the model and scaler."""
         return {
             "model_loaded": self.session is not None,
-            "scaler_loaded": self.scaler_mean is not None and self.scaler_scale is not None
+            "scaler_loaded": self.scaler_mean is not None
+            and self.scaler_scale is not None,
         }

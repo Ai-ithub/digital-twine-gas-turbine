@@ -6,6 +6,7 @@ import json
 
 logger = logging.getLogger(__name__)
 
+
 def log_prediction(db_config, model_version, input_data, prediction, latency_ms):
     """Logs a prediction event to the MySQL database."""
     try:
@@ -19,7 +20,7 @@ def log_prediction(db_config, model_version, input_data, prediction, latency_ms)
             # Convert dicts/numpy arrays to JSON strings for storage
             input_str = json.dumps(input_data, default=str)
             output_str = json.dumps(prediction, default=str)
-            
+
             cursor.execute(sql, (model_version, input_str, output_str, latency_ms))
         conn.commit()
     except Exception as e:
