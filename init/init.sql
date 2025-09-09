@@ -58,3 +58,12 @@ CREATE TABLE IF NOT EXISTS rto_suggestions (
     suggestion_text VARCHAR(255) NOT NULL,
     generated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE IF NOT EXISTS prediction_logs (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    model_version VARCHAR(50) NOT NULL,
+    input_data TEXT,
+    prediction_result TEXT,
+    latency_ms FLOAT,
+    generated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);

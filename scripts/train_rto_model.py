@@ -163,10 +163,10 @@ def train_rto_model(config: dict):
 
 
 if __name__ == "__main__":
-    # NEW: All hyperparameters are centralized in a config dictionary
     CONFIG = {
         "seed": 42,
-        "n_epochs": 20,
+        # --- CHANGE 1: Increase training time ---
+        "n_epochs": 100,
         "timesteps_per_epoch": 2048,
         "actor_lr": 3e-4,
         "critic_lr": 1e-3,
@@ -174,6 +174,7 @@ if __name__ == "__main__":
         "eps_clip": 0.2,
         "actor_hidden_dims": [128, 128],
         "critic_hidden_dims": [128, 128],
-        "reward_weights": {"efficiency": 1.5, "power": -0.01, "vibration": -0.1},
+        # --- CHANGE 2: Adjust reward weights for more focus on efficiency ---
+        "reward_weights": {"efficiency": 5.0, "power": -0.01, "vibration": -0.1},
     }
     train_rto_model(CONFIG)

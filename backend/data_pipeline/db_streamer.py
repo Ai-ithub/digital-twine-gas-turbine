@@ -5,6 +5,7 @@ import logging
 from kafka import KafkaProducer
 from kafka.errors import NoBrokersAvailable
 from dotenv import load_dotenv
+from datetime import datetime, timezone
 from backend.core.database import CompressorDatabase
 
 # --- Configuration and Logging Setup ---
@@ -63,12 +64,19 @@ def stream_data_from_db():
 
     logger.info(f"Starting to stream data to Kafka topic '{topic}'...")
     try:
-        while True:  # Loop forever to make the stream continuous
+        while True:
             for record in db._data:
-                # --- CHANGE: We no longer modify the timestamp here ---
+                # --- THIS IS THE FIX ---
+                # Update the timestamp to the current time to make it "live"
+                record["Timestamp"] = (
+                    datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+                )
+
                 producer.send(topic, value=record)
-                logger.info(f"Sent record with original Time={record.get('Time')}")
-                time.sleep(2)  # Keep the stream slow and observable
+                logger.info(
+                    f"Sent record with new LIVE timestamp for Time={record.get('Time')}"
+                )
+                time.sleep(2)
 
             logger.info("✅ Finished one full loop of the dataset. Restarting...")
 

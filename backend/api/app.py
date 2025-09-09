@@ -9,7 +9,6 @@ from flask_socketio import SocketIO
 from dotenv import load_dotenv
 from kafka import KafkaConsumer
 from kafka.errors import NoBrokersAvailable
-from datetime import datetime, timezone
 
 # Import blueprints
 from .routes.data_routes import data_bp
@@ -17,6 +16,7 @@ from .routes.prediction_routes import prediction_bp
 from .routes.overview_routes import overview_bp
 from .routes.pdm_routes import pdm_bp
 from .routes.rto_routes import rto_bp
+from .routes.mlops_routes import mlops_bp
 
 eventlet.monkey_patch()
 
@@ -48,15 +48,9 @@ def kafka_raw_data_listener():
     for message in consumer:
         try:
             raw_data = message.value
-
-            # --- THIS IS THE FIX for LIVE data ---
-            # Overwrite the timestamp just before sending to the frontend
-            raw_data["Timestamp"] = (
-                datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
-            )
-
+            # The timestamp is already live, so we just pass it through
             logging.info(
-                f"Received raw data (Time={raw_data.get('Time')}). Emitting to frontend with LIVE timestamp..."
+                f"Received raw data (Time={raw_data.get('Time')}). Emitting to frontend..."
             )
             socketio.emit("new_data", raw_data)
         except Exception as e:
@@ -127,6 +121,7 @@ def create_app():
     app.register_blueprint(overview_bp, url_prefix="/api/status")
     app.register_blueprint(pdm_bp, url_prefix="/api/predict")
     app.register_blueprint(rto_bp, url_prefix="/api/rto")
+    app.register_blueprint(mlops_bp, url_prefix="/api/models")
 
     @app.route("/")
     def home():

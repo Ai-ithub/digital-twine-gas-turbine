@@ -171,5 +171,5 @@ def main():
 
 
 if __name__ == "__main__":
-    time.sleep(25)  # Wait a bit longer to ensure enough data points exist
+    time.sleep(130)  # Wait a bit longer to ensure enough data points exist
     main()
