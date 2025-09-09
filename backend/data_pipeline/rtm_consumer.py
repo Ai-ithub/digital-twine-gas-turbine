@@ -1,4 +1,4 @@
-# backend/data_pipeline/rtm_consumer.py (Upgraded for Live Feature Engineering)
+# backend/data_pipeline/rtm_consumer.py
 
 import json
 import logging
@@ -8,18 +8,28 @@ from kafka import KafkaConsumer, KafkaProducer
 from kafka.errors import NoBrokersAvailable
 from backend.ml.rtm_module import AnomalyDetector
 import pandas as pd
-from collections import deque  # <-- For creating a data buffer
+from collections import deque
+from backend.core.prediction_logger import log_prediction
+from dotenv import load_dotenv # <-- Import load_dotenv
 
-# --- Setup Logging ---
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
-)
+# --- 1. Configuration and Setup ---
+load_dotenv() # <-- Load variables from .env file
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
-# --- Configuration ---
+# --- Kafka Config ---
 KAFKA_SERVER = os.getenv("KAFKA_BROKER_URL", "kafka:9092")
 KAFKA_TOPIC_IN = "sensors-raw"
 KAFKA_TOPIC_OUT = "alerts"
-WINDOW_SIZE = 5  # Must match the window size used in the notebook
+WINDOW_SIZE = 5
+
+# --- THIS IS THE FIX: Define DB_CONFIG ---
+DB_CONFIG = {
+    "host": os.getenv("DB_HOST"),
+    "port": int(os.getenv("DB_PORT", 3306)),
+    "user": os.getenv("DB_USER"),
+    "password": os.getenv("DB_PASSWORD"),
+    "database": os.getenv("DB_DATABASE"),
+}
 
 
 def connect_to_kafka():
@@ -29,7 +39,7 @@ def connect_to_kafka():
             consumer = KafkaConsumer(
                 KAFKA_TOPIC_IN,
                 bootstrap_servers=[KAFKA_SERVER],
-                auto_offset_reset="latest",  # For live monitoring, 'latest' is correct
+                auto_offset_reset="latest",
                 value_deserializer=lambda x: json.loads(x.decode("utf-8")),
             )
             producer = KafkaProducer(
@@ -39,73 +49,50 @@ def connect_to_kafka():
             logging.info("✅ RTM Kafka Consumer and Producer connected successfully.")
             return consumer, producer
         except NoBrokersAvailable:
-            logging.warning(
-                "Could not connect to Kafka for RTM. Retrying in 5 seconds..."
-            )
+            logging.warning("Could not connect to Kafka for RTM. Retrying in 5 seconds...")
             time.sleep(5)
 
 
 def main():
     detector = AnomalyDetector()
     if not detector.session:
-        logging.critical(
-            "Stopping RTM consumer: Anomaly detector model could not be loaded."
-        )
+        logging.critical("Stopping RTM consumer: Anomaly detector model could not be loaded.")
         return
 
     consumer, producer = connect_to_kafka()
     logging.info("Listening for messages to analyze...")
 
-    # --- THIS IS THE NEW LOGIC ---
-    # Create a buffer (deque) to hold the last WINDOW_SIZE data points
     data_buffer = deque(maxlen=WINDOW_SIZE)
 
     for message in consumer:
         try:
+            start_time = time.time()
             data_row = message.value
-
-            # Append new data row to our buffer
             data_buffer.append(data_row)
 
-            # We can only start predicting when the buffer is full
             if len(data_buffer) < WINDOW_SIZE:
-                logging.info(
-                    f"Buffer is filling up... ({len(data_buffer)}/{WINDOW_SIZE})"
-                )
+                logging.info(f"Buffer is filling up... ({len(data_buffer)}/{WINDOW_SIZE})")
                 continue
 
-            # Convert the buffer to a pandas DataFrame to calculate rolling features
             df_window = pd.DataFrame(list(data_buffer))
-
-            # Calculate the rolling features for the LATEST data point
+            
             last_row_index = len(df_window) - 1
-            data_row["Vibration_roll_mean"] = (
-                df_window["Vibration"]
-                .rolling(window=WINDOW_SIZE)
-                .mean()
-                .iloc[last_row_index]
-            )
-            data_row["Power_Consumption_roll_mean"] = (
-                df_window["Power_Consumption"]
-                .rolling(window=WINDOW_SIZE)
-                .mean()
-                .iloc[last_row_index]
-            )
-            data_row["Vibration_roll_std"] = (
-                df_window["Vibration"]
-                .rolling(window=WINDOW_SIZE)
-                .std()
-                .iloc[last_row_index]
-            )
-            data_row["Power_Consumption_roll_std"] = (
-                df_window["Power_Consumption"]
-                .rolling(window=WINDOW_SIZE)
-                .std()
-                .iloc[last_row_index]
-            )
+            data_row["Vibration_roll_mean"] = df_window["Vibration"].rolling(window=WINDOW_SIZE).mean().iloc[last_row_index]
+            data_row["Power_Consumption_roll_mean"] = df_window["Power_Consumption"].rolling(window=WINDOW_SIZE).mean().iloc[last_row_index]
+            data_row["Vibration_roll_std"] = df_window["Vibration"].rolling(window=WINDOW_SIZE).std().iloc[last_row_index]
+            data_row["Power_Consumption_roll_std"] = df_window["Power_Consumption"].rolling(window=WINDOW_SIZE).std().iloc[last_row_index]
 
-            # Now, data_row has all 20 features and we can send it to the model
             prediction = detector.predict(data_row)
+            latency = (time.time() - start_time) * 1000
+            
+            # Now DB_CONFIG is defined and can be passed
+            log_prediction(
+                db_config=DB_CONFIG,
+                model_version="RandomForest_RTM_v1.0",
+                input_data=data_row,
+                prediction={"anomaly": int(prediction)},
+                latency_ms=latency
+            )
 
             if prediction == -1:
                 alert_message = {
@@ -116,9 +103,7 @@ def main():
                 }
                 producer.send(KAFKA_TOPIC_OUT, value=alert_message)
                 producer.flush()
-                logging.warning(
-                    f"🚨 ANOMALY DETECTED and published to '{KAFKA_TOPIC_OUT}'. (Time={data_row.get('Time')})"
-                )
+                logging.warning(f"🚨 ANOMALY DETECTED and published to '{KAFKA_TOPIC_OUT}'. (Time={data_row.get('Time')})")
 
         except Exception as e:
             logging.error(f"An error occurred in the RTM consumer loop: {e}")

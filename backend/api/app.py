@@ -17,6 +17,7 @@ from .routes.prediction_routes import prediction_bp
 from .routes.overview_routes import overview_bp
 from .routes.pdm_routes import pdm_bp
 from .routes.rto_routes import rto_bp
+from .routes.mlops_routes import mlops_bp
 
 eventlet.monkey_patch()
 
@@ -119,6 +120,7 @@ def create_app():
     app.register_blueprint(overview_bp, url_prefix="/api/status")
     app.register_blueprint(pdm_bp, url_prefix="/api/predict")
     app.register_blueprint(rto_bp, url_prefix="/api/rto")
+    app.register_blueprint(mlops_bp, url_prefix="/api/models")
 
     @app.route("/")
     def home():

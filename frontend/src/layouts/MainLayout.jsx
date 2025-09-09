@@ -1,22 +1,23 @@
 // src/layouts/MainLayout.jsx
 
 import React from 'react';
-import { Outlet, useNavigate } from 'react-router-dom';
-import { Box, Drawer, AppBar, Toolbar, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Typography, CssBaseline } from '@mui/material';
+import { Outlet, NavLink } from 'react-router-dom';
+import { Box, Drawer, List, ListItem, ListItemButton, ListItemIcon, ListItemText, AppBar, Toolbar, Typography, CssBaseline } from '@mui/material';
+
+// Import Icons
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import TimelineIcon from '@mui/icons-material/Timeline';
-import SettingsIcon from '@mui/icons-material/Settings';
+import OnlinePredictionIcon from '@mui/icons-material/OnlinePrediction';
 import BuildIcon from '@mui/icons-material/Build';
+import companyLogo from '../assets/images/logo.png'; 
 
 const drawerWidth = 240;
 
 const MainLayout = () => {
-  const navigate = useNavigate();
-
   const menuItems = [
     { text: 'Overview', icon: <DashboardIcon />, path: '/' },
     { text: 'Real-Time Monitoring', icon: <TimelineIcon />, path: '/monitoring' },
-    { text: 'Optimization', icon: <SettingsIcon />, path: '/optimization' },
+    { text: 'Optimization', icon: <OnlinePredictionIcon />, path: '/optimization' },
     { text: 'Maintenance', icon: <BuildIcon />, path: '/maintenance' },
   ];
 
@@ -45,11 +46,24 @@ const MainLayout = () => {
         variant="permanent"
         anchor="left"
       >
-        <Toolbar />
+        {/* --- THIS IS THE FIX: Wrap the logo's Box with an anchor tag --- */}
+        <a 
+          href="http://petropala.com/" 
+          target="_blank" 
+          rel="noopener noreferrer" 
+          style={{ textDecoration: 'none', color: 'inherit' }}
+        >
+          <Box sx={{ p: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
+            <img src={companyLogo} alt="Company Logo" style={{ height: 40 }} />
+            <Typography variant="h6" component="div">
+              Petro Pala
+            </Typography>
+          </Box>
+        </a>
         <List>
           {menuItems.map((item) => (
             <ListItem key={item.text} disablePadding>
-              <ListItemButton onClick={() => navigate(item.path)}>
+              <ListItemButton component={NavLink} to={item.path}>
                 <ListItemIcon>{item.icon}</ListItemIcon>
                 <ListItemText primary={item.text} />
               </ListItemButton>
@@ -59,9 +73,8 @@ const MainLayout = () => {
       </Drawer>
       <Box
         component="main"
-        sx={{ flexGrow: 1, bgcolor: 'background.default', p: 3, marginTop: '64px' }}
+        sx={{ flexGrow: 1, bgcolor: 'background.default', p: 3, mt: '64px' }}
       >
-        {/* محتوای هر صفحه اینجا نمایش داده می‌شود */}
         <Outlet />
       </Box>
     </Box>
