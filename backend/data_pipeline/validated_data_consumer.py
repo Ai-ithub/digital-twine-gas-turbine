@@ -1,3 +1,5 @@
+# backend/data_pipeline/validated_data_consumer.py
+
 import os
 import json
 import logging
@@ -5,13 +7,15 @@ import time
 from kafka import KafkaConsumer
 from kafka.errors import NoBrokersAvailable
 from influxdb_client import InfluxDBClient, Point, WriteOptions
+from dotenv import load_dotenv
 
-# --- Logging Setup ---
+# --- 1. Configuration and Setup ---
+load_dotenv()
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
 )
+logger = logging.getLogger(__name__)
 
-# --- Load Environment Variables ---
 # Kafka Configuration
 KAFKA_BROKER_URL = os.getenv("KAFKA_BROKER_URL", "kafka:9092")
 VALIDATED_TOPIC_NAME = os.getenv("VALIDATED_TOPIC_NAME", "sensors-validated")
@@ -20,13 +24,10 @@ VALIDATED_TOPIC_NAME = os.getenv("VALIDATED_TOPIC_NAME", "sensors-validated")
 INFLUXDB_URL = os.getenv("INFLUXDB_URL")
 INFLUXDB_TOKEN = os.getenv("INFLUXDB_TOKEN")
 INFLUXDB_ORG = os.getenv("INFLUXDB_ORG")
-INFLUXDB_BUCKET_VALIDATED = "compressor-data-validated"  # The new bucket name
+INFLUXDB_BUCKET_VALIDATED = "compressor-data-validated"
 
 
 def connect_to_kafka():
-    """
-    Tries to connect to Kafka in a loop until successful.
-    """
     while True:
         try:
             consumer = KafkaConsumer(
@@ -49,57 +50,57 @@ def connect_to_kafka():
             time.sleep(5)
 
 
-def main():
-    """
-    Main function to run the consumer.
-    It connects to the validated data topic and persists messages to InfluxDB.
-    """
-    logging.info("Starting the consumer for validated data...")
+def ensure_bucket_exists(client: InfluxDBClient, bucket_name: str, org_name: str):
+    """Checks if a bucket exists, and creates it if it does not."""
+    try:
+        bucket_api = client.buckets_api()
+        bucket = bucket_api.find_bucket_by_name(bucket_name)
+        if not bucket:
+            logger.info(f"Bucket '{bucket_name}' not found. Creating it...")
+            bucket_api.create_bucket(bucket_name=bucket_name, org=org_name)
+            logger.info(f"✅ Bucket '{bucket_name}' created successfully.")
+        else:
+            logger.info(f"Bucket '{bucket_name}' already exists.")
+    except Exception as e:
+        logger.error(f"Error ensuring bucket '{bucket_name}' exists: {e}")
+        raise
 
-    # --- Connect to Kafka with retry logic ---
+
+def main():
+    logging.info("Starting the consumer for validated data...")
     consumer = connect_to_kafka()
     if not consumer:
-        logging.error(
-            "Could not establish a connection to Kafka after multiple retries. Exiting."
-        )
+        logging.error("Could not connect to Kafka. Exiting.")
         return
 
-    # --- Connect to InfluxDB ---
     try:
         influx_client = InfluxDBClient(
             url=INFLUXDB_URL, token=INFLUXDB_TOKEN, org=INFLUXDB_ORG
         )
-        # Use SYNCHRONOUS mode to ensure each message is written before proceeding
+
+        # --- FIX: Ensure the bucket exists before writing ---
+        ensure_bucket_exists(influx_client, INFLUXDB_BUCKET_VALIDATED, INFLUXDB_ORG)
+
         write_api = influx_client.write_api(write_options=WriteOptions(batch_size=1))
-        logging.info(
+        logger.info(
             f"Successfully connected to InfluxDB bucket: {INFLUXDB_BUCKET_VALIDATED}"
         )
     except Exception as e:
-        logging.error(f"Error connecting to InfluxDB: {e}")
+        logger.error(f"Error connecting to InfluxDB: {e}")
         return
 
-    # --- Main Loop to Process Messages ---
-    logging.info("Waiting for messages from Kafka...")
+    logger.info("Waiting for messages from Kafka...")
     for message in consumer:
         try:
             data = message.value
             logging.info(f"New message received: {data}")
+            point = Point("validated_sensors").time(data.get("Timestamp"))
 
-            point = Point("validated_sensors")
-
-            # Use the 'Timestamp' field for the InfluxDB timestamp
-            point.time(data.get("Timestamp"))
-
-            # Iterate through the data and add fields and tags
             for key, value in data.items():
-                # Skip the key that we already used for the timestamp
                 if key == "Timestamp":
                     continue
-
-                # If the value is a string, add it as a tag
                 if isinstance(value, str):
                     point.tag(key, value)
-                # If the value is a number (int, float, bool), add it as a field
                 elif isinstance(value, (int, float, bool)):
                     point.field(key, value)
 
@@ -107,7 +108,6 @@ def main():
                 bucket=INFLUXDB_BUCKET_VALIDATED, org=INFLUXDB_ORG, record=point
             )
             logging.info("✅ Data point successfully written to InfluxDB.")
-
         except Exception as e:
             logging.error(f"Error processing message or writing to InfluxDB: {e}")
 

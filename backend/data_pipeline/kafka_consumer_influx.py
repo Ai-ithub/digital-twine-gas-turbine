@@ -1,7 +1,11 @@
+# backend/data_pipeline/kafka_consumer_influx.py
+
 import os
 import json
 import logging
+import time
 from kafka import KafkaConsumer
+from kafka.errors import NoBrokersAvailable
 from influxdb_client import InfluxDBClient, Point
 from influxdb_client.client.write_api import SYNCHRONOUS
 from dotenv import load_dotenv
@@ -31,18 +35,26 @@ def main():
         logger.critical("❌ InfluxDB credentials not found in .env file. Exiting.")
         return
 
-    try:
-        consumer = KafkaConsumer(
-            KAFKA_TOPIC,
-            bootstrap_servers=[KAFKA_SERVER],
-            auto_offset_reset="earliest",
-            enable_auto_commit=False,  # Disable auto-commit for manual control
-            group_id=GROUP_ID,
-        )
-        logger.info("✅ Kafka Consumer connected successfully.")
-    except Exception as e:
-        logger.critical(f"❌ Could not connect to Kafka: {e}. Exiting.")
-        return
+    # --- FIX: Add retry loop for Kafka connection ---
+    consumer = None
+    while not consumer:
+        try:
+            consumer = KafkaConsumer(
+                KAFKA_TOPIC,
+                bootstrap_servers=[KAFKA_SERVER],
+                auto_offset_reset="earliest",
+                enable_auto_commit=False,
+                group_id=GROUP_ID,
+            )
+            logger.info("✅ Kafka Consumer for InfluxDB connected successfully.")
+        except NoBrokersAvailable:
+            logger.warning(
+                "Could not connect to Kafka for InfluxDB writer. Retrying in 5 seconds..."
+            )
+            time.sleep(5)
+        except Exception as e:
+            logger.error(f"An unexpected error occurred while connecting to Kafka: {e}")
+            time.sleep(5)
 
     try:
         with InfluxDBClient(
@@ -57,12 +69,11 @@ def main():
             for message in consumer:
                 try:
                     data = json.loads(message.value.decode("utf-8"))
-
                     point = (
                         Point("compressor_metrics")
                         .tag("status", data.get("Status", "Unknown"))
                         .time(data.get("Timestamp"))
-                    )  # Assumes Timestamp is in a format InfluxDB understands
+                    )
 
                     for key, value in data.items():
                         if key.lower() not in [
@@ -78,25 +89,23 @@ def main():
                     logger.info(
                         f"Written message with Timestamp={data.get('Timestamp')} to InfluxDB."
                     )
-
-                    # Commit the offset to Kafka ONLY after a successful write
                     consumer.commit()
 
                 except json.JSONDecodeError:
                     logger.warning(
                         f"Skipping message with invalid JSON: {message.value}"
                     )
-                    consumer.commit()  # Commit even if message is bad to avoid getting stuck
+                    consumer.commit()
                 except Exception as e:
                     logger.error(
                         f"❌ Failed to process message: {e}. Data: {message.value}"
                     )
-                    # We do not commit here, so we will retry this message later.
 
     except Exception as e:
         logger.critical(f"❌ A critical error occurred in the main loop: {e}")
     finally:
-        consumer.close()
+        if consumer:
+            consumer.close()
         logger.info("Kafka consumer closed.")
 
 

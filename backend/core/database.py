@@ -13,14 +13,14 @@ class CompressorDatabase:
         user: str,
         password: str,
         database: str,
-        port: int,  # <-- NEW
+        port: int,
         table: str = "compressor_data",
     ):
         self.host = host
         self.user = user
         self.password = password
         self.database = database
-        self.port = port  # <-- NEW
+        self.port = port
         self.table = table
         self.connection = None
         self.cursor = None
@@ -38,7 +38,7 @@ class CompressorDatabase:
                 user=self.user,
                 password=self.password,
                 database=self.database,
-                port=self.port,  # <-- NEW: Pass the port to the connection function
+                port=self.port,
                 cursorclass=pymysql.cursors.DictCursor,
             )
             self.cursor = self.connection.cursor()
@@ -48,7 +48,7 @@ class CompressorDatabase:
             self.logger.error(f"Error connecting to the database: {str(e)}")
             return False
 
-    # ... (متدهای دیگر مانند load_data, get_next_record و ... بدون تغییر باقی می‌مانند)
+    # ... (Other methods like load_data, get_next_record, etc. remain unchanged.)
     def load_data(self, query: str = None) -> bool:
         """Load data from the table"""
         if not self.connection:

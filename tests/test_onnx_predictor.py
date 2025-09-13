@@ -4,7 +4,7 @@ import onnx
 from onnx import helper
 from onnx import TensorProto
 
-# ماژول مورد نظر برای تست را از مسیر جدیدش وارد می‌کنیم
+# We import the module we want to test from its new path.
 from backend.ml.onnx_predictor import ONNXPredictor, DART_MODEL_FEATURES
 
 
