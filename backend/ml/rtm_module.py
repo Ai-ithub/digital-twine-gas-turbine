@@ -3,44 +3,21 @@
 import numpy as np
 import pandas as pd
 import logging
-from .base_predictor import BasePredictor  # <-- 1. Import the base class
+from .base_predictor import BasePredictor
+from backend.core import config
 
 
-class AnomalyDetector(BasePredictor):  # <-- 2. We inherit from the base class
+class AnomalyDetector(BasePredictor):
     def __init__(
         self,
-        model_path="artifacts/isolation_forest_model.onnx",
-        mean_path="artifacts/rtm_scaler_mean.npy",
-        scale_path="artifacts/rtm_scaler_scale.npy",
+        model_path=config.RTM_MODEL_PATH,
+        mean_path=config.RTM_SCALER_MEAN_PATH,
+        scale_path=config.RTM_SCALER_SCALE_PATH,
     ):
-        # 3. We call the base class constructor to load the model
         super().__init__(model_path)
-
+        self.features = config.RTM_FEATURE_COLUMNS
         self.scaler_mean = None
         self.scaler_scale = None
-        # The feature list should include all 20 features.
-        self.features = [
-            "Pressure_In",
-            "Temperature_In",
-            "Flow_Rate",
-            "Pressure_Out",
-            "Temperature_Out",
-            "Efficiency",
-            "Power_Consumption",
-            "Vibration",
-            "Ambient_Temperature",
-            "Humidity",
-            "Air_Pollution",
-            "Frequency",
-            "Amplitude",
-            "Phase_Angle",
-            "Velocity",
-            "Stiffness",
-            "Vibration_roll_mean",
-            "Power_Consumption_roll_mean",
-            "Vibration_roll_std",
-            "Power_Consumption_roll_std",
-        ]
         self.load_scaler_params(mean_path, scale_path)
 
     def load_scaler_params(self, mean_path, scale_path):
