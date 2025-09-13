@@ -1,7 +1,7 @@
 // src/App.jsx
 
 import AppRouter from './routes/AppRouter';
-import Notifier from './components/common/Notifier'; // <-- 1. Import
+import Notifier from './components/common/Notifier';
 
 function App() {
   return (

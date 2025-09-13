@@ -1,6 +1,6 @@
 import os
 import json
-import logging  # NEW: Import logging module
+import logging
 import pandas as pd
 import numpy as np
 from backend.ml.dvr_processor import DVRProcessor
@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 # --- 1. Configuration and Setup ---
 load_dotenv()
 
-# NEW: Setup structured logging
+# Setup structured logging
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )

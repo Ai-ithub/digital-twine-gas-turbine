@@ -5,7 +5,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { Box, Paper, Typography, Button, CircularProgress } from '@mui/material';
 import PageHeader from '../components/common/PageHeader';
 import { fetchLatestRtoSuggestion, fetchEfficiencyHistory } from '../features/rto/rtoSlice';
-import { showSnackbar } from '../features/ui/uiSlice'; // <-- Import برای نوتیفیکیشن
+import { showSnackbar } from '../features/ui/uiSlice';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 // Icons
@@ -13,7 +13,7 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import BoltIcon from '@mui/icons-material/Bolt';
 
-// کامپوننت سفارشی برای Tooltip
+// Custom component for Tooltip
 const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
         return (
@@ -30,7 +30,7 @@ const CustomTooltip = ({ active, payload, label }) => {
     return null;
 };
 
-// کامپوننت کارت پیشنهاد
+// Offer Card Component
 const SuggestionCard = () => {
     const dispatch = useDispatch();
     const { suggestion, status, error } = useSelector((state) => state.rto);
@@ -73,7 +73,7 @@ const SuggestionCard = () => {
     );
 };
 
-// کامپوننت اصلی صفحه
+// Main page component
 const Optimization = () => {
   const dispatch = useDispatch();
   const { history, historyStatus } = useSelector((state) => state.rto);
@@ -88,7 +88,7 @@ const Optimization = () => {
     return () => clearInterval(interval);
   }, [dispatch]);
   
-  // پردازش داده‌های تاریخچه برای حذف موارد تکراری
+  // Processing historical data to remove duplicates
   const processedHistory = useMemo(() => {
     if (!history || history.length === 0) return [];
     const uniqueTimePoints = new Map();

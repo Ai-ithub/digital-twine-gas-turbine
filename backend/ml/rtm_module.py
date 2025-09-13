@@ -3,22 +3,22 @@
 import numpy as np
 import pandas as pd
 import logging
-from .base_predictor import BasePredictor  # <-- ۱. کلاس پایه را وارد می‌کنیم
+from .base_predictor import BasePredictor  # <-- 1. Import the base class
 
 
-class AnomalyDetector(BasePredictor):  # <-- ۲. از کلاس پایه ارث‌بری می‌کنیم
+class AnomalyDetector(BasePredictor):  # <-- 2. We inherit from the base class
     def __init__(
         self,
         model_path="artifacts/isolation_forest_model.onnx",
         mean_path="artifacts/rtm_scaler_mean.npy",
         scale_path="artifacts/rtm_scaler_scale.npy",
     ):
-        # ۳. سازنده کلاس پایه را فراخوانی می‌کنیم تا مدل را لود کند
+        # 3. We call the base class constructor to load the model
         super().__init__(model_path)
 
         self.scaler_mean = None
         self.scaler_scale = None
-        # لیست ویژگی‌ها باید شامل تمام ۲۰ ویژگی باشد
+        # The feature list should include all 20 features.
         self.features = [
             "Pressure_In",
             "Temperature_In",
@@ -56,7 +56,7 @@ class AnomalyDetector(BasePredictor):  # <-- ۲. از کلاس پایه ارث�
 
     def get_status(self):
         """Returns the loading status of the model AND scaler."""
-        status = super().get_status()  # وضعیت مدل را از کلاس پایه می‌گیرد
+        status = super().get_status()  # Gets the model state from the base class.
         status["scaler_loaded"] = (
             self.scaler_mean is not None and self.scaler_scale is not None
         )

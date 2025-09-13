@@ -47,7 +47,7 @@ def convert_model_to_onnx(
                 )
             ]
 
-            # ما مستقیماً 'model_function' را پاس می‌دهیم و دیگر 'concrete_func' را خودمان نمی‌سازیم.
+            # We pass the 'model_function' directly and no longer create the 'concrete_func' ourselves.
             model_proto, _ = tf2onnx.convert.from_function(
                 model_function, input_signature, opset=13
             )

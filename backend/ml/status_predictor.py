@@ -32,7 +32,7 @@ class CompressorStatusPredictor:
         }
 
     def _fit_scaler(self):
-        """آماده‌سازی استانداردسازی با داده‌های اولیه از دیتابیس."""
+        """Preparing standardization with raw data from the database."""
         conn = pymysql.connect(**self.db_config)
         query = f"SELECT {', '.join(self.features)} FROM compressor_data"
         df = pd.read_sql_query(query, conn)
@@ -40,7 +40,7 @@ class CompressorStatusPredictor:
         self.scaler.fit(df.values)
 
     def fetch_latest_data(self):
-        """دریافت جدیدترین داده‌ها از دیتابیس."""
+        """Get the latest data from the database."""
         conn = pymysql.connect(**self.db_config)
         query = f"SELECT {', '.join(self.features)} FROM compressor_data ORDER BY timestamp DESC LIMIT 1"
         df = pd.read_sql_query(query, conn)
@@ -48,20 +48,20 @@ class CompressorStatusPredictor:
         return df.values
 
     def predict(self):
-        """پیش‌بینی وضعیت کمپرسور بر اساس داده‌های دیتابیس."""
+        """Compressor condition prediction based on database data."""
         data = self.fetch_latest_data()
         if data is None or len(data) == 0:
             return "No data available for prediction"
 
-        # نرمال‌سازی داده
+        # Data normalization
         data_scaled = self.scaler.transform(data.astype(np.float32))
 
-        # انجام پیش‌بینی با ONNX
+        # Making predictions with ONNX
         ort_inputs = {
             self.ort_session.get_inputs()[0].name: data_scaled.astype(np.float32)
         }
         ort_outs = self.ort_session.run(None, ort_inputs)
 
-        # یافتن کلاس با بیشترین احتمال
+        # Finding the class with the highest probability
         predicted_class = np.argmax(ort_outs[0], axis=1)[0]
         return self.status_map[predicted_class]

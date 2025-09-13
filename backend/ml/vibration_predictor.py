@@ -3,7 +3,7 @@ import onnxruntime as ort
 import logging
 from typing import Dict, List
 
-# CORRECTED: Use an absolute import from the 'backend' package root
+# Use an absolute import from the 'backend' package root
 from backend.core.database import CompressorDatabase
 
 
@@ -61,13 +61,9 @@ class VibrationPredictor:
     def _fill_initial_window(self) -> None:
         """Fills the initial time window with historical data from the database."""
         self.logger.info("Filling initial data window...")
-        # ... (منطق این بخش بدون تغییر باقی می‌ماند)
 
     def _process_record(self, record: Dict) -> None:
         """Processes and normalizes a single record."""
-        # ... (منطق این بخش بدون تغییر باقی می‌ماند)
 
     def predict_all(self) -> List[Dict]:
         """Performs predictions for all available records in the database."""
-        # ... (منطق این بخش بدون تغییر باقی می‌ماند)
-        # (کدهای قبلی این متدها صحیح بودند و نیازی به تغییر ندارند)
