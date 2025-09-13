@@ -7,12 +7,13 @@ import time
 from kafka import KafkaConsumer
 from kafka.errors import NoBrokersAvailable
 from influxdb_client import InfluxDBClient, Point, WriteOptions
-from influxdb_client.client.bucket_api import BucketsApi
 from dotenv import load_dotenv
 
 # --- 1. Configuration and Setup ---
 load_dotenv()
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+)
 logger = logging.getLogger(__name__)
 
 # Kafka Configuration
@@ -35,13 +36,17 @@ def connect_to_kafka():
                 value_deserializer=lambda v: json.loads(v.decode("utf-8")),
                 auto_offset_reset="earliest",
             )
-            logging.info(f"✅ Successfully connected to Kafka topic: {VALIDATED_TOPIC_NAME}")
+            logging.info(
+                f"✅ Successfully connected to Kafka topic: {VALIDATED_TOPIC_NAME}"
+            )
             return consumer
         except NoBrokersAvailable:
             logging.warning("Could not connect to Kafka. Retrying in 5 seconds...")
             time.sleep(5)
         except Exception as e:
-            logging.error(f"An unexpected error occurred while connecting to Kafka: {e}")
+            logging.error(
+                f"An unexpected error occurred while connecting to Kafka: {e}"
+            )
             time.sleep(5)
 
 
@@ -69,13 +74,17 @@ def main():
         return
 
     try:
-        influx_client = InfluxDBClient(url=INFLUXDB_URL, token=INFLUXDB_TOKEN, org=INFLUXDB_ORG)
-        
+        influx_client = InfluxDBClient(
+            url=INFLUXDB_URL, token=INFLUXDB_TOKEN, org=INFLUXDB_ORG
+        )
+
         # --- FIX: Ensure the bucket exists before writing ---
         ensure_bucket_exists(influx_client, INFLUXDB_BUCKET_VALIDATED, INFLUXDB_ORG)
-        
+
         write_api = influx_client.write_api(write_options=WriteOptions(batch_size=1))
-        logger.info(f"Successfully connected to InfluxDB bucket: {INFLUXDB_BUCKET_VALIDATED}")
+        logger.info(
+            f"Successfully connected to InfluxDB bucket: {INFLUXDB_BUCKET_VALIDATED}"
+        )
     except Exception as e:
         logger.error(f"Error connecting to InfluxDB: {e}")
         return
@@ -88,14 +97,20 @@ def main():
             point = Point("validated_sensors").time(data.get("Timestamp"))
 
             for key, value in data.items():
-                if key == "Timestamp": continue
-                if isinstance(value, str): point.tag(key, value)
-                elif isinstance(value, (int, float, bool)): point.field(key, value)
+                if key == "Timestamp":
+                    continue
+                if isinstance(value, str):
+                    point.tag(key, value)
+                elif isinstance(value, (int, float, bool)):
+                    point.field(key, value)
 
-            write_api.write(bucket=INFLUXDB_BUCKET_VALIDATED, org=INFLUXDB_ORG, record=point)
+            write_api.write(
+                bucket=INFLUXDB_BUCKET_VALIDATED, org=INFLUXDB_ORG, record=point
+            )
             logging.info("✅ Data point successfully written to InfluxDB.")
         except Exception as e:
             logging.error(f"Error processing message or writing to InfluxDB: {e}")
+
 
 if __name__ == "__main__":
     main()

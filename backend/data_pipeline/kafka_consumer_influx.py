@@ -6,7 +6,7 @@ import logging
 import time
 from kafka import KafkaConsumer
 from kafka.errors import NoBrokersAvailable
-from influxdb_client import InfluxDBClient, Point, WriteOptions
+from influxdb_client import InfluxDBClient, Point
 from influxdb_client.client.write_api import SYNCHRONOUS
 from dotenv import load_dotenv
 
@@ -48,36 +48,58 @@ def main():
             )
             logger.info("✅ Kafka Consumer for InfluxDB connected successfully.")
         except NoBrokersAvailable:
-            logger.warning("Could not connect to Kafka for InfluxDB writer. Retrying in 5 seconds...")
+            logger.warning(
+                "Could not connect to Kafka for InfluxDB writer. Retrying in 5 seconds..."
+            )
             time.sleep(5)
         except Exception as e:
             logger.error(f"An unexpected error occurred while connecting to Kafka: {e}")
             time.sleep(5)
 
     try:
-        with InfluxDBClient(url=INFLUXDB_URL, token=INFLUXDB_TOKEN, org=INFLUXDB_ORG) as client:
+        with InfluxDBClient(
+            url=INFLUXDB_URL, token=INFLUXDB_TOKEN, org=INFLUXDB_ORG
+        ) as client:
             write_api = client.write_api(write_options=SYNCHRONOUS)
-            logger.info(f"✅ InfluxDB client connected. Writing to bucket '{INFLUXDB_BUCKET}'.")
+            logger.info(
+                f"✅ InfluxDB client connected. Writing to bucket '{INFLUXDB_BUCKET}'."
+            )
 
             logger.info(f"Listening for messages from topic '{KAFKA_TOPIC}'...")
             for message in consumer:
                 try:
                     data = json.loads(message.value.decode("utf-8"))
-                    point = Point("compressor_metrics").tag("status", data.get("Status", "Unknown")).time(data.get("Timestamp"))
+                    point = (
+                        Point("compressor_metrics")
+                        .tag("status", data.get("Status", "Unknown"))
+                        .time(data.get("Timestamp"))
+                    )
 
                     for key, value in data.items():
-                        if key.lower() not in ["timestamp", "status", "device_id"] and isinstance(value, (int, float)):
+                        if key.lower() not in [
+                            "timestamp",
+                            "status",
+                            "device_id",
+                        ] and isinstance(value, (int, float)):
                             point = point.field(key, value)
 
-                    write_api.write(bucket=INFLUXDB_BUCKET, org=INFLUXDB_ORG, record=point)
-                    logger.info(f"Written message with Timestamp={data.get('Timestamp')} to InfluxDB.")
+                    write_api.write(
+                        bucket=INFLUXDB_BUCKET, org=INFLUXDB_ORG, record=point
+                    )
+                    logger.info(
+                        f"Written message with Timestamp={data.get('Timestamp')} to InfluxDB."
+                    )
                     consumer.commit()
 
                 except json.JSONDecodeError:
-                    logger.warning(f"Skipping message with invalid JSON: {message.value}")
+                    logger.warning(
+                        f"Skipping message with invalid JSON: {message.value}"
+                    )
                     consumer.commit()
                 except Exception as e:
-                    logger.error(f"❌ Failed to process message: {e}. Data: {message.value}")
+                    logger.error(
+                        f"❌ Failed to process message: {e}. Data: {message.value}"
+                    )
 
     except Exception as e:
         logger.critical(f"❌ A critical error occurred in the main loop: {e}")
@@ -85,6 +107,7 @@ def main():
         if consumer:
             consumer.close()
         logger.info("Kafka consumer closed.")
+
 
 if __name__ == "__main__":
     main()
