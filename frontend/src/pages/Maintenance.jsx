@@ -1,14 +1,12 @@
-// src/pages/Maintenance.jsx (Final version using Box for layout)
+// src/pages/Maintenance.jsx (نسخه نهایی و مرتب شده)
 
 import React, { useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { Box, Paper, Typography, List, ListItem, ListItemIcon, ListItemText, Divider, Chip, CircularProgress } from '@mui/material';
-// We don't need to import Grid anymore
 import PageHeader from '../components/common/PageHeader';
 import { fetchLatestRul } from '../features/pdm/pdmSlice';
 
 // Icons
-import BuildCircleIcon from '@mui/icons-material/BuildCircle';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import DangerousIcon from '@mui/icons-material/Dangerous';
@@ -49,21 +47,36 @@ const Maintenance = () => {
     }
 
     return (
-      // --- FINAL FIX: Using Box with Flexbox for a robust responsive layout ---
-      <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 4 }}>
+      <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 3 }}>
         
         {/* RUL Display Card */}
         <Box sx={{ flex: 1, minWidth: '250px' }}>
-            <Paper elevation={3} sx={{ textAlign: 'center', p: 3, height: '100%' }}>
+            {/* --- تغییر ۱: افزودن Flexbox برای تراز عمودی محتوا --- */}
+            <Paper 
+              elevation={3} 
+              sx={{ 
+                textAlign: 'center', 
+                p: 3, 
+                height: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center'
+              }}
+            >
                 <Typography variant="h6" color="text.secondary" gutterBottom>
                     Remaining Useful Life (RUL)
                 </Typography>
-                <Typography variant="h1" component="div" color="primary" sx={{ fontWeight: 'bold' }}>
-                    {data.rul_value.toFixed(2)}
-                </Typography>
-                <Typography variant="h5" color="text.secondary">
-                    days
-                </Typography>
+                
+                {/* --- تغییر ۲: بهبود تراز عدد و کلمه 'days' --- */}
+                <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'baseline', gap: 1, my: 1 }}>
+                    <Typography variant="h1" component="div" color="primary" sx={{ fontWeight: 'bold' }}>
+                        {data.rul_value.toFixed(0)} {/* نمایش عدد صحیح برای خوانایی بهتر */}
+                    </Typography>
+                    <Typography variant="h5" color="text.secondary">
+                        days
+                    </Typography>
+                </Box>
+
                 <Typography variant="caption" display="block" sx={{ mt: 1 }}>
                     Predicted at: {new Date(data.prediction_time).toLocaleString()}
                 </Typography>
@@ -73,7 +86,7 @@ const Maintenance = () => {
         {/* Recommendations List Card */}
         <Box sx={{ flex: 2 }}>
             <Paper elevation={3} sx={{ p: 2, height: '100%' }}>
-                <Typography variant="h6" gutterBottom sx={{ p: 1 }}>
+                <Typography variant="h6" gutterBottom sx={{ px: 2, pt: 1 }}>
                     Maintenance Recommendations
                 </Typography>
                 <List>
@@ -81,12 +94,14 @@ const Maintenance = () => {
                     const { color, icon } = getUrgencyChip(rec.urgency);
                     return (
                     <React.Fragment key={rec.id}>
-                        <ListItem>
-                        <ListItemIcon><BuildCircleIcon color="action" /></ListItemIcon>
-                        <ListItemText primary={rec.component} secondary={rec.action} />
-                        <Chip label={rec.urgency} color={color} icon={icon} />
+                        {/* --- تغییر ۳: افزودن پدینگ عمودی برای فاصله بیشتر --- */}
+                        <ListItem sx={{ py: 1.5 }}> 
+                          {/* --- تغییر ۴: استفاده از آیکون دینامیک --- */}
+                          <ListItemIcon>{icon}</ListItemIcon>
+                          <ListItemText primary={rec.component} secondary={rec.action} />
+                          <Chip label={rec.urgency} color={color} size="small" />
                         </ListItem>
-                        {index < mockRecommendations.length - 1 && <Divider component="li" />}
+                        {index < mockRecommendations.length - 1 && <Divider component="li" variant="inset" />}
                     </React.Fragment>
                     );
                 })}
@@ -98,7 +113,8 @@ const Maintenance = () => {
   };
 
   return (
-    <Box>
+    // افزودن پدینگ به کانتینر اصلی برای فاصله از لبه‌های صفحه
+    <Box sx={{ p: 3 }}>
       <PageHeader
         title="Predictive Maintenance (PdM)"
         subtitle="Forecasts and recommendations for compressor component health."
