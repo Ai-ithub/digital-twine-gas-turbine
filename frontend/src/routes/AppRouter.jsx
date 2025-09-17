@@ -10,6 +10,7 @@ import Monitoring from '../pages/Monitoring.jsx';
 import Optimization from '../pages/Optimization.jsx';
 import Maintenance from '../pages/Maintenance.jsx';
 import Alarms from '../pages/Alarms.jsx';
+import Control from '../pages/Control.jsx';
 
 const AppRouter = () => {
   return (
@@ -21,6 +22,7 @@ const AppRouter = () => {
           <Route path="alarms" element={<Alarms />} />
           <Route path="optimization" element={<Optimization />} />
           <Route path="maintenance" element={<Maintenance />} />
+          <Route path="control" element={<Control />} />
         </Route>
       </Routes>
     </BrowserRouter>
