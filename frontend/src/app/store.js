@@ -8,6 +8,7 @@ import uiReducer from '../features/ui/uiSlice';
 import alarmsReducer from '../features/alarms/alarmsSlice';
 import controlReducer from '../features/control/controlSlice';
 import threeDReducer from '../features/threeD/threeDSlice';
+import checklistReducer from '../features/checklist/checklistSlice';
 
 export const store = configureStore({
   reducer: {
@@ -18,5 +19,6 @@ export const store = configureStore({
     alarms: alarmsReducer,
     control: controlReducer,
     threeD: threeDReducer,
+    checklist: checklistReducer,
   },
 });
