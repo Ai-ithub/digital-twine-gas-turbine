@@ -11,6 +11,7 @@ import Optimization from '../pages/Optimization.jsx';
 import Maintenance from '../pages/Maintenance.jsx';
 import Alarms from '../pages/Alarms.jsx';
 import Control from '../pages/Control.jsx';
+import ThreeDAnalysis from '../pages/ThreeDAnalysis.jsx';
 
 const AppRouter = () => {
   return (
@@ -23,6 +24,7 @@ const AppRouter = () => {
           <Route path="optimization" element={<Optimization />} />
           <Route path="maintenance" element={<Maintenance />} />
           <Route path="control" element={<Control />} />
+          <Route path="3d-analysis" element={<ThreeDAnalysis />} />
         </Route>
       </Routes>
     </BrowserRouter>

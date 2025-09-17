@@ -12,6 +12,7 @@ import BuildIcon from '@mui/icons-material/Build';
 import companyLogo from '../assets/images/logo.png';
 import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive';
 import SettingsIcon from '@mui/icons-material/Settings';
+import BubbleChartIcon from '@mui/icons-material/BubbleChart';
 
 const drawerWidth = 240;
 
@@ -21,6 +22,7 @@ const MainLayout = () => {
     { text: 'Real-Time Monitoring', icon: <TimelineIcon />, path: '/monitoring' },
     { text: 'Alarms', icon: <NotificationsActiveIcon />, path: '/alarms' },
     { text: 'Optimization', icon: <OnlinePredictionIcon />, path: '/optimization' },
+     { text: '3D Analysis', icon: <BubbleChartIcon />, path: '/3d-analysis' },
     { text: 'Control', icon: <SettingsIcon />, path: '/control' },
     { text: 'Maintenance', icon: <BuildIcon />, path: '/maintenance' },
   ];
