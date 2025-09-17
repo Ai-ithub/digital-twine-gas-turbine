@@ -5,6 +5,7 @@ import rtmReducer from '../features/rtm/rtmSlice';
 import pdmReducer from '../features/pdm/pdmSlice';
 import rtoReducer from '../features/rto/rtoSlice';
 import uiReducer from '../features/ui/uiSlice';
+import alarmsReducer from '../features/alarms/alarmsSlice';
 
 export const store = configureStore({
   reducer: {
@@ -12,5 +13,6 @@ export const store = configureStore({
     pdm: pdmReducer,
     rto: rtoReducer,
     ui: uiReducer,
+    alarms: alarmsReducer,
   },
 });

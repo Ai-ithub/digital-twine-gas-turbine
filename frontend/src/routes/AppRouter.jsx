@@ -9,17 +9,18 @@ import Overview from '../pages/Overview.jsx';
 import Monitoring from '../pages/Monitoring.jsx';
 import Optimization from '../pages/Optimization.jsx';
 import Maintenance from '../pages/Maintenance.jsx';
-
+import Alarms from '../pages/Alarms.jsx';
 
 const AppRouter = () => {
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<MainLayout />}>
-          <Route index element={<Overview />} /> {/* 'index' makes it the default */}
+          <Route index element={<Overview />} />
           <Route path="monitoring" element={<Monitoring />} />
+          <Route path="alarms" element={<Alarms />} />
           <Route path="optimization" element={<Optimization />} />
-          <Route path="maintenance" element={<Maintenance />} /> {/* <-- Check this line carefully */}
+          <Route path="maintenance" element={<Maintenance />} />
         </Route>
       </Routes>
     </BrowserRouter>

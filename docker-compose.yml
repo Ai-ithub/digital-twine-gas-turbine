@@ -15,6 +15,7 @@ services:
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: 'CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT'
       KAFKA_INTER_BROKER_LISTENER_NAME: 'PLAINTEXT'
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_CREATE_TOPICS: "sensors-raw:1:1,sensors-validated:1:1,alerts:1:1"
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
     env_file:
       - .env
@@ -106,7 +107,8 @@ services:
   rtm-consumer:
     build: .
     container_name: rtm-consumer
-    command: python -u backend/data_pipeline/rtm_consumer.py
+    command: >
+      bash -c "sleep 10 && python -u backend/data_pipeline/rtm_consumer.py"
     environment:
       - PYTHONPATH=/app
     depends_on:

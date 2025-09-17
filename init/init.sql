@@ -67,3 +67,13 @@ CREATE TABLE IF NOT EXISTS prediction_logs (
     latency_ms FLOAT,
     generated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+CREATE TABLE IF NOT EXISTS alarms (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    time_id INT,
+    timestamp DATETIME NOT NULL,
+    alert_type VARCHAR(100) NOT NULL,
+    details TEXT,
+    urgency VARCHAR(50) DEFAULT 'Medium',
+    acknowledged BOOLEAN DEFAULT FALSE,
+    source_service VARCHAR(100) DEFAULT 'rtm_consumer'
+);
