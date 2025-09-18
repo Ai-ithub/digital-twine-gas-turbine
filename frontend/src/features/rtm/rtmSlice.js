@@ -3,13 +3,13 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { getHistoricalData } from '../../api/rtmApi';
 
-// Async thunk for fetching historical data
+// Async thunk برای دریافت داده‌های تاریخی (بدون تغییر)
 export const fetchHistoricalData = createAsyncThunk(
   'rtm/fetchHistoricalData',
   async (timeRange, { rejectWithValue }) => {
     try {
       const response = await getHistoricalData(timeRange);
-      // Pivot the flat data structure from the API into a format suitable for Recharts
+      // تبدیل ساختار داده تخت API به فرمت مناسب برای Recharts
       const pivotedData = response.data.reduce((acc, point) => {
         let entry = acc.find(item => item.time === point.time);
         if (!entry) {
@@ -39,20 +39,48 @@ export const rtmSlice = createSlice({
   initialState,
   reducers: {
     addDataPoint: (state, action) => {
-      state.liveData.push(action.payload);
-      if (state.liveData.length > state.maxDataPoints) {
-        state.liveData.shift();
+      const isExisting = state.liveData.some(point => point.time_id === action.payload.time_id);
+      
+      if (!isExisting) {
+        // --- ✅ شروع تغییر ---
+        // به جای push، یک آرایه جدید با داده جدید می‌سازیم
+        let updatedLiveData = [...state.liveData, action.payload];
+        
+        // اگر طول آرایه از حد مجاز بیشتر شد، قدیمی‌ترین داده را با slice حذف می‌کنیم
+        if (updatedLiveData.length > state.maxDataPoints) {
+          updatedLiveData = updatedLiveData.slice(1); // یک آرایه جدید بدون اولین عنصر برمی‌گرداند
+        }
+        
+        // state را با آرایه جدید جایگزین می‌کنیم
+        state.liveData = updatedLiveData;
+        // --- ✅ پایان تغییر ---
       }
     },
     addAlert: (state, action) => {
+      const lastAlert = state.alerts[0];
+      if (lastAlert && lastAlert.message === action.payload.message) {
+        return;
+      }
       state.alerts.unshift(action.payload);
+      if (state.alerts.length > 20) {
+        state.alerts.pop();
+      }
     },
     markAsAnomaly: (state, action) => {
       const anomalyTimeId = action.payload;
-      const pointToMark = state.liveData.find(p => p.time_id === anomalyTimeId);
-      if (pointToMark) {
-        pointToMark.isAnomaly = true;
-      }
+      
+      // --- ✅ شروع تغییر ---
+      // از map برای ساختن یک آرایه جدید استفاده می‌کنیم
+      // و فقط آیتمی که time_id منطبق دارد را با یک کپی جدید و تغییریافته جایگزین می‌کنیم
+      state.liveData = state.liveData.map(point => {
+        if (point.time_id === anomalyTimeId) {
+          // یک کپی از نقطه داده با isAnomaly: true برمی‌گردانیم
+          return { ...point, isAnomaly: true };
+        }
+        // بقیه نقاط داده را بدون تغییر برمی‌گردانیم
+        return point;
+      });
+      // --- ✅ پایان تغییر ---
     },
     clearHistoricalData: (state) => {
         state.historicalData = [];
