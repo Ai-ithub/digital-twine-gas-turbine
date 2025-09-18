@@ -13,6 +13,7 @@ import Alarms from '../pages/Alarms.jsx';
 import Control from '../pages/Control.jsx';
 import ThreeDAnalysis from '../pages/ThreeDAnalysis.jsx';
 import Checklist from '../pages/Checklist.jsx';
+import GraphAnalysis from '../pages/GraphAnalysis.jsx';
 
 const AppRouter = () => {
   return (
@@ -27,6 +28,7 @@ const AppRouter = () => {
           <Route path="control" element={<Control />} />
           <Route path="3d-analysis" element={<ThreeDAnalysis />} />
           <Route path="checklist" element={<Checklist />} />
+          <Route path="graph-analysis" element={<GraphAnalysis />} />
         </Route>
       </Routes>
     </BrowserRouter>

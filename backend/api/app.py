@@ -19,6 +19,7 @@ from .routes.rto_routes import rto_bp
 from .routes.mlops_routes import mlops_bp
 from .routes.alarms_routes import alarms_bp
 from .routes.control_routes import control_bp
+from .routes.analysis_routes import analysis_bp
 
 eventlet.monkey_patch()
 
@@ -126,6 +127,7 @@ def create_app():
     app.register_blueprint(mlops_bp, url_prefix="/api/models")
     app.register_blueprint(alarms_bp, url_prefix="/api/alarms")
     app.register_blueprint(control_bp, url_prefix="/api/control")
+    app.register_blueprint(analysis_bp, url_prefix="/api/analysis")
 
     @app.route("/")
     def home():
