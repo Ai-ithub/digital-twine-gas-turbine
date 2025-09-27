@@ -9,6 +9,7 @@ import pandas as pd
 import onnxruntime as ort
 import pymysql
 import pickle
+
 # Add KafkaProducer
 from kafka import KafkaConsumer, KafkaProducer
 from kafka.errors import NoBrokersAvailable
@@ -71,7 +72,7 @@ def main():
     consumer = None
     producer = None
     kafka_server = os.getenv("KAFKA_BROKER_URL", "kafka:9092")
-    
+
     while not consumer or not producer:
         try:
             if not consumer:
@@ -81,14 +82,14 @@ def main():
                     auto_offset_reset="latest",
                     value_deserializer=lambda x: json.loads(x.decode("utf-8")),
                 )
-                logger.info(f"✅ RTO Kafka Consumer connected.")
-            
+                logger.info("✅ RTO Kafka Consumer connected.")
+
             if not producer:
                 producer = KafkaProducer(
                     bootstrap_servers=[kafka_server],
                     value_serializer=lambda v: json.dumps(v).encode("utf-8"),
                 )
-                logger.info(f"✅ RTO Kafka Producer connected.")
+                logger.info("✅ RTO Kafka Producer connected.")
 
         except NoBrokersAvailable:
             logger.warning("Could not connect to Kafka. Retrying...")
@@ -122,12 +123,13 @@ def main():
             # 2. NEW: Produce to Kafka topic for real-time push
             rto_payload = {
                 "suggestion_text": suggestion_text,
-                "generated_at": pd.Timestamp.now(tz='UTC').isoformat() # Add timestamp
+                "generated_at": pd.Timestamp.now(tz="UTC").isoformat(),  # Add timestamp
             }
             producer.send(config.KAFKA_RTO_SUGGESTIONS_TOPIC, value=rto_payload)
             producer.flush()
-            logger.info(f"✅ Suggestion sent to Kafka topic '{config.KAFKA_RTO_SUGGESTIONS_TOPIC}'.")
-
+            logger.info(
+                f"✅ Suggestion sent to Kafka topic '{config.KAFKA_RTO_SUGGESTIONS_TOPIC}'."
+            )
 
         except KeyError as e:
             logger.warning(f"Skipping message due to missing feature: {e}")

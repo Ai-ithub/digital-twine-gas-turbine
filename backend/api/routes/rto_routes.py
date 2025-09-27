@@ -2,10 +2,10 @@
 
 import logging
 from flask import Blueprint, jsonify, current_app
-import pymysql
 from influxdb_client import InfluxDBClient
 
 rto_bp = Blueprint("rto_routes", __name__)
+
 
 @rto_bp.route("/efficiency_history", methods=["GET"])
 def get_efficiency_history():

@@ -14,15 +14,17 @@ control_state = {
         "targetTemperature": 75,
         "flowRate": 450,
         "speed": 3600,
-    }
+    },
 }
 
-@control_bp.route("/status", methods=['GET'])
+
+@control_bp.route("/status", methods=["GET"])
 def get_control_status():
     """Returns the current control status."""
     return jsonify(control_state)
 
-@control_bp.route("/settings", methods=['POST'])
+
+@control_bp.route("/settings", methods=["POST"])
 def update_control_settings():
     """Updates control settings (e.g., mode or parameters)."""
     data = request.get_json()
@@ -38,4 +40,6 @@ def update_control_settings():
                 control_state[key] = value
 
     logging.info(f"Control state updated: {control_state}")
-    return jsonify({"message": "Settings updated successfully", "newState": control_state})
+    return jsonify(
+        {"message": "Settings updated successfully", "newState": control_state}
+    )

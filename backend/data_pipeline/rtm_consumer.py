@@ -46,21 +46,28 @@ def save_alert_to_mysql(alert_data: dict):
                 INSERT INTO alarms (time_id, timestamp, alert_type, details, causes)
                 VALUES (%s, %s, %s, %s, %s)
             """
-            
-            timestamp_obj = datetime.fromisoformat(alert_data.get("timestamp").replace('Z', '+00:00'))
-            
+
+            timestamp_obj = datetime.fromisoformat(
+                alert_data.get("timestamp").replace("Z", "+00:00")
+            )
+
             # Convert the causes list to a JSON string for database storage
             causes_json = json.dumps(alert_data.get("causes", []))
-            
-            cursor.execute(sql, (
-                alert_data.get("time_id"),
-                timestamp_obj,
-                alert_data.get("alert_type"),
-                alert_data.get("details"),
-                causes_json # New parameter for causes
-            ))
+
+            cursor.execute(
+                sql,
+                (
+                    alert_data.get("time_id"),
+                    timestamp_obj,
+                    alert_data.get("alert_type"),
+                    alert_data.get("details"),
+                    causes_json,  # New parameter for causes
+                ),
+            )
         conn.commit()
-        logging.info(f"✅ Alert for Time={alert_data.get('time_id')} saved to database.")
+        logging.info(
+            f"✅ Alert for Time={alert_data.get('time_id')} saved to database."
+        )
     except Exception as e:
         logging.error(f"❌ Failed to save alert to MySQL: {e}")
     finally:
@@ -104,7 +111,7 @@ def main():
     logging.info("Listening for messages to analyze...")
 
     data_buffer = deque(maxlen=WINDOW_SIZE)
-    last_reported_causes = set() # Variable to prevent duplicate alerts
+    last_reported_causes = set()  # Variable to prevent duplicate alerts
 
     for message in consumer:
         try:
@@ -175,9 +182,9 @@ def main():
                     "time_id": data_row.get("Time"),
                     "alert_type": "Anomaly Detected",
                     "details": f"Anomaly found. Main causes: {', '.join(causes)}",
-                    "causes": causes, # New field for causes
+                    "causes": causes,  # New field for causes
                 }
-                
+
                 # Send alert to Kafka
                 producer.send(KAFKA_TOPIC_OUT, value=alert_message)
                 producer.flush()

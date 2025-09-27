@@ -79,7 +79,9 @@ class AnomalyDetector(BasePredictor):
             )
             # Get the top 3 features with negative contributions
             top_causes = [
-                feature for feature, contribution in sorted_features[:3] if contribution < 0
+                feature
+                for feature, contribution in sorted_features[:3]
+                if contribution < 0
             ]
             return top_causes if top_causes else ["Contribution analysis failed"]
         except Exception as e:
@@ -102,7 +104,7 @@ class AnomalyDetector(BasePredictor):
             input_tensor = input_scaled.astype(np.float32)
 
             input_name = self.session.get_inputs()[0].name
-            
+
             # 1. Perform a quick prediction with the ONNX model
             prediction_result = self.session.run(None, {input_name: input_tensor})[0][0]
             prediction = int(prediction_result)

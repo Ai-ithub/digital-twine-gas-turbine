@@ -11,7 +11,7 @@ from flask_socketio import SocketIO
 from dotenv import load_dotenv
 from kafka import KafkaConsumer
 from kafka.errors import NoBrokersAvailable
-from backend.core import config # Import config
+from backend.core import config  # Import config
 
 # Import blueprints
 from .routes.data_routes import data_bp
@@ -108,7 +108,7 @@ def rto_suggestion_listener():
                 auto_offset_reset="latest",
                 group_id=random_group_id,
             )
-            logging.info(f"✅ WebSocket bridge connected to RTO suggestions topic.")
+            logging.info("✅ WebSocket bridge connected to RTO suggestions topic.")
         except NoBrokersAvailable:
             logging.warning("RTO bridge could not connect to Kafka. Retrying...")
             eventlet.sleep(5)
@@ -116,7 +116,9 @@ def rto_suggestion_listener():
     for message in consumer:
         try:
             suggestion_data = message.value
-            logging.info(f"Received RTO suggestion: {suggestion_data}. Emitting to frontend...")
+            logging.info(
+                f"Received RTO suggestion: {suggestion_data}. Emitting to frontend..."
+            )
             # The event name 'new_rto_suggestion' is important for the frontend
             socketio.emit("new_rto_suggestion", suggestion_data)
         except Exception as e:
@@ -174,7 +176,7 @@ socketio = SocketIO(
 # Start Kafka listeners as background tasks
 eventlet.spawn(kafka_alert_listener)
 eventlet.spawn(kafka_raw_data_listener)
-eventlet.spawn(rto_suggestion_listener) # Add the new listener
+eventlet.spawn(rto_suggestion_listener)  # Add the new listener
 
 # Gunicorn uses the 'app' object, so the __main__ block is for direct execution
 if __name__ == "__main__":
