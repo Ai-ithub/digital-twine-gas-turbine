@@ -8,8 +8,10 @@ const AlertsList = ({ alerts }) => {
         <p>No alerts to display.</p>
       ) : (
         <ul style={{ listStyleType: 'none', padding: 0 }}>
-          {alerts.map((alert) => (
-            <li key={alert.id} style={{ borderBottom: '1px solid #eee', padding: '10px', backgroundColor: '#fff0f0' }}>
+          {/* We get the 'index' from the map function */}
+          {alerts.map((alert, index) => (
+            // We create a unique key using both id and index
+            <li key={`${alert.id}-${index}`} style={{ borderBottom: '1px solid #eee', padding: '10px', backgroundColor: '#fff0f0' }}>
               <strong>⚠️ {alert.timestamp}:</strong> {alert.message}
             </li>
           ))}
@@ -19,5 +21,4 @@ const AlertsList = ({ alerts }) => {
   );
 };
 
-// This line is the crucial fix!
 export default AlertsList;

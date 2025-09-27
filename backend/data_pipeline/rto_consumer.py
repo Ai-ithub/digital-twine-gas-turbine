@@ -1,4 +1,4 @@
-# backend/data_pipeline/rto_consumer.py (Final Corrected Version)
+# backend/data_pipeline/rto_consumer.py
 
 import os
 import json
@@ -9,7 +9,9 @@ import pandas as pd
 import onnxruntime as ort
 import pymysql
 import pickle
-from kafka import KafkaConsumer
+
+# Add KafkaProducer
+from kafka import KafkaConsumer, KafkaProducer
 from kafka.errors import NoBrokersAvailable
 from dotenv import load_dotenv
 from backend.core import config
@@ -32,7 +34,7 @@ DB_CONFIG = {
 
 
 def save_suggestion_to_mysql(suggestion: str):
-    # ... (This function remains unchanged)
+    # This function remains unchanged
     logger.info(f"Saving suggestion: '{suggestion}' to MySQL...")
     conn = None
     try:
@@ -53,7 +55,7 @@ def save_suggestion_to_mysql(suggestion: str):
 
 def main():
     try:
-        # --- Use Config Variables for Model Paths and Features ---
+        # Use Config Variables for Model Paths and Features
         logger.info(f"Loading RTO model from {config.RTO_MODEL_PATH}...")
         session = ort.InferenceSession(config.RTO_MODEL_PATH)
         input_name = session.get_inputs()[0].name
@@ -66,19 +68,29 @@ def main():
         logger.critical(f"❌ Failed to load model or scaler. Exiting. Error: {e}")
         return
 
-    # --- Connect to Kafka using topic from config ---
+    # --- Connect to Kafka Consumer & Producer ---
     consumer = None
-    while not consumer:
+    producer = None
+    kafka_server = os.getenv("KAFKA_BROKER_URL", "kafka:9092")
+
+    while not consumer or not producer:
         try:
-            consumer = KafkaConsumer(
-                config.KAFKA_VALIDATED_TOPIC,  # <-- Use config
-                bootstrap_servers=[os.getenv("KAFKA_BROKER_URL", "kafka:9092")],
-                auto_offset_reset="latest",
-                value_deserializer=lambda x: json.loads(x.decode("utf-8")),
-            )
-            logger.info(
-                f"✅ RTO Kafka Consumer connected to topic '{config.KAFKA_VALIDATED_TOPIC}'."
-            )
+            if not consumer:
+                consumer = KafkaConsumer(
+                    config.KAFKA_VALIDATED_TOPIC,
+                    bootstrap_servers=[kafka_server],
+                    auto_offset_reset="latest",
+                    value_deserializer=lambda x: json.loads(x.decode("utf-8")),
+                )
+                logger.info("✅ RTO Kafka Consumer connected.")
+
+            if not producer:
+                producer = KafkaProducer(
+                    bootstrap_servers=[kafka_server],
+                    value_serializer=lambda v: json.dumps(v).encode("utf-8"),
+                )
+                logger.info("✅ RTO Kafka Producer connected.")
+
         except NoBrokersAvailable:
             logger.warning("Could not connect to Kafka. Retrying...")
             time.sleep(5)
@@ -105,7 +117,19 @@ def main():
                 f"efficiency gain of {efficiency_gain:.1f}%."
             )
 
+            # 1. Save to DB (as before)
             save_suggestion_to_mysql(suggestion_text)
+
+            # 2. NEW: Produce to Kafka topic for real-time push
+            rto_payload = {
+                "suggestion_text": suggestion_text,
+                "generated_at": pd.Timestamp.now(tz="UTC").isoformat(),  # Add timestamp
+            }
+            producer.send(config.KAFKA_RTO_SUGGESTIONS_TOPIC, value=rto_payload)
+            producer.flush()
+            logger.info(
+                f"✅ Suggestion sent to Kafka topic '{config.KAFKA_RTO_SUGGESTIONS_TOPIC}'."
+            )
 
         except KeyError as e:
             logger.warning(f"Skipping message due to missing feature: {e}")

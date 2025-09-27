@@ -1,3 +1,5 @@
+# backend/api/app.py
+
 import eventlet
 import os
 import logging
@@ -9,6 +11,7 @@ from flask_socketio import SocketIO
 from dotenv import load_dotenv
 from kafka import KafkaConsumer
 from kafka.errors import NoBrokersAvailable
+from backend.core import config  # Import config
 
 # Import blueprints
 from .routes.data_routes import data_bp
@@ -17,12 +20,15 @@ from .routes.overview_routes import overview_bp
 from .routes.pdm_routes import pdm_bp
 from .routes.rto_routes import rto_bp
 from .routes.mlops_routes import mlops_bp
+from .routes.control_routes import control_bp
+from .routes.analysis_routes import analysis_bp
 
 eventlet.monkey_patch()
 
 
 def kafka_raw_data_listener():
-    """Listens to the 'sensors-raw' topic and pushes messages to clients."""
+    """Listens to the raw data topic and pushes messages to clients."""
+    # This function remains the same
     consumer = None
     logging.info("Starting Kafka listener for raw data stream...")
     while not consumer:
@@ -44,11 +50,9 @@ def kafka_raw_data_listener():
             )
             eventlet.sleep(5)
 
-    # --- THE FIX: Add logging inside the loop ---
     for message in consumer:
         try:
             raw_data = message.value
-            # The timestamp is already live, so we just pass it through
             logging.info(
                 f"Received raw data (Time={raw_data.get('Time')}). Emitting to frontend..."
             )
@@ -59,6 +63,7 @@ def kafka_raw_data_listener():
 
 def kafka_alert_listener():
     """Listens to the 'alerts' topic and pushes messages to clients via WebSocket."""
+    # This function remains the same
     consumer = None
     logging.info("Starting Kafka listener for WebSocket bridge...")
     while not consumer:
@@ -80,7 +85,6 @@ def kafka_alert_listener():
             )
             eventlet.sleep(5)
 
-    # --- THE FIX: Add logging inside the loop ---
     for message in consumer:
         try:
             alert_data = message.value
@@ -88,6 +92,37 @@ def kafka_alert_listener():
             socketio.emit("new_alert", alert_data)
         except Exception as e:
             logging.error(f"Error processing alert message: {e}")
+
+
+def rto_suggestion_listener():
+    """Listens to the RTO suggestions topic and pushes them to clients."""
+    consumer = None
+    logging.info("Starting Kafka listener for RTO suggestions...")
+    while not consumer:
+        try:
+            random_group_id = f"backend-rto-{uuid.uuid4()}"
+            consumer = KafkaConsumer(
+                config.KAFKA_RTO_SUGGESTIONS_TOPIC,
+                bootstrap_servers=os.getenv("KAFKA_BROKER_URL", "kafka:9092"),
+                value_deserializer=lambda x: json.loads(x.decode("utf-8")),
+                auto_offset_reset="latest",
+                group_id=random_group_id,
+            )
+            logging.info("✅ WebSocket bridge connected to RTO suggestions topic.")
+        except NoBrokersAvailable:
+            logging.warning("RTO bridge could not connect to Kafka. Retrying...")
+            eventlet.sleep(5)
+
+    for message in consumer:
+        try:
+            suggestion_data = message.value
+            logging.info(
+                f"Received RTO suggestion: {suggestion_data}. Emitting to frontend..."
+            )
+            # The event name 'new_rto_suggestion' is important for the frontend
+            socketio.emit("new_rto_suggestion", suggestion_data)
+        except Exception as e:
+            logging.error(f"Error processing RTO suggestion message: {e}")
 
 
 def create_app():
@@ -122,6 +157,8 @@ def create_app():
     app.register_blueprint(pdm_bp, url_prefix="/api/predict")
     app.register_blueprint(rto_bp, url_prefix="/api/rto")
     app.register_blueprint(mlops_bp, url_prefix="/api/models")
+    app.register_blueprint(control_bp, url_prefix="/api/control")
+    app.register_blueprint(analysis_bp, url_prefix="/api/analysis")
 
     @app.route("/")
     def home():
@@ -139,6 +176,7 @@ socketio = SocketIO(
 # Start Kafka listeners as background tasks
 eventlet.spawn(kafka_alert_listener)
 eventlet.spawn(kafka_raw_data_listener)
+eventlet.spawn(rto_suggestion_listener)  # Add the new listener
 
 # Gunicorn uses the 'app' object, so the __main__ block is for direct execution
 if __name__ == "__main__":

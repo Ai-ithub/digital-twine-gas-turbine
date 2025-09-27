@@ -5,9 +5,11 @@
 KAFKA_RAW_TOPIC = "sensors-raw"
 KAFKA_VALIDATED_TOPIC = "sensors-validated"
 KAFKA_ALERTS_TOPIC = "alerts"
+KAFKA_RTO_SUGGESTIONS_TOPIC = "rto-suggestions"
 
 # --- Model Artifacts ---
 RTM_MODEL_PATH = "artifacts/isolation_forest_model.onnx"
+RTM_EXPLAIN_MODEL_PATH = "artifacts/rtm_random_forest.joblib"
 RTM_SCALER_MEAN_PATH = "artifacts/rtm_scaler_mean.npy"
 RTM_SCALER_SCALE_PATH = "artifacts/rtm_scaler_scale.npy"
 

@@ -9,7 +9,12 @@ import DashboardIcon from '@mui/icons-material/Dashboard';
 import TimelineIcon from '@mui/icons-material/Timeline';
 import OnlinePredictionIcon from '@mui/icons-material/OnlinePrediction';
 import BuildIcon from '@mui/icons-material/Build';
-import companyLogo from '../assets/images/logo.png'; 
+import companyLogo from '../assets/images/logo.png';
+import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive';
+import SettingsIcon from '@mui/icons-material/Settings';
+import BubbleChartIcon from '@mui/icons-material/BubbleChart';
+import CheckBoxIcon from '@mui/icons-material/CheckBox';
+import BarChartIcon from '@mui/icons-material/BarChart';
 
 const drawerWidth = 240;
 
@@ -17,7 +22,12 @@ const MainLayout = () => {
   const menuItems = [
     { text: 'Overview', icon: <DashboardIcon />, path: '/' },
     { text: 'Real-Time Monitoring', icon: <TimelineIcon />, path: '/monitoring' },
+    { text: 'Alarms', icon: <NotificationsActiveIcon />, path: '/alarms' },
     { text: 'Optimization', icon: <OnlinePredictionIcon />, path: '/optimization' },
+    { text: 'Graph Analysis', icon: <BarChartIcon />, path: '/graph-analysis' },
+    { text: 'Checklist', icon: <CheckBoxIcon />, path: '/checklist' },
+    { text: '3D Analysis', icon: <BubbleChartIcon />, path: '/3d-analysis' },
+    { text: 'Control', icon: <SettingsIcon />, path: '/control' },
     { text: 'Maintenance', icon: <BuildIcon />, path: '/maintenance' },
   ];
 
