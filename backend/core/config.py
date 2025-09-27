@@ -5,6 +5,7 @@
 KAFKA_RAW_TOPIC = "sensors-raw"
 KAFKA_VALIDATED_TOPIC = "sensors-validated"
 KAFKA_ALERTS_TOPIC = "alerts"
+KAFKA_RTO_SUGGESTIONS_TOPIC = "rto-suggestions"
 
 # --- Model Artifacts ---
 RTM_MODEL_PATH = "artifacts/isolation_forest_model.onnx"

@@ -5,7 +5,6 @@ import { useSelector } from 'react-redux';
 import { Box, Chip, ButtonGroup, Button, Typography, Grid, Paper } from '@mui/material';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar } from 'recharts';
 import PageHeader from '../components/common/PageHeader';
-import AnomalyAlerts from '../features/rtm/components/AnomalyAlerts';
 
 // Constants for time ranges
 const TIME_RANGES = {
@@ -150,14 +149,7 @@ const Monitoring = () => {
               </BarChart>
             </ResponsiveContainer>
           </Paper>
-        </Grid>
-        
-        {/* Alerts Section */}
-        <Grid size={{ xs: 12 }}>
-           <Paper sx={{ p: 2, height: '450px', overflow: 'auto' }}>
-            <AnomalyAlerts alerts={alerts} />
-          </Paper>
-        </Grid>
+        </Grid>      
       </Grid>
     </Box>
   );

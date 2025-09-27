@@ -1,22 +1,8 @@
 // src/features/rto/rtoSlice.js
 
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-// Import from the new rtoApi.js file
-import { getLatestRtoSuggestion, getEfficiencyHistory } from '../../api/rtoApi'; 
+import { getEfficiencyHistory } from '../../api/rtoApi'; 
 
-export const fetchLatestRtoSuggestion = createAsyncThunk(
-  'rto/fetchLatestRtoSuggestion',
-  async (_, { rejectWithValue }) => {
-    try {
-      const response = await getLatestRtoSuggestion();
-      return response.data;
-    } catch (error) {
-      return rejectWithValue(error.response?.data);
-    }
-  }
-);
-
-// --- This is the missing export ---
 export const fetchEfficiencyHistory = createAsyncThunk(
   'rto/fetchEfficiencyHistory',
   async (_, { rejectWithValue }) => {
@@ -31,7 +17,7 @@ export const fetchEfficiencyHistory = createAsyncThunk(
 
 const initialState = {
   suggestion: null,
-  history: [], // For chart data
+  history: [],
   status: 'idle',
   historyStatus: 'idle',
   error: null,
@@ -40,22 +26,17 @@ const initialState = {
 export const rtoSlice = createSlice({
   name: 'rto',
   initialState,
-  reducers: {},
+  reducers: {
+    // New reducer to handle incoming WebSocket data
+    updateRtoSuggestion: (state, action) => {
+      state.suggestion = action.payload;
+      state.status = 'succeeded';
+      state.error = null;
+    }
+  },
   extraReducers: (builder) => {
     builder
-      // Cases for suggestion
-      .addCase(fetchLatestRtoSuggestion.pending, (state) => {
-        state.status = 'loading';
-      })
-      .addCase(fetchLatestRtoSuggestion.fulfilled, (state, action) => {
-        state.status = 'succeeded';
-        state.suggestion = action.payload;
-      })
-      .addCase(fetchLatestRtoSuggestion.rejected, (state, action) => {
-        state.status = 'failed';
-        state.error = action.payload;
-      })
-      // Cases for chart history
+      // Cases for chart history remain the same
       .addCase(fetchEfficiencyHistory.pending, (state) => {
         state.historyStatus = 'loading';
       })
@@ -69,4 +50,6 @@ export const rtoSlice = createSlice({
   },
 });
 
+// Add the new action to exports
+export const { updateRtoSuggestion } = rtoSlice.actions;
 export default rtoSlice.reducer;

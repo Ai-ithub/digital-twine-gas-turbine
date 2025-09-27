@@ -9,13 +9,15 @@ import {
   addDataPoint, 
   addAlert, 
   markAsAnomaly,
-  setConnectionStatus // New action for connection status
+  setConnectionStatus
 } from './features/rtm/rtmSlice';
+// Import the new action
+import { updateRtoSuggestion } from './features/rto/rtoSlice';
 
 function App() {
   const dispatch = useDispatch();
 
-  // Callbacks are now defined in the top-level component
+  // Callbacks for RTM data
   const handleNewData = useCallback((dataPoint) => {
     const newPointForChart = {
       time_id: dataPoint.Time,
@@ -34,9 +36,7 @@ function App() {
   const handleNewAlert = useCallback((alertData) => {
     const newAlert = {
       id: `${Date.now()}-${Math.random()}`,
-      // Store the original ISO timestamp for filtering
       iso_timestamp: alertData.timestamp,
-      // Keep a user-friendly version for display
       display_timestamp: new Date(alertData.timestamp).toLocaleString(),
       message: alertData.details,
     };
@@ -47,13 +47,19 @@ function App() {
     }
   }, [dispatch]);
 
-  // The WebSocket hook is now called here and lives for the entire app session
+  // Callback for RTO suggestions
+  const handleNewRtoSuggestion = useCallback((suggestionData) => {
+    dispatch(updateRtoSuggestion(suggestionData));
+  }, [dispatch]);
+
+  // Central WebSocket hook
   const { isConnected } = useWebSocket({
     'new_data': handleNewData,
     'new_alert': handleNewAlert,
+    'new_rto_suggestion': handleNewRtoSuggestion, // Add this event handler
   });
 
-  // This effect syncs the connection status from the hook to the global Redux store
+  // Syncs connection status to the Redux store
   useEffect(() => {
     dispatch(setConnectionStatus(isConnected));
   }, [isConnected, dispatch]);
