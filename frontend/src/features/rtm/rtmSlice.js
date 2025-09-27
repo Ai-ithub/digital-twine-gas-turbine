@@ -3,13 +3,13 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { getHistoricalData } from '../../api/rtmApi';
 
-// Async thunk برای دریافت داده‌های تاریخی (بدون تغییر)
+// Async thunk to fetch historical data
 export const fetchHistoricalData = createAsyncThunk(
   'rtm/fetchHistoricalData',
   async (timeRange, { rejectWithValue }) => {
     try {
       const response = await getHistoricalData(timeRange);
-      // تبدیل ساختار داده تخت API به فرمت مناسب برای Recharts
+      // Convert the flat API data structure to a suitable format for Recharts
       const pivotedData = response.data.reduce((acc, point) => {
         let entry = acc.find(item => item.time === point.time);
         if (!entry) {
@@ -30,30 +30,41 @@ const initialState = {
   liveData: [],
   alerts: [],
   historicalData: [],
+  // Holds anomalies that arrive before their corresponding data point
+  unmatchedAnomalies: {},
   status: 'idle', // 'idle' | 'loading' | 'succeeded' | 'failed'
-  maxDataPoints: 43200,
+  maxDataPoints: 10000,
+  isConnected: false, // ADDED: To track WebSocket connection status globally
 };
 
 export const rtmSlice = createSlice({
   name: 'rtm',
   initialState,
   reducers: {
+    // ADDED: New reducer to update the connection status
+    setConnectionStatus: (state, action) => {
+      state.isConnected = action.payload;
+    },
     addDataPoint: (state, action) => {
-      const isExisting = state.liveData.some(point => point.time_id === action.payload.time_id);
-      
+      const newPoint = { ...action.payload }; // Create a mutable copy
+      const isExisting = state.liveData.some(point => point.time_id === newPoint.time_id);
+
       if (!isExisting) {
-        // --- ✅ شروع تغییر ---
-        // به جای push، یک آرایه جدید با داده جدید می‌سازیم
-        let updatedLiveData = [...state.liveData, action.payload];
+        // Check if an anomaly alert for this point arrived early
+        if (state.unmatchedAnomalies && state.unmatchedAnomalies[newPoint.time_id]) {
+          newPoint.anomalyCauses = state.unmatchedAnomalies[newPoint.time_id];
+          // Clean up the matched anomaly
+          delete state.unmatchedAnomalies[newPoint.time_id];
+        }
+
+        let updatedLiveData = [...state.liveData, newPoint];
         
-        // اگر طول آرایه از حد مجاز بیشتر شد، قدیمی‌ترین داده را با slice حذف می‌کنیم
+        // If the array exceeds the max length, trim the oldest points
         if (updatedLiveData.length > state.maxDataPoints) {
-          updatedLiveData = updatedLiveData.slice(1); // یک آرایه جدید بدون اولین عنصر برمی‌گرداند
+          updatedLiveData = updatedLiveData.slice(-state.maxDataPoints);
         }
         
-        // state را با آرایه جدید جایگزین می‌کنیم
         state.liveData = updatedLiveData;
-        // --- ✅ پایان تغییر ---
       }
     },
     addAlert: (state, action) => {
@@ -67,20 +78,18 @@ export const rtmSlice = createSlice({
       }
     },
     markAsAnomaly: (state, action) => {
-      const anomalyTimeId = action.payload;
+      const { time_id, causes } = action.payload;
       
-      // --- ✅ شروع تغییر ---
-      // از map برای ساختن یک آرایه جدید استفاده می‌کنیم
-      // و فقط آیتمی که time_id منطبق دارد را با یک کپی جدید و تغییریافته جایگزین می‌کنیم
-      state.liveData = state.liveData.map(point => {
-        if (point.time_id === anomalyTimeId) {
-          // یک کپی از نقطه داده با isAnomaly: true برمی‌گردانیم
-          return { ...point, isAnomaly: true };
-        }
-        // بقیه نقاط داده را بدون تغییر برمی‌گردانیم
-        return point;
-      });
-      // --- ✅ پایان تغییر ---
+      // Find the index of the data point to mark
+      const pointIndex = state.liveData.findIndex(p => p.time_id === time_id);
+
+      if (pointIndex !== -1) {
+        // If the data point already exists, mark it as an anomaly
+        state.liveData[pointIndex].anomalyCauses = causes;
+      } else {
+        // If the data point hasn't arrived yet, store the anomaly to match it later
+        state.unmatchedAnomalies[time_id] = causes;
+      }
     },
     clearHistoricalData: (state) => {
         state.historicalData = [];
@@ -102,6 +111,13 @@ export const rtmSlice = createSlice({
   },
 });
 
-export const { addDataPoint, addAlert, markAsAnomaly, clearHistoricalData } = rtmSlice.actions;
+// ADDED: Export the new action
+export const { 
+  addDataPoint, 
+  addAlert, 
+  markAsAnomaly, 
+  clearHistoricalData, 
+  setConnectionStatus 
+} = rtmSlice.actions;
 
 export default rtmSlice.reducer;

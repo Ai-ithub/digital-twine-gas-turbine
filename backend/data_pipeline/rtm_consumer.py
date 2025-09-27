@@ -34,25 +34,30 @@ DB_CONFIG = {
 }
 
 
-# --- ۲. تابع جدید برای ذخیره هشدار در دیتابیس ---
+# --- 2. Function to save alerts to the database ---
 def save_alert_to_mysql(alert_data: dict):
-    """Saves a new anomaly alert to the 'alarms' table in MySQL."""
+    """Saves a new anomaly alert, including its causes, to the 'alarms' table in MySQL."""
     conn = None
     try:
         conn = pymysql.connect(**DB_CONFIG)
         with conn.cursor() as cursor:
+            # Modified SQL query to include the 'causes' column
             sql = """
-                INSERT INTO alarms (time_id, timestamp, alert_type, details)
-                VALUES (%s, %s, %s, %s)
+                INSERT INTO alarms (time_id, timestamp, alert_type, details, causes)
+                VALUES (%s, %s, %s, %s, %s)
             """
-            # --- THIS IS THE FIX: Convert ISO 8601 string to a datetime object ---
+            
             timestamp_obj = datetime.fromisoformat(alert_data.get("timestamp").replace('Z', '+00:00'))
+            
+            # Convert the causes list to a JSON string for database storage
+            causes_json = json.dumps(alert_data.get("causes", []))
             
             cursor.execute(sql, (
                 alert_data.get("time_id"),
-                timestamp_obj, # Pass the datetime object
+                timestamp_obj,
                 alert_data.get("alert_type"),
-                alert_data.get("details")
+                alert_data.get("details"),
+                causes_json # New parameter for causes
             ))
         conn.commit()
         logging.info(f"✅ Alert for Time={alert_data.get('time_id')} saved to database.")
@@ -99,6 +104,7 @@ def main():
     logging.info("Listening for messages to analyze...")
 
     data_buffer = deque(maxlen=WINDOW_SIZE)
+    last_reported_causes = set() # Variable to prevent duplicate alerts
 
     for message in consumer:
         try:
@@ -141,7 +147,8 @@ def main():
                 .iloc[last_row_index]
             )
 
-            prediction = detector.predict(data_row)
+            # Unpack prediction and causes from the detector
+            prediction, causes = detector.predict(data_row)
             latency = (time.time() - start_time) * 1000
 
             # Log every prediction to the database
@@ -155,21 +162,30 @@ def main():
 
             # If an anomaly is detected, send alert and save to DB
             if prediction == -1:
+                # Logic to prevent sending duplicate consecutive alerts
+                current_causes_set = set(causes)
+                if current_causes_set == last_reported_causes:
+                    logging.info(f"Skipping duplicate anomaly with causes: {causes}")
+                    continue
+                last_reported_causes = current_causes_set
+
+                # Enhance the alert message with causes
                 alert_message = {
                     "timestamp": data_row.get("Timestamp"),
                     "time_id": data_row.get("Time"),
                     "alert_type": "Anomaly Detected",
-                    "details": f"Anomaly found in sensor readings. Vibration: {data_row.get('Vibration')}",
+                    "details": f"Anomaly found. Main causes: {', '.join(causes)}",
+                    "causes": causes, # New field for causes
                 }
                 
-                # Send alert to Kafka (as before)
+                # Send alert to Kafka
                 producer.send(KAFKA_TOPIC_OUT, value=alert_message)
                 producer.flush()
                 logging.warning(
                     f"🚨 ANOMALY DETECTED and published to '{KAFKA_TOPIC_OUT}'. (Time={data_row.get('Time')})"
                 )
 
-                # --- ۳. فراخوانی تابع جدید برای ذخیره هشدار ---
+                # Call the function to save the alert
                 save_alert_to_mysql(alert_message)
 
         except Exception as e:

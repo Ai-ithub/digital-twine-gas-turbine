@@ -8,6 +8,7 @@ KAFKA_ALERTS_TOPIC = "alerts"
 
 # --- Model Artifacts ---
 RTM_MODEL_PATH = "artifacts/isolation_forest_model.onnx"
+RTM_EXPLAIN_MODEL_PATH = "artifacts/rtm_random_forest.joblib"
 RTM_SCALER_MEAN_PATH = "artifacts/rtm_scaler_mean.npy"
 RTM_SCALER_SCALE_PATH = "artifacts/rtm_scaler_scale.npy"
 
