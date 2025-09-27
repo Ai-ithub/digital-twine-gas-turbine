@@ -9,7 +9,7 @@ import {
   addDataPoint, 
   addAlert, 
   markAsAnomaly,
-  setConnectionStatus // اکشن جدید برای وضعیت اتصال
+  setConnectionStatus // New action for connection status
 } from './features/rtm/rtmSlice';
 
 function App() {
@@ -34,7 +34,10 @@ function App() {
   const handleNewAlert = useCallback((alertData) => {
     const newAlert = {
       id: `${Date.now()}-${Math.random()}`,
-      timestamp: new Date(alertData.timestamp).toLocaleTimeString(),
+      // Store the original ISO timestamp for filtering
+      iso_timestamp: alertData.timestamp,
+      // Keep a user-friendly version for display
+      display_timestamp: new Date(alertData.timestamp).toLocaleString(),
       message: alertData.details,
     };
     dispatch(addAlert(newAlert));

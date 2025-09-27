@@ -34,19 +34,21 @@ const initialState = {
   unmatchedAnomalies: {},
   status: 'idle', // 'idle' | 'loading' | 'succeeded' | 'failed'
   maxDataPoints: 10000,
-  isConnected: false, // ADDED: To track WebSocket connection status globally
+  isConnected: false,
+  // State to count the frequency of each anomaly cause
+  anomalyCauseCounts: {},
 };
 
 export const rtmSlice = createSlice({
   name: 'rtm',
   initialState,
   reducers: {
-    // ADDED: New reducer to update the connection status
+    // Updates the WebSocket connection status
     setConnectionStatus: (state, action) => {
       state.isConnected = action.payload;
     },
     addDataPoint: (state, action) => {
-      const newPoint = { ...action.payload }; // Create a mutable copy
+      const newPoint = { ...action.payload };
       const isExisting = state.liveData.some(point => point.time_id === newPoint.time_id);
 
       if (!isExisting) {
@@ -73,14 +75,21 @@ export const rtmSlice = createSlice({
         return;
       }
       state.alerts.unshift(action.payload);
-      if (state.alerts.length > 20) {
-        state.alerts.pop();
-      }
     },
     markAsAnomaly: (state, action) => {
       const { time_id, causes } = action.payload;
       
-      // Find the index of the data point to mark
+      // Iterate over the causes and increment their count
+      if (causes && causes.length > 0) {
+        causes.forEach(cause => {
+          if (state.anomalyCauseCounts[cause]) {
+            state.anomalyCauseCounts[cause] += 1;
+          } else {
+            state.anomalyCauseCounts[cause] = 1;
+          }
+        });
+      }
+      
       const pointIndex = state.liveData.findIndex(p => p.time_id === time_id);
 
       if (pointIndex !== -1) {
@@ -111,7 +120,6 @@ export const rtmSlice = createSlice({
   },
 });
 
-// ADDED: Export the new action
 export const { 
   addDataPoint, 
   addAlert, 
