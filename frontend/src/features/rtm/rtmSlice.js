@@ -103,7 +103,14 @@ export const rtmSlice = createSlice({
     clearHistoricalData: (state) => {
         state.historicalData = [];
         state.status = 'idle';
-    }
+    },
+    // New reducer to clear live data for performance
+    clearLiveData: (state) => {
+        // Keep only the last 75 items to clear memory
+        if (state.liveData.length > 75) {
+          state.liveData = state.liveData.slice(-75);
+        }
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -125,7 +132,8 @@ export const {
   addAlert, 
   markAsAnomaly, 
   clearHistoricalData, 
-  setConnectionStatus 
+  setConnectionStatus,
+  clearLiveData // Export the new action
 } = rtmSlice.actions;
 
 export default rtmSlice.reducer;

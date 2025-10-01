@@ -1,10 +1,11 @@
 // src/pages/Monitoring.jsx
 
 import React, { useState, useMemo } from 'react';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { Box, Chip, ButtonGroup, Button, Typography, Grid, Paper } from '@mui/material';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar } from 'recharts';
 import PageHeader from '../components/common/PageHeader';
+import { clearLiveData } from '../features/rtm/rtmSlice';
 
 // Constants for time ranges
 const TIME_RANGES = {
@@ -15,12 +16,10 @@ const TIME_RANGES = {
 };
 
 const Monitoring = () => {
-  // We now get isConnected directly from the Redux store
-  const { liveData, alerts, isConnected } = useSelector((state) => state.rtm);
+  const dispatch = useDispatch();
+  const { liveData, isConnected } = useSelector((state) => state.rtm);
   const [selectedRange, setSelectedRange] = useState(TIME_RANGES.LIVE);
 
-  // All WebSocket related logic (useCallback, useDispatch, useWebSocket) is removed from here.
-  
   const displayData = useMemo(() => {
     const now = Date.now();
     switch (selectedRange) {
@@ -44,13 +43,23 @@ const Monitoring = () => {
     });
     return Object.keys(bins).map(key => ({ range: key, frequency: bins[key] }));
   }, [displayData]);
-
+  
+  // A custom dot renderer to highlight anomalies on the chart
   const createAnomalyDotRenderer = (dataKey) => (props) => {
     const { cx, cy, payload, index } = props;
     if (payload.anomalyCauses && payload.anomalyCauses.includes(dataKey)) {
       return <circle key={`anomaly-dot-${index}`} cx={cx} cy={cy} r={6} fill="red" stroke="white" strokeWidth={2} />;
     }
     return null;
+  };
+  
+  // Handles clicks on the time range buttons
+  const handleRangeChange = (range) => {
+    // When the user switches back to live view, clear old data to save memory
+    if (range === TIME_RANGES.LIVE) {
+      dispatch(clearLiveData());
+    }
+    setSelectedRange(range);
   };
 
   return (
@@ -63,10 +72,10 @@ const Monitoring = () => {
         />
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mt: 1 }}>
             <ButtonGroup variant="outlined" aria-label="Time range filter">
-                <Button onClick={() => setSelectedRange(TIME_RANGES.LIVE)} variant={selectedRange === TIME_RANGES.LIVE ? 'contained' : 'outlined'}>Live</Button>
-                <Button onClick={() => setSelectedRange(TIME_RANGES.LAST_10M)} variant={selectedRange === TIME_RANGES.LAST_10M ? 'contained' : 'outlined'}>10m</Button>
-                <Button onClick={() => setSelectedRange(TIME_RANGES.LAST_1H)} variant={selectedRange === TIME_RANGES.LAST_1H ? 'contained' : 'outlined'}>1h</Button>
-                <Button onClick={() => setSelectedRange(TIME_RANGES.LAST_8H)} variant={selectedRange === TIME_RANGES.LAST_8H ? 'contained' : 'outlined'}>8h</Button>
+                <Button onClick={() => handleRangeChange(TIME_RANGES.LIVE)} variant={selectedRange === TIME_RANGES.LIVE ? 'contained' : 'outlined'}>Live</Button>
+                <Button onClick={() => handleRangeChange(TIME_RANGES.LAST_10M)} variant={selectedRange === TIME_RANGES.LAST_10M ? 'contained' : 'outlined'}>10m</Button>
+                <Button onClick={() => handleRangeChange(TIME_RANGES.LAST_1H)} variant={selectedRange === TIME_RANGES.LAST_1H ? 'contained' : 'outlined'}>1h</Button>
+                <Button onClick={() => handleRangeChange(TIME_RANGES.LAST_8H)} variant={selectedRange === TIME_RANGES.LAST_8H ? 'contained' : 'outlined'}>8h</Button>
             </ButtonGroup>
             <Chip 
               label={isConnected ? 'Connected' : 'Disconnected'}
@@ -90,7 +99,6 @@ const Monitoring = () => {
                 <Tooltip />
                 <Legend />
                 <Line yAxisId="left" type="monotone" dataKey="Pressure_In" stroke="#8884d8" name="Pressure (bar)" dot={createAnomalyDotRenderer('Pressure_In')} isAnimationActive={false} />
-                {/* CHANGE HERE 1 */}
                 <Line yAxisId="right" type="monotone" dataKey="Temperature_In" stroke="#82ca9d" name="Temp (°C)" dot={createAnomalyDotRenderer('Temperature_In')} isAnimationActive={false} />
               </LineChart>
             </ResponsiveContainer>
@@ -110,9 +118,7 @@ const Monitoring = () => {
                 <Tooltip />
                 <Legend />
                 <Line yAxisId="left" type="monotone" dataKey="Efficiency" stroke="#ff7300" name="Efficiency (%)" dot={false} isAnimationActive={false} />
-                {/* CHANGE HERE 2 */}
                 <Line yAxisId="left" type="monotone" dataKey="Flow_Rate" stroke="#ffc658" name="Flow Rate" dot={createAnomalyDotRenderer('Flow_Rate')} isAnimationActive={false} />
-                {/* CHANGE HERE 3 */}
                 <Line yAxisId="right" type="monotone" dataKey="Power_Consumption" stroke="#e91e63" name="Power (kW)" dot={createAnomalyDotRenderer('Power_Consumption')} isAnimationActive={false} />
               </LineChart>
             </ResponsiveContainer>
