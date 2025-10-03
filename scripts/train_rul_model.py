@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 CONFIG = {
     "data_path": "datasets/MASTER_DATASET.csv",
     "artifacts_path": "artifacts",
-    "window_size": 60,
+    "window_size": 120,  # Increased from 60 for better temporal context
     "test_size": 0.2,
     "kalman_filter_columns": [
         "Pressure_In",
@@ -34,8 +34,11 @@ CONFIG = {
         "Temperature_Out",
     ],
     "target_column": "Label",
-    "epochs": 50,
-    "batch_size": 128,
+    "epochs": 100,  # Increased from 50
+    "batch_size": 64,  # Reduced from 128 for better convergence
+    "lstm_units": [128, 64],  # Multi-layer LSTM
+    "dropout": 0.2,
+    "recurrent_dropout": 0.2,
 }
 
 
@@ -101,9 +104,21 @@ def train_rul_model(config: dict):
     )
 
     n_timesteps, n_features = X_train.shape[1], X_train.shape[2]
-    model = Sequential(
-        [Input(shape=(n_timesteps, n_features)), LSTM(64, activation="relu"), Dense(1)]
-    )
+    
+    # --- OPTIMIZED: Multi-layer LSTM with dropout ---
+    model = Sequential([
+        Input(shape=(n_timesteps, n_features)),
+        LSTM(config["lstm_units"][0], 
+             activation="relu", 
+             return_sequences=True,
+             dropout=config["dropout"],
+             recurrent_dropout=config["recurrent_dropout"]),
+        LSTM(config["lstm_units"][1], 
+             activation="relu",
+             dropout=config["dropout"],
+             recurrent_dropout=config["recurrent_dropout"]),
+        Dense(1)
+    ])
     model.compile(optimizer="adam", loss="mean_squared_error")
 
     early_stopping = EarlyStopping(
