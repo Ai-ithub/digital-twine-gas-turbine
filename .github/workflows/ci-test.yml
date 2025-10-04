@@ -5,12 +5,12 @@ on:
     branches:
       - main
       - AlirezA
-      - task219
+      - Zara_AA
   pull_request:
     branches:
       - main
       - AlirezA
-      - task219
+      - Zara_AA
 
 jobs:
   test:
