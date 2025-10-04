@@ -24,9 +24,9 @@ logging.basicConfig(
 KAFKA_SERVER = os.getenv("KAFKA_BROKER_URL", "kafka:9092")
 KAFKA_TOPIC_IN = "sensors-raw"
 # Renamed for clarity to distinguish it from the new data topic
-KAFKA_TOPIC_ALERTS_OUT = "alerts" 
+KAFKA_TOPIC_ALERTS_OUT = "alerts"
 # New topic to send processed sensor data (for frontend visualization)
-KAFKA_TOPIC_DATA_OUT = "sensors-processed" 
+KAFKA_TOPIC_DATA_OUT = "sensors-processed"
 WINDOW_SIZE = 5
 DB_CONFIG = {
     "host": os.getenv("DB_HOST"),
@@ -51,8 +51,8 @@ def save_alert_to_mysql(alert_data: dict):
             """
 
             # Ensure 'causes' key exists before accessing
-            if 'causes' not in alert_data: 
-                alert_data['causes'] = []
+            if "causes" not in alert_data:
+                alert_data["causes"] = []
 
             timestamp_obj = datetime.fromisoformat(
                 alert_data.get("timestamp").replace("Z", "+00:00")
@@ -166,8 +166,9 @@ def main():
             # This is CRITICAL for the frontend/real-time dashboard.
             producer.send(KAFKA_TOPIC_DATA_OUT, value=data_row)
             producer.flush()
-            logging.debug(f"Data point for Time={data_row.get('Time')} sent to {KAFKA_TOPIC_DATA_OUT}.")
-
+            logging.debug(
+                f"Data point for Time={data_row.get('Time')} sent to {KAFKA_TOPIC_DATA_OUT}."
+            )
 
             # Unpack prediction and causes from the detector
             prediction, causes = detector.predict(data_row)

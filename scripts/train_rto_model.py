@@ -4,16 +4,8 @@ import numpy as np
 import random
 import pickle
 import os
-import sys
 import mlflow
 from mlflow.models import infer_signature
-
-# --- Dummy backend.core for MLflow URI (Replace with actual import in real project) ---
-class MockConfig:
-    MLFLOW_TRACKING_URI = "sqlite:///mlruns.db"  # Example local tracking URI
-
-config_mlflow = MockConfig()
-# -----------------------------------------------------------------------------------
 
 # --- Ensure necessary classes are available (Dummy or actual imports) ---
 # Assuming these imports work in your environment after setting up sys.path
@@ -24,10 +16,25 @@ config_mlflow = MockConfig()
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.model_selection import train_test_split
 
+
+# --- Dummy backend.core for MLflow URI (Replace with actual import in real project) ---
+class MockConfig:
+    MLFLOW_TRACKING_URI = "sqlite:///mlruns.db"  # Example local tracking URI
+
+
+config_mlflow = MockConfig()
+# -----------------------------------------------------------------------------------
+
+
 # Mocking the environment and agent for demonstration
 class CompressorEnv:
     def __init__(self, df, scaler=None, reward_weights=None, dynamics_models=None):
-        self.state_features = ["Pressure_In", "Temperature_In", "Vibration", "Flow_Rate"]
+        self.state_features = [
+            "Pressure_In",
+            "Temperature_In",
+            "Vibration",
+            "Flow_Rate",
+        ]
         self.df = df
         self.scaler = scaler
         self.dynamics_models = dynamics_models or {}
@@ -38,31 +45,50 @@ class CompressorEnv:
     def step(self, action):
         return np.zeros(len(self.state_features)), 1.0, True, False, {}
 
+
 class PPOAgent:
-    def __init__(self, state_dim, action_dim, actor_hidden_dims, critic_hidden_dims, actor_lr, critic_lr, gamma, eps_clip, device):
-        self.actor = torch.nn.Linear(state_dim, action_dim) # Simple mock
-        self.critic = torch.nn.Linear(state_dim, 1) # Simple mock
+    def __init__(
+        self,
+        state_dim,
+        action_dim,
+        actor_hidden_dims,
+        critic_hidden_dims,
+        actor_lr,
+        critic_lr,
+        gamma,
+        eps_clip,
+        device,
+    ):
+        self.actor = torch.nn.Linear(state_dim, action_dim)  # Simple mock
+        self.critic = torch.nn.Linear(state_dim, 1)  # Simple mock
         self.device = device
         self.state_dim = state_dim
 
     def select_action(self, state_tensor):
-        return torch.randn(1, device=self.device), torch.tensor(0.5, device=self.device), torch.tensor(0.1, device=self.device)
+        return (
+            torch.randn(1, device=self.device),
+            torch.tensor(0.5, device=self.device),
+            torch.tensor(0.1, device=self.device),
+        )
 
     def compute_gae(self, rewards, values, dones):
         return torch.zeros_like(rewards), torch.zeros_like(values)
 
     def update(self, states, actions, log_probs, returns, advantages):
         pass
+
+
 # ---------------------------------------------------------------------------------------
 
 
 RTO_MODEL_NAME = "SGT400-RTO-Agent-Model"
 
+
 def train_rto_model(config: dict):
     """
     Main function to run the PPO training and evaluation loop based on a config dictionary.
     """
-    
+
     # --- MLflow Setup ---
     mlflow.set_tracking_uri(config_mlflow.MLFLOW_TRACKING_URI)
     mlflow.set_experiment(RTO_MODEL_NAME)
@@ -78,7 +104,7 @@ def train_rto_model(config: dict):
         torch.manual_seed(SEED)
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         print(f"Using device: {device}")
-        
+
         # -------- 2. Load and Preprocess Data --------
         print("Loading and preprocessing data...")
         # Using a dummy dataset path for demonstration as the environment requires a DataFrame
@@ -88,10 +114,9 @@ def train_rto_model(config: dict):
         except FileNotFoundError:
             print("❌ Dummy dataset not found. Creating a minimal dummy DataFrame.")
             df = pd.DataFrame(
-                np.random.rand(100, 4), 
-                columns=["Pressure_In", "Temperature_In", "Vibration", "Flow_Rate"]
+                np.random.rand(100, 4),
+                columns=["Pressure_In", "Temperature_In", "Vibration", "Flow_Rate"],
             )
-
 
         # Define state features from the environment class for consistency
         temp_env = CompressorEnv(df.head(1))
@@ -133,7 +158,7 @@ def train_rto_model(config: dict):
 
         # -------- 4. Training and Evaluation Loop --------
         best_eval_reward = float("-inf")
-        onnx_path = "best_ppo_actor.onnx" # Defined once
+        onnx_path = "best_ppo_actor.onnx"  # Defined once
 
         print("\n--- Starting Training & Evaluation Loop ---")
         for epoch in range(config["n_epochs"]):
@@ -170,9 +195,9 @@ def train_rto_model(config: dict):
             eval_state, _ = eval_env.reset()
             eval_done = False
             while not eval_done:
-                eval_state_tensor = torch.tensor(
-                    eval_state, dtype=torch.float32
-                ).to(device)
+                eval_state_tensor = torch.tensor(eval_state, dtype=torch.float32).to(
+                    device
+                )
                 # In eval, we can act more deterministically by taking the mean
                 action, _, _ = agent.select_action(
                     eval_state_tensor
@@ -210,16 +235,16 @@ def train_rto_model(config: dict):
                 torch.onnx.export(
                     agent.actor,
                     dummy_input,
-                    onnx_path, # Saves to the predefined path
+                    onnx_path,  # Saves to the predefined path
                     input_names=["state"],
                     output_names=["action"],
-                    opset_version=13, # Recommended opset
+                    opset_version=13,  # Recommended opset
                 )
                 print(f"  -> Best actor exported to {onnx_path}")
-                
+
         # -------- 5. Artifact Saving and MLflow Logging --------
         print("\n--- Training complete. Starting artifact logging ---")
-        
+
         # 5a. Log final metrics (best evaluation reward)
         mlflow.log_metric("best_eval_reward", best_eval_reward)
         print(f"✅ Best Evaluation Reward logged: {best_eval_reward:.2f}")
@@ -236,16 +261,13 @@ def train_rto_model(config: dict):
         # 5c. Log the ONNX model (The best one saved during the loop)
         mlflow.log_artifact(onnx_path, "model")
         print(f"✅ ONNX Actor Model logged to MLflow artifacts: {onnx_path}")
-        
+
         # 5d. Register the ONNX Actor Model
         # Infer signature (using dummy input for PyTorch)
         dummy_input = torch.randn(1, len(state_features), device=device)
         # Dummy output is a single action value (e.g., [[0.0]])
-        signature = infer_signature(
-            dummy_input.cpu().numpy(),
-            np.array([[0.0]]) 
-        )
-        
+        signature = infer_signature(dummy_input.cpu().numpy(), np.array([[0.0]]))
+
         # Register the ONNX Model
         logged_model_info = mlflow.register_model(
             model_uri=f"runs:/{run.info.run_id}/model/{onnx_path}",
@@ -254,14 +276,14 @@ def train_rto_model(config: dict):
             signature=signature,
         )
         print(f"✅ Model registered as version: {logged_model_info.version}")
-        
+
         # Cleanup
         os.remove(scaler_only_path)
         os.rmdir(temp_dir)
         if os.path.exists("best_ppo_model.pkl"):
-            os.remove("best_ppo_model.pkl") # Remove pkl file
+            os.remove("best_ppo_model.pkl")  # Remove pkl file
         if os.path.exists(onnx_path):
-            os.remove(onnx_path) # Remove local onnx artifact
+            os.remove(onnx_path)  # Remove local onnx artifact
 
         print("\n--- MLflow Logging Complete. ---")
 

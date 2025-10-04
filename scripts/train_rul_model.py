@@ -17,9 +17,11 @@ from tqdm import tqdm
 import mlflow
 from mlflow.models import infer_signature
 
+
 # --- Dummy backend.core for MLflow URI (Replace with actual import in real project) ---
 class MockConfig:
     MLFLOW_TRACKING_URI = "sqlite:///mlruns.db"  # Example local tracking URI
+
 
 config = MockConfig()
 # -----------------------------------------------------------------------------------
@@ -118,9 +120,7 @@ def train_rul_model(config: dict):
 
         def create_sequences(data, labels, window_size):
             Xs, ys = [], []
-            for i in tqdm(
-                range(len(data) - window_size), desc="Creating Sequences"
-            ):
+            for i in tqdm(range(len(data) - window_size), desc="Creating Sequences"):
                 Xs.append(data[i : i + window_size])
                 ys.append(labels[i + window_size])
             return np.array(Xs, dtype=np.float32), np.array(ys, dtype=np.float32)
@@ -217,9 +217,9 @@ def train_rul_model(config: dict):
 
         # 6. MLflow Logging and Registration
         mlflow.log_artifact(temp_onnx_path, "model")
-        logger.info(f"✅ ONNX model logged to MLflow artifacts folder.")
+        logger.info("✅ ONNX model logged to MLflow artifacts folder.")
         mlflow.log_artifact(scaler_path, "scaler")
-        logger.info(f"✅ Scaler logged to MLflow artifacts folder.")
+        logger.info("✅ Scaler logged to MLflow artifacts folder.")
 
         # Infer model signature for registration
         # Flatten y_pred for signature inference as infer_signature expects 1D/2D arrays
