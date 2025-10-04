@@ -33,9 +33,8 @@ const initialState = {
   // Holds anomalies that arrive before their corresponding data point
   unmatchedAnomalies: {},
   status: 'idle', // 'idle' | 'loading' | 'succeeded' | 'failed'
-  maxDataPoints: 10000,
+  maxDataPoints: 500,
   isConnected: false,
-  // State to count the frequency of each anomaly cause
   anomalyCauseCounts: {},
 };
 
@@ -104,12 +103,11 @@ export const rtmSlice = createSlice({
         state.historicalData = [];
         state.status = 'idle';
     },
-    // New reducer to clear live data for performance
+    // New reducer to clear live data for performance (KEEP ONLY THE LATEST 75 POINTS)
     clearLiveData: (state) => {
-        // Keep only the last 75 items to clear memory
-        if (state.liveData.length > 75) {
-          state.liveData = state.liveData.slice(-75);
-        }
+      if (state.liveData.length > 75) {
+        state.liveData = state.liveData.slice(-75);
+      }
     },
   },
   extraReducers: (builder) => {
@@ -133,7 +131,7 @@ export const {
   markAsAnomaly, 
   clearHistoricalData, 
   setConnectionStatus,
-  clearLiveData // Export the new action
+  clearLiveData
 } = rtmSlice.actions;
 
 export default rtmSlice.reducer;

@@ -11,7 +11,6 @@ import {
   markAsAnomaly,
   setConnectionStatus
 } from './features/rtm/rtmSlice';
-// Import the new action
 import { updateRtoSuggestion } from './features/rto/rtoSlice';
 
 function App() {
@@ -19,16 +18,16 @@ function App() {
 
   // Callbacks for RTM data
   const handleNewData = useCallback((dataPoint) => {
+    // Use the Spread operator to automatically include all incoming fields
+    // (all sensors + feature engineering) into the Redux state.
     const newPointForChart = {
-      time_id: dataPoint.Time,
-      timestamp: dataPoint.Timestamp,
-      time: new Date(dataPoint.Timestamp).toLocaleTimeString(),
-      Pressure_In: dataPoint.Pressure_In,
-      Temperature_In: dataPoint.Temperature_In,
-      Power_Consumption: dataPoint.Power_Consumption,
-      Efficiency: dataPoint.Efficiency * 100,
-      Flow_Rate: dataPoint.Flow_Rate,
-      Vibration: dataPoint.Vibration,
+      ...dataPoint, 
+      
+      // Overrides/Calculations:
+      time_id: dataPoint.Time, // Set Time_ID from the original Time field
+      // timestamp: dataPoint.Timestamp is included via spread, no need to restate unless changing it.
+      time: new Date(dataPoint.Timestamp).toLocaleTimeString(), // Human-readable format for chart X-axis
+      Efficiency: dataPoint.Efficiency * 100, // Apply necessary scaling (0-1 to 0-100)
     };
     dispatch(addDataPoint(newPointForChart));
   }, [dispatch]);
@@ -56,7 +55,7 @@ function App() {
   const { isConnected } = useWebSocket({
     'new_data': handleNewData,
     'new_alert': handleNewAlert,
-    'new_rto_suggestion': handleNewRtoSuggestion, // Add this event handler
+    'new_rto_suggestion': handleNewRtoSuggestion, 
   });
 
   // Syncs connection status to the Redux store
