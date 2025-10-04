@@ -73,6 +73,7 @@ CREATE TABLE IF NOT EXISTS alarms (
     timestamp DATETIME NOT NULL,
     alert_type VARCHAR(100) NOT NULL,
     details TEXT,
+    causes JSON NULL,
     urgency VARCHAR(50) DEFAULT 'Medium',
     acknowledged BOOLEAN DEFAULT FALSE,
     source_service VARCHAR(100) DEFAULT 'rtm_consumer'
