@@ -291,15 +291,21 @@ def train_rto_model(config: dict):
 if __name__ == "__main__":
     CONFIG = {
         "seed": 42,
-        "n_epochs": 100,
-        "timesteps_per_epoch": 2048,
-        "actor_lr": 3e-4,
-        "critic_lr": 1e-3,
-        "gamma": 0.99,
+        # --- OPTIMIZED: Increased training time and improved hyperparameters ---
+        "n_epochs": 200,  # Increased from 100
+        "timesteps_per_epoch": 4096,  # Increased from 2048
+        "actor_lr": 1e-4,  # Reduced from 3e-4 for better stability
+        "critic_lr": 5e-4,  # Reduced from 1e-3
+        "gamma": 0.995,  # Increased from 0.99 for longer-term planning
         "eps_clip": 0.2,
-        "actor_hidden_dims": [128, 128],
-        "critic_hidden_dims": [128, 128],
-        "reward_weights": {"efficiency": 5.0, "power": -0.01, "vibration": -0.1},
+        "actor_hidden_dims": [256, 128, 64],  # Deeper network
+        "critic_hidden_dims": [256, 128, 64],  # Deeper network
+        # --- OPTIMIZED: Better balanced reward weights ---
+        "reward_weights": {
+            "efficiency": 10.0,  # Increased focus on efficiency
+            "power": -0.005,  # Reduced penalty to allow exploration
+            "vibration": -0.2  # Increased penalty for vibration
+        },
     }
     # Ensure the artifacts directory exists for local operations (optional but good practice)
     os.makedirs("artifacts", exist_ok=True)
