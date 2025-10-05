@@ -1,5 +1,10 @@
 # backend/core/config.py
 
+# --- MLflow Configuration ---
+MLFLOW_TRACKING_URI = "http://mlflow:5000"
+# MLFLOW_ARTIFACT_ROOT is optional for tracking server,
+# but included for clarity as it matches the path in docker-compose.yml
+MLFLOW_ARTIFACT_ROOT = "file:/mlflow_artifacts"
 
 # --- Kafka Topics ---
 KAFKA_RAW_TOPIC = "sensors-raw"
