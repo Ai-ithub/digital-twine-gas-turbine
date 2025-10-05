@@ -32,11 +32,13 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# --- Configuration (UPDATED for MLOps) ---
+# --- Configuration (MERGED) ---
 CONFIG = {
+    # MLOps data path is kept with fallback logic in load_and_preprocess_data
     "data_path": "data/training_data/retraining_dataset_pdm.parquet",
-    "artifacts_path": "artifacts",  # Artifacts are now logged via MLflow
-    "window_size": 60,
+    "artifacts_path": "artifacts", 
+    # Optimizations from PR for performance improvement:
+    "window_size": 120,  # Increased from 60
     "test_size": 0.2,
     "kalman_filter_columns": [
         "Pressure_In",
@@ -45,10 +47,13 @@ CONFIG = {
         "Temperature_Out",
     ],
     "target_column": "Label",
-    "epochs": 50,
-    "batch_size": 128,
-    "lstm_units": 64,  # Loggable Hyperparameter
-    "optimizer": "adam",  # Loggable Hyperparameter
+    "epochs": 100,  # Increased from 50
+    "batch_size": 64,  # Reduced from 128
+    "lstm_units": [128, 64],  # Multi-layer LSTM
+    "dropout": 0.2,
+    "recurrent_dropout": 0.2,
+    # Kept for MLflow logging:
+    "optimizer": "adam",
 }
 RUL_MODEL_NAME = "SGT400-RUL-Prediction-Model"
 
@@ -56,13 +61,14 @@ RUL_MODEL_NAME = "SGT400-RUL-Prediction-Model"
 # --- 2. Data Loading and Preprocessing ---
 def load_and_preprocess_data(config: dict):
     logger.info(f"Reading dataset from {config['data_path']}...")
-    # Attempt to read Parquet, fallback to default CSV if not found
+    # Improved data loading logic to support Parquet and Fallback
     try:
         df = pd.read_parquet(config["data_path"])
     except FileNotFoundError:
         logger.error(
             f"❌ Dataset not found at {config['data_path']}. Falling back to default CSV."
         )
+        # Using the old CSV path
         df = pd.read_csv("datasets/MASTER_DATASET.csv")
 
     logger.info("Dataset read successfully. Starting preprocessing...")
@@ -80,14 +86,14 @@ def load_and_preprocess_data(config: dict):
     imputer = KNNImputer(n_neighbors=3)
     df[numeric_cols] = imputer.fit_transform(df[numeric_cols])
 
+    logger.info("Preprocessing complete.")
     feature_cols = [
         col for col in numeric_cols if col not in [config["target_column"], "Time"]
     ]
-    logger.info("Preprocessing complete.")
     return df, feature_cols
 
 
-# --- 3. Feature Engineering and Model Training ---
+# --- 3. Feature Engineering and Model Training (MERGED) ---
 def train_rul_model(config: dict):
     # --- MLflow Setup ---
     mlflow.set_tracking_uri(config.MLFLOW_TRACKING_URI)
@@ -95,17 +101,8 @@ def train_rul_model(config: dict):
 
     with mlflow.start_run() as run:
         # 1. Logging Hyperparameters
-        mlflow.log_params(
-            {
-                "window_size": config["window_size"],
-                "test_size": config["test_size"],
-                "epochs": config["epochs"],
-                "batch_size": config["batch_size"],
-                "lstm_units": config["lstm_units"],
-                "optimizer": config["optimizer"],
-                "model_type": "LSTM_RUL",
-            }
-        )
+        # Log the entire config dictionary, which now includes all parameters
+        mlflow.log_params(config)
 
         # 2. Data Preparation
         df, feature_cols = load_and_preprocess_data(config)
@@ -140,28 +137,36 @@ def train_rul_model(config: dict):
 
         # 3. Model Definition and Training
         n_timesteps, n_features = X_train.shape[1], X_train.shape[2]
-        model = Sequential(
-            [
-                Input(shape=(n_timesteps, n_features)),
-                LSTM(config["lstm_units"], activation="relu"),
-                Dense(1),
-            ]
-        )
-        model.compile(optimizer=config["optimizer"], loss="mean_squared_error")
+        
+        # --- OPTIMIZED: Multi-layer LSTM with dropout (from Elham_kokabidana) ---
+        model = Sequential([
+            Input(shape=(n_timesteps, n_features)),
+            LSTM(config["lstm_units"][0], 
+                 activation="relu", 
+                 return_sequences=True,
+                 dropout=config["dropout"],
+                 recurrent_dropout=config["recurrent_dropout"]),
+            LSTM(config["lstm_units"][1], 
+                 activation="relu",
+                 dropout=config["dropout"],
+                 recurrent_dropout=config["recurrent_dropout"]),
+            Dense(1)
+        ])
+        model.compile(optimizer=config["optimizer"], loss="mean_squared_error") # Use config["optimizer"]
 
         early_stopping = EarlyStopping(
             monitor="val_loss", patience=5, restore_best_weights=True
         )
 
         logger.info("\n--- Starting Model Training ---")
-        history = model.fit(
+        history = model.fit( # Store history to log val_loss
             X_train,
             y_train,
             epochs=config["epochs"],
             batch_size=config["batch_size"],
             validation_split=0.2,
             callbacks=[early_stopping],
-            verbose=0,
+            verbose=1, # Set verbose to 1 for more detail during training
         )
         logger.info("--- Training Complete ---")
 
@@ -170,18 +175,18 @@ def train_rul_model(config: dict):
         y_pred = model.predict(X_test)
         mae = mean_absolute_error(y_test, y_pred)
         r2 = r2_score(y_test, y_pred)
-        val_loss = history.history["val_loss"][-1]
+        val_loss = history.history["val_loss"][-1] # Log final val_loss
 
         mlflow.log_metric("mae", mae)
         mlflow.log_metric("r2_score", r2)
         mlflow.log_metric("validation_loss", val_loss)
         logger.info(f"✅ Logged MAE: {mae:.4f}, R2: {r2:.4f}, Val Loss: {val_loss:.4f}")
 
-        # 5. ONNX Conversion and Artifact Logging
+        # 5. ONNX Conversion and Artifact Logging (MERGED)
         logger.info("\n--- Converting Model to ONNX and Logging Artifacts ---")
         onnx_model_path = "rul_model.onnx"
 
-        # ONNX Conversion Logic
+        # ONNX Conversion Logic (from Elham_kokabidana - corrected for Functional model)
         input_tensor = tf.keras.Input(
             shape=(n_timesteps, n_features), name="input_layer"
         )
@@ -222,7 +227,6 @@ def train_rul_model(config: dict):
         logger.info("✅ Scaler logged to MLflow artifacts folder.")
 
         # Infer model signature for registration
-        # Flatten y_pred for signature inference as infer_signature expects 1D/2D arrays
         signature = infer_signature(X_test, y_pred.flatten())
 
         # Register the model to the MLflow Model Registry
@@ -243,4 +247,4 @@ def train_rul_model(config: dict):
 if __name__ == "__main__":
     # Ensure the artifacts directory exists for local operations (optional but good practice)
     os.makedirs(CONFIG["artifacts_path"], exist_ok=True)
-    train_rul_model(config)
+    train_rul_model(CONFIG) # Use the merged CONFIG
