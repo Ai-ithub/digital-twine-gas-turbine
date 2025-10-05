@@ -49,22 +49,6 @@ services:
       retries: 10
       start_period: 10s
 
-  # mlflow: # سرویس MLflow موقتاً غیرفعال شد
-  #   image: mlflow/mlflow:2.14.0
-  #   container_name: mlflow
-  #   ports:
-  #     - "5001:5000"
-  #   environment:
-  #     MLFLOW_BACKEND_STORE_URI: mysql://root:${MYSQL_ROOT_PASSWORD}@mysql:3306/${MYSQL_DATABASE}
-  #     MLFLOW_ARTIFACT_STORE_URI: file:/mlflow_artifacts
-  #   volumes:
-  #     - mlflow_artifacts:/mlflow_artifacts
-  #   depends_on:
-  #     mysql:
-  #       condition: service_healthy
-  #   env_file:
-  #     - .env
-
   db-importer:
     build: .
     container_name: db-importer
@@ -130,8 +114,6 @@ services:
     depends_on:
       db-streamer:
         condition: service_started
-      # mlflow: # وابستگی به mlflow حذف شد
-      #   condition: service_started
     env_file:
       - .env
     restart: on-failure
@@ -160,29 +142,8 @@ services:
     depends_on:
       influx-writer:
         condition: service_started
-      # mlflow: # وابستگی به mlflow حذف شد
-      #   condition: service_started
     env_file:
       - .env
-
-  # New service for automated data collection (Issue #215)
-  data-retrainer:
-    build: .
-    container_name: data-retrainer
-    command: python scripts/data_collector.py
-    environment:
-      - PYTHONPATH=/app
-    volumes:
-      # Mount the local data directory to persist the output dataset
-      - ./data:/app/data
-    depends_on:
-      influxdb:
-        condition: service_started
-      mysql:
-        condition: service_healthy
-    env_file:
-      - .env
-    restart: on-failure
 
   backend:
     build: .
@@ -201,11 +162,8 @@ services:
         condition: service_started
       pdm-batch-runner:
         condition: service_completed_successfully
-      # mlflow: # وابستگی به mlflow حذف شد
-      #   condition: service_started
     restart: on-failure
 
 volumes:
   influxdb_data:
   mysql_data:
-  # mlflow_artifacts: # ولوم mlflow_artifacts موقتاً غیرفعال شد

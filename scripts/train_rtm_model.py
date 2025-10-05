@@ -1,239 +1,160 @@
 # scripts/train_rtm_model.py
 
-import os
-import logging
 import pandas as pd
 import numpy as np
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import classification_report
+from sklearn.metrics import classification_report, confusion_matrix
 import joblib
+
+# For ONNX conversion
 import skl2onnx
 from skl2onnx.common.data_types import FloatTensorType
-import mlflow
-from mlflow.models import infer_signature
-# Assuming 'backend.core' provides configuration details like MLFLOW_TRACKING_URI
-# and RTM_FEATURE_COLUMNS. We will use a mock object for demonstration.
 
-
-# --- Mock Configuration (Replace with actual import if available) ---
-class MockConfig:
-    MLFLOW_TRACKING_URI = "http://127.0.0.1:5000"  # Replace with your actual URI
-    # Features defined in the original code, including engineered ones
+# Import configuration from the backend
+# Assuming the script is run from the project root or the correct path is set
+try:
+    from backend.core.config import (
+        RTM_FEATURE_COLUMNS,
+        RTM_EXPLAIN_MODEL_PATH,
+        RTM_MODEL_PATH,
+        RTM_SCALER_MEAN_PATH,
+        RTM_SCALER_SCALE_PATH,
+    )
+except ImportError:
+    print("Error: Could not import configuration. Ensure 'backend.core.config' is accessible.")
+    # Use fallback paths for execution outside of a structured environment
+    RTM_MODEL_PATH = "../artifacts/rtm_model.onnx"
+    RTM_EXPLAIN_MODEL_PATH = "../artifacts/rtm_random_forest.joblib"
+    RTM_SCALER_MEAN_PATH = "../artifacts/rtm_scaler_mean.npy"
+    RTM_SCALER_SCALE_PATH = "../artifacts/rtm_scaler_scale.npy"
     RTM_FEATURE_COLUMNS = [
-        "Pressure_In",
-        "Temperature_In",
-        "Flow_Rate",
-        "Pressure_Out",
-        "Temperature_Out",
-        "Efficiency",
-        "Power_Consumption",
-        "Vibration",
-        "Ambient_Temperature",
-        "Humidity",
-        "Air_Pollution",
-        "Frequency",
-        "Amplitude",
-        "Phase_Angle",
-        "Velocity",
-        "Stiffness",
-        "Vibration_roll_mean",
-        "Power_Consumption_roll_mean",
-        "Vibration_roll_std",
-        "Power_Consumption_roll_std",
+        "Pressure_In", "Temperature_In", "Flow_Rate", "Pressure_Out", "Temperature_Out", 
+        "Efficiency", "Power_Consumption", "Vibration", "Ambient_Temperature", "Humidity", 
+        "Air_Pollution", "Frequency", "Amplitude", "Phase_Angle", "Velocity", "Stiffness", 
+        "Vibration_roll_mean", "Power_Consumption_roll_mean", "Vibration_roll_std", "Power_Consumption_roll_std",
     ]
 
 
-config = MockConfig()
-# --- End Mock Configuration ---
+DATASET_PATH = "datasets/MASTER_DATASET.csv" # Adjusted path based on typical project structure
+WINDOW_SIZE = 5
 
 
-# --- 1. Setup Logging and Configuration ---
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-)
-logger = logging.getLogger(__name__)
+def feature_engineering(df: pd.DataFrame) -> pd.DataFrame:
+    """Applies rolling mean and std features."""
+    
+    # Check if base columns for rolling window exist
+    if "Vibration" not in df.columns or "Power_Consumption" not in df.columns:
+        print("Required columns 'Vibration' or 'Power_Consumption' not found for feature engineering.")
+        return df
 
-# --- Configuration ---
-CONFIG = {
-    "data_path": "../datasets/MASTER_DATASET.csv",  # Adjusted path for execution outside 'scripts'
-    "window_size": 5,
-    "test_size": 0.2,
-    "n_estimators": 100,
-    "random_state": 42,
-    "target_opset": {"": 15, "ai.onnx.ml": 3},
-    "anomaly_label": -1,
-    "normal_label": 1,
-}
-RTM_MODEL_NAME = "SGT400-RTM-Anomaly-Model"
+    df["Vibration_roll_mean"] = df["Vibration"].rolling(window=WINDOW_SIZE).mean()
+    df["Power_Consumption_roll_mean"] = (
+        df["Power_Consumption"].rolling(window=WINDOW_SIZE).mean()
+    )
+    df["Vibration_roll_std"] = df["Vibration"].rolling(window=WINDOW_SIZE).std()
+    df["Power_Consumption_roll_std"] = (
+        df["Power_Consumption"].rolling(window=WINDOW_SIZE).std()
+    )
+    
+    # Fill NaN values created by the rolling window operation
+    df.bfill(inplace=True)
+    df.ffill(inplace=True)
+    
+    return df
 
 
-def train_rtm_model(cfg: dict):
-    """
-    Trains the RTM RandomForest model, logs parameters and metrics to MLflow,
-    and registers the ONNX model.
-    """
-    # --- MLflow Setup ---
-    mlflow.set_tracking_uri(config.MLFLOW_TRACKING_URI)
-    mlflow.set_experiment(RTM_MODEL_NAME)
+def train_rtm_model():
+    """Loads data, trains the RTM RandomForest model, evaluates it, and saves artifacts."""
+    
+    # --- 1. Load Data ---
+    print("Loading data...")
+    try:
+        df = pd.read_csv(DATASET_PATH)
+        print("✅ Data loaded successfully.")
+    except FileNotFoundError:
+        print(f"❌ Error: Dataset not found at {DATASET_PATH}. Aborting.")
+        return
 
-    with mlflow.start_run() as run:
-        # 1. Logging Hyperparameters
-        mlflow.log_params(
-            {
-                "model_type": "RandomForest_RTM",
-                "window_size": cfg["window_size"],
-                "test_size": cfg["test_size"],
-                "n_estimators": cfg["n_estimators"],
-                "random_state": cfg["random_state"],
-                "target_opset": cfg["target_opset"],
-            }
-        )
+    # --- 2. Feature Engineering ---
+    print("\n--- Starting Feature Engineering ---")
+    df = feature_engineering(df)
+    
+    # Verify that all required feature columns are present after engineering
+    missing_cols = [col for col in RTM_FEATURE_COLUMNS if col not in df.columns]
+    if missing_cols:
+        print(f"❌ Error: Missing required feature columns after engineering: {missing_cols}. Aborting.")
+        return
+        
+    print(f"✅ Feature engineering complete. Total features: {len(RTM_FEATURE_COLUMNS)}")
 
-        # 2. Data Loading
-        logger.info(f"Loading data from {cfg['data_path']}...")
-        df = pd.read_csv(cfg["data_path"])
-        logger.info("✅ Data loaded successfully. Starting preprocessing.")
+    # --- 3. Prepare Data for Supervised Learning ---
+    print("\n--- Preparing data for supervised learning ---")
+    X = df[RTM_FEATURE_COLUMNS]
+    # Map "Normal" to 1 and all others (Anomaly/Failure) to -1
+    y = df["Status"].apply(lambda x: 1 if x == "Normal" else -1)
+    
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, random_state=42, stratify=y
+    )
+    
+    scaler = StandardScaler()
+    X_train_scaled = scaler.fit_transform(X_train)
+    X_test_scaled = scaler.transform(X_test)
+    print("✅ Data split and scaled successfully.")
 
-        # 3. Feature Engineering
-        df["Vibration_roll_mean"] = (
-            df["Vibration"].rolling(window=cfg["window_size"]).mean()
-        )
-        df["Power_Consumption_roll_mean"] = (
-            df["Power_Consumption"].rolling(window=cfg["window_size"]).mean()
-        )
-        df["Vibration_roll_std"] = (
-            df["Vibration"].rolling(window=cfg["window_size"]).std()
-        )
-        df["Power_Consumption_roll_std"] = (
-            df["Power_Consumption"].rolling(window=cfg["window_size"]).std()
-        )
+    # --- 4. Train New RandomForest Model ---
+    print("\n--- Training New RandomForest Model ---")
+    model = RandomForestClassifier(n_estimators=100, random_state=42, n_jobs=-1)
+    model.fit(X_train_scaled, y_train)
+    print("✅ New model trained successfully.")
 
-        # Fill NaN values created by rolling window
-        df.bfill(inplace=True)
-        df.ffill(inplace=True)
+    # --- 5. Evaluate the New Model ---
+    print("\n--- Evaluating New Model Performance on Test Data ---")
+    y_pred = model.predict(X_test_scaled)
+    
+    print("\n--- Model Performance Metrics ---")
+    print(
+        classification_report(y_test, y_pred, target_names=["Anomaly (-1)", "Normal (1)"])
+    )
+    
+    print("\n--- Confusion Matrix ---")
+    cm = confusion_matrix(y_test, y_pred)
+    print(cm)
 
-        FEATURE_COLUMNS = config.RTM_FEATURE_COLUMNS
+    # --- 6. Save New Models (ONNX & Sklearn) and Scaler ---
+    print("\n--- Saving new models and scaler ---")
 
-        # 4. Prepare Data & Scaling
-        X = df[FEATURE_COLUMNS]
-        # Convert 'Status' column to numerical labels (-1: Anomaly, 1: Normal)
-        y = df["Status"].apply(
-            lambda x: cfg["normal_label"] if x == "Normal" else cfg["anomaly_label"]
-        )
-
-        X_train, X_test, y_train, y_test = train_test_split(
-            X,
-            y,
-            test_size=cfg["test_size"],
-            random_state=cfg["random_state"],
-            stratify=y,
-        )
-
-        scaler = StandardScaler()
-        X_train_scaled = scaler.fit_transform(X_train)
-        X_test_scaled = scaler.transform(X_test)
-        logger.info("✅ Data split and scaled successfully.")
-
-        # 5. Train Model
-        model = RandomForestClassifier(
-            n_estimators=cfg["n_estimators"],
-            random_state=cfg["random_state"],
-            n_jobs=-1,
-        )
-        logger.info("\n--- Starting Model Training ---")
-        model.fit(X_train_scaled, y_train)
-        logger.info("--- Training Complete ---")
-
-        # 6. Evaluation and Metrics Logging
-        y_pred = model.predict(X_test_scaled)
-        report = classification_report(y_test, y_pred, output_dict=True)
-
-        # Extract key metrics for Anomaly (-1)
-        anomaly_metrics = report[str(cfg["anomaly_label"])]
-        f1 = anomaly_metrics["f1-score"]
-        recall = anomaly_metrics["recall"]
-
-        mlflow.log_metric("f1_score_anomaly", f1)
-        mlflow.log_metric("recall_anomaly", recall)
-        logger.info(
-            f"✅ Logged F1-score (Anomaly): {f1:.4f}, Recall (Anomaly): {recall:.4f}"
-        )
-
-        # 7. ONNX Conversion and Artifact Logging
-        logger.info("\n--- Converting Model to ONNX and Logging Artifacts ---")
-
-        # Convert the trained scikit-learn model to ONNX
-        onnx_model_filename = "rtm_random_forest_model.onnx"  # Renamed for clarity
-        initial_type = [("input", FloatTensorType([None, len(FEATURE_COLUMNS)]))]
+    # Save the model in ONNX format for fast prediction (RTM_MODEL_PATH)
+    target_opset = {"": 15, "ai.onnx.ml": 3}
+    initial_type = [("input", FloatTensorType([None, len(RTM_FEATURE_COLUMNS)]))]
+    
+    try:
         onnx_model = skl2onnx.convert_sklearn(
-            model, initial_types=initial_type, target_opset=cfg["target_opset"]
+            model, initial_types=initial_type, target_opset=target_opset
         )
-
-        temp_dir = "./temp_mlflow_artifacts"  # Use a dedicated temporary directory
-        os.makedirs(temp_dir, exist_ok=True)
-        temp_onnx_path = os.path.join(temp_dir, onnx_model_filename)
-
-        with open(temp_onnx_path, "wb") as f:
+        with open(RTM_MODEL_PATH, "wb") as f:
             f.write(onnx_model.SerializeToString())
+        print(f"✅ New ONNX model saved to: {RTM_MODEL_PATH}")
+    except Exception as e:
+        print(f"❌ Error saving ONNX model: {e}")
 
-        # Log the ONNX model artifact
-        mlflow.log_artifact(temp_onnx_path, "model")
-        logger.info("✅ ONNX model saved to MLflow artifacts folder.")
+    # Save the original scikit-learn model using joblib (RTM_EXPLAIN_MODEL_PATH)
+    try:
+        joblib.dump(model, RTM_EXPLAIN_MODEL_PATH)
+        print(f"✅ New Sklearn model saved to: {RTM_EXPLAIN_MODEL_PATH}")
+    except Exception as e:
+        print(f"❌ Error saving Sklearn model: {e}")
 
-        # Save Scaler parameters and log them
-        # These parameters are required for inference (rtm-consumer)
-        np.save(os.path.join(temp_dir, "rtm_scaler_mean.npy"), scaler.mean_)
-        np.save(os.path.join(temp_dir, "rtm_scaler_scale.npy"), scaler.scale_)
-        mlflow.log_artifact(
-            os.path.join(temp_dir, "rtm_scaler_mean.npy"), "scaler_params"
-        )
-        mlflow.log_artifact(
-            os.path.join(temp_dir, "rtm_scaler_scale.npy"), "scaler_params"
-        )
-        logger.info("✅ Scaler parameters saved to MLflow artifacts folder.")
-
-        # Save the original Sklearn model (for interpretability/SHAP) and log it
-        temp_sklearn_path = os.path.join(temp_dir, "rtm_random_forest.joblib")
-        joblib.dump(model, temp_sklearn_path)
-        mlflow.log_artifact(temp_sklearn_path, "sklearn_model")
-        logger.info("✅ Sklearn model saved for interpretability.")
-
-        # 8. Register the Model (We register the ONNX model)
-        # We need an input example for the signature
-        input_example = X_test_scaled[:1].astype(
-            np.float32
-        )  # Use scaled data for input example
-        signature = infer_signature(input_example, np.array([y_pred[0]]))
-
-        logged_model_info = mlflow.register_model(
-            # The model_uri points to the ONNX file logged in the 'model' artifact folder
-            model_uri=f"runs:/{run.info.run_id}/model/{onnx_model_filename}",
-            name=RTM_MODEL_NAME,
-            tags={"model_type": "RandomForest_RTM", "format": "ONNX"},
-            signature=signature,
-        )
-        logger.info(f"✅ Model registered as version: {logged_model_info.version}")
-
-        # 9. Cleanup
-        os.remove(temp_onnx_path)
-        os.remove(temp_sklearn_path)
-        os.remove(os.path.join(temp_dir, "rtm_scaler_mean.npy"))
-        os.remove(os.path.join(temp_dir, "rtm_scaler_scale.npy"))
-        os.rmdir(temp_dir)
+    # Save the scaler parameters
+    try:
+        np.save(RTM_SCALER_MEAN_PATH, scaler.mean_)
+        np.save(RTM_SCALER_SCALE_PATH, scaler.scale_)
+        print(f"✅ New scaler parameters saved to: {RTM_SCALER_MEAN_PATH} and {RTM_SCALER_SCALE_PATH}")
+    except Exception as e:
+        print(f"❌ Error saving scaler parameters: {e}")
 
 
 if __name__ == "__main__":
-    # In a real environment, you would ensure 'backend.core.config' is imported correctly
-    # and the paths are correct relative to where the script is executed.
-    # The CONFIG dictionary is used here as a placeholder for the actual configuration.
-    try:
-        train_rtm_model(CONFIG)
-    except FileNotFoundError as e:
-        logger.error(
-            f"Error: Data file not found. Please ensure the path is correct: {e}"
-        )
-        logger.error(
-            "If running from 'scripts/' folder, make sure '../datasets/MASTER_DATASET.csv' exists."
-        )
+    train_rtm_model()
