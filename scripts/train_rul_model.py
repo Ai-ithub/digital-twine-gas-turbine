@@ -104,21 +104,27 @@ def train_rul_model(config: dict):
     )
 
     n_timesteps, n_features = X_train.shape[1], X_train.shape[2]
-    
+
     # --- OPTIMIZED: Multi-layer LSTM with dropout ---
-    model = Sequential([
-        Input(shape=(n_timesteps, n_features)),
-        LSTM(config["lstm_units"][0], 
-             activation="relu", 
-             return_sequences=True,
-             dropout=config["dropout"],
-             recurrent_dropout=config["recurrent_dropout"]),
-        LSTM(config["lstm_units"][1], 
-             activation="relu",
-             dropout=config["dropout"],
-             recurrent_dropout=config["recurrent_dropout"]),
-        Dense(1)
-    ])
+    model = Sequential(
+        [
+            Input(shape=(n_timesteps, n_features)),
+            LSTM(
+                config["lstm_units"][0],
+                activation="relu",
+                return_sequences=True,
+                dropout=config["dropout"],
+                recurrent_dropout=config["recurrent_dropout"],
+            ),
+            LSTM(
+                config["lstm_units"][1],
+                activation="relu",
+                dropout=config["dropout"],
+                recurrent_dropout=config["recurrent_dropout"],
+            ),
+            Dense(1),
+        ]
+    )
     model.compile(optimizer="adam", loss="mean_squared_error")
 
     early_stopping = EarlyStopping(

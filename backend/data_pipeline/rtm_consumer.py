@@ -23,17 +23,25 @@ logging.basicConfig(
 # --- Configs ---
 KAFKA_SERVER = os.getenv("KAFKA_BROKER_URL", "kafka:9092")
 KAFKA_TOPIC_IN = "sensors-raw"
-# Renamed for clarity to distinguish it from the new data topic
 KAFKA_TOPIC_ALERTS_OUT = "alerts"
-# New topic to send processed sensor data (for frontend visualization)
 KAFKA_TOPIC_DATA_OUT = "sensors-processed"
 WINDOW_SIZE = 5
+
+# MySQL Config (for Alarms)
 DB_CONFIG = {
     "host": os.getenv("DB_HOST"),
     "port": int(os.getenv("DB_PORT", 3306)),
     "user": os.getenv("DB_USER"),
     "password": os.getenv("DB_PASSWORD"),
     "database": os.getenv("DB_DATABASE"),
+}
+
+# InfluxDB Config (for Prediction Logs)
+INFLUXDB_CONFIG = {
+    "url": os.getenv("INFLUXDB_URL", "http://influxdb:8086"),
+    "token": os.getenv("INFLUXDB_TOKEN"),
+    "org": os.getenv("INFLUXDB_ORG"),
+    "bucket": os.getenv("INFLUXDB_BUCKET"),
 }
 
 
@@ -163,7 +171,6 @@ def main():
             )
 
             # Send the complete data point (including new features) to the data output stream
-            # This is CRITICAL for the frontend/real-time dashboard.
             producer.send(KAFKA_TOPIC_DATA_OUT, value=data_row)
             producer.flush()
             logging.debug(
@@ -174,9 +181,9 @@ def main():
             prediction, causes = detector.predict(data_row)
             latency = (time.time() - start_time) * 1000
 
-            # Log every prediction to the database
+            # Log every prediction to InfluxDB (UPDATED CALL)
             log_prediction(
-                db_config=DB_CONFIG,
+                influxdb_config=INFLUXDB_CONFIG,
                 model_version="RandomForest_RTM_v1.0",
                 input_data=data_row,
                 prediction={"anomaly": int(prediction)},

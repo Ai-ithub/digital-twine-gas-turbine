@@ -1,9 +1,12 @@
+# backend/ml/onnx_predictor.py
+
 import os
 import numpy as np
 import onnxruntime as ort
 from dotenv import load_dotenv
-from typing import Dict, List
+from typing import Dict, List, Tuple
 import logging
+import time  # NEW Import
 
 # CORRECTED: Use an absolute import from the 'backend' package root
 from backend.core.database import CompressorDatabase
@@ -65,6 +68,7 @@ class ONNXPredictor:
 
         return np.array(processed_data, dtype=np.float32)
 
+    # CHANGED: Added latency logging
     def predict_all_values(self) -> np.ndarray:
         """
         Loads data from the database, preprocesses it, and runs prediction for all entries.
@@ -75,7 +79,6 @@ class ONNXPredictor:
         if not self.db.load_data():
             raise ValueError("Failed to load data from the database")
 
-        # THE FIX: Use the new preprocessing function
         input_data = self._preprocess_data(self.db._data)
 
         if input_data.shape[0] == 0:
@@ -91,8 +94,36 @@ class ONNXPredictor:
             )
             return np.array([])
 
+        start_time = time.time()
+
         predictions = self.session.run(None, {self.input_name: input_data})[0]
+
+        latency_ms = (time.time() - start_time) * 1000
+        self.logger.info(
+            f"Prediction inference time: {latency_ms:.2f} ms"
+        )  # Log Latency
+
         return predictions.flatten()
+
+    # NEW: Predict method for a single data point, returning prediction and latency
+    def predict_single(
+        self, input_data: np.ndarray, model_version: str
+    ) -> Tuple[np.ndarray, float]:
+        """Runs prediction for a single data point and returns latency."""
+        if input_data.shape[0] != 1 or input_data.ndim != 2:
+            raise ValueError(
+                "Input data must be a single row (2D array: 1 row, N features)."
+            )
+
+        start_time = time.time()
+
+        ort_inputs = {self.input_name: input_data.astype(np.float32)}
+        predictions = self.session.run(None, ort_inputs)[0]
+
+        latency_ms = (time.time() - start_time) * 1000
+        self.logger.debug(f"Inference time for {model_version}: {latency_ms:.2f} ms")
+
+        return predictions, latency_ms
 
 
 if __name__ == "__main__":
