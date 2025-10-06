@@ -5,7 +5,9 @@ from backend.core.utils import format_status_for_dashboard
 def test_format_status_normal():
     """Tests the function with a normal status string, including confidence."""
     # Updated to expect the confidence text
-    assert format_status_for_dashboard("Normal") == "Status: NORMAL (Confidence: 100.0%)"
+    assert (
+        format_status_for_dashboard("Normal") == "Status: NORMAL (Confidence: 100.0%)"
+    )
 
 
 def test_format_status_fault():
