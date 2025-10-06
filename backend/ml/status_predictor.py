@@ -1,8 +1,13 @@
+# backend/ml/status_predictor.py
+
 import pymysql
 import numpy as np
 import onnxruntime as ort
 from sklearn.preprocessing import StandardScaler
 import pandas as pd
+# CHANGED: Import for improved return type and json
+import json 
+from typing import Dict, Tuple, Any, Optional 
 
 
 class CompressorStatusPredictor:
@@ -47,11 +52,14 @@ class CompressorStatusPredictor:
         conn.close()
         return df.values
 
-    def predict(self):
-        """Compressor condition prediction based on database data."""
+    # CHANGED: Predict method now returns status, confidence, and all class probabilities
+    def predict(self) -> Tuple[str, float, Dict[str, float]]:
+        """
+        Compressor condition prediction returning status, confidence, and all probabilities.
+        """
         data = self.fetch_latest_data()
         if data is None or len(data) == 0:
-            return "No data available for prediction"
+            return "No data available", 0.0, {}
 
         # Data normalization
         data_scaled = self.scaler.transform(data.astype(np.float32))
@@ -61,7 +69,20 @@ class CompressorStatusPredictor:
             self.ort_session.get_inputs()[0].name: data_scaled.astype(np.float32)
         }
         ort_outs = self.ort_session.run(None, ort_inputs)
-
-        # Finding the class with the highest probability
-        predicted_class = np.argmax(ort_outs[0], axis=1)[0]
-        return self.status_map[predicted_class]
+        
+        # 1. Uncertainty Estimation: Use Softmax output (probabilities)
+        probabilities = ort_outs[0].flatten() 
+        
+        # Finding the class with the highest probability (Confidence/Trust)
+        predicted_class_index = np.argmax(probabilities)
+        confidence = float(probabilities[predicted_class_index])
+        
+        predicted_status = self.status_map[predicted_class_index]
+        
+        # Map probabilities to status labels
+        prob_dict = {
+            self.status_map[i]: float(probabilities[i]) 
+            for i in range(len(probabilities))
+        }
+        
+        return predicted_status, confidence, prob_dict

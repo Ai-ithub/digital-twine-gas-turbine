@@ -8,6 +8,9 @@ from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import StandardScaler
 from typing import Dict, Optional
 
+# NEW Import for safety constraints
+from backend.core.config import RTO_CONSTRAINTS
+
 
 class CompressorEnv(gym.Env):
     def __init__(
@@ -60,7 +63,17 @@ class CompressorEnv(gym.Env):
             "vibration_max": df["Vibration"].max(),
         }
 
-        self.action_space = spaces.Box(low=0.0, high=1.0, shape=(1,), dtype=np.float32)
+        # NEW: Load Safety Constraints
+        self.safety_constraints = RTO_CONSTRAINTS
+        
+        # CHANGED: Action space is now defined by safety constraints
+        self.action_space = spaces.Box(
+            low=self.safety_constraints["LOAD_FACTOR_MIN"], 
+            high=self.safety_constraints["LOAD_FACTOR_MAX"], 
+            shape=(1,), 
+            dtype=np.float32
+        )
+        
         self.observation_space = spaces.Box(
             low=-np.inf,
             high=np.inf,
@@ -110,8 +123,15 @@ class CompressorEnv(gym.Env):
             return 0
         return (value - min_val) / (max_val - min_val)
 
+    # CHANGED: step method to include safety constraints, penalty, and termination logic
     def step(self, action: np.ndarray):
-        load_factor = np.clip(action, 0.0, 1.0)[0]
+        # 1. Enforce Action Constraint (Action Clipping)
+        load_factor = np.clip(
+            action, 
+            self.safety_constraints["LOAD_FACTOR_MIN"], 
+            self.safety_constraints["LOAD_FACTOR_MAX"]
+        )[0]
+        
         load_factor_df = pd.DataFrame([[load_factor]], columns=["Load_Factor"])
 
         efficiency = self.models["Efficiency"].predict(load_factor_df)[0]
@@ -138,14 +158,36 @@ class CompressorEnv(gym.Env):
             + self.reward_weights["vibration"] * norm_vibration
         )
 
+        # --- NEW: Safety Constraint Penalty and Termination Logic ---
+        safety_penalty = 0
+        terminated = False # Indicates episode ends due to critical safety violation
+        
+        # Heavy penalty for critical violations
+        if vibration > self.safety_constraints["MAX_VIBRATION_LIMIT"]:
+            safety_penalty += 100 
+            terminated = True # Critical violation ends the simulation run (E-Stop)
+            
+        if power > self.safety_constraints["MAX_POWER_CONSUMPTION"]:
+            safety_penalty += 50
+            
+        if efficiency < self.safety_constraints["MIN_EFFICIENCY"]:
+            safety_penalty += 20
+        # -----------------------------------------------------------
+        
+        # Apply the penalty to the total reward
+        reward -= safety_penalty 
+
         self.current_step += 1
-        done = self.current_step >= len(self.df) - 1
+        # 'truncated' indicates episode ends due to reaching the end of the data
+        truncated = self.current_step >= len(self.df) - 1
 
         next_state = (
             self._get_state(self.current_step)
-            if not done
+            if not terminated and not truncated
             else np.zeros(self.observation_space.shape, dtype=np.float32)
         )
-        info = {"efficiency": efficiency, "power": power, "vibration": vibration}
+        
+        # Add the load factor to info for logging/debugging
+        info = {"efficiency": efficiency, "power": power, "vibration": vibration, "load_factor": load_factor}
 
-        return next_state, reward, done, False, info
+        return next_state, reward, terminated, truncated, info
