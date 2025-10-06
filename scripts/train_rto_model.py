@@ -178,7 +178,7 @@ if __name__ == "__main__":
         "reward_weights": {
             "efficiency": 10.0,  # Increased focus on efficiency
             "power": -0.005,  # Reduced penalty to allow exploration
-            "vibration": -0.2  # Increased penalty for vibration
+            "vibration": -0.2,  # Increased penalty for vibration
         },
     }
     train_rto_model(CONFIG)

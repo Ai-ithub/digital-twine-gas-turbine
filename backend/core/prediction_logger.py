@@ -8,7 +8,13 @@ from influxdb_client import InfluxDBClient, Point
 logger = logging.getLogger(__name__)
 
 
-def log_prediction(influxdb_config: dict, model_version: str, input_data: dict, prediction: dict, latency_ms: float):
+def log_prediction(
+    influxdb_config: dict,
+    model_version: str,
+    input_data: dict,
+    prediction: dict,
+    latency_ms: float,
+):
     """Logs a prediction event to the InfluxDB time-series database.
 
     Args:
@@ -29,30 +35,32 @@ def log_prediction(influxdb_config: dict, model_version: str, input_data: dict, 
 
             # Extract timestamp from input data (assuming 'Timestamp' key in ISO format)
             timestamp_str = input_data.get("Timestamp")
-            
-            point_time = datetime.utcnow() # Default
+
+            point_time = datetime.utcnow()  # Default
             if timestamp_str:
                 try:
                     # Convert ISO time string (e.g., with Z) to datetime object
-                    point_time = datetime.fromisoformat(timestamp_str.replace("Z", "+00:00"))
+                    point_time = datetime.fromisoformat(
+                        timestamp_str.replace("Z", "+00:00")
+                    )
                 except ValueError:
-                    pass # Fallback to current UTC time on error
+                    pass  # Fallback to current UTC time on error
 
             # 2. Create Point for InfluxDB storage
             point = (
-                Point("prediction_logs") # Measurement name
+                Point("prediction_logs")  # Measurement name
                 .tag("model_version", model_version)
-                .tag("time_id", str(input_data.get("Time"))) 
+                .tag("time_id", str(input_data.get("Time")))
                 .field("latency_ms", latency_ms)
                 # Store complex data (inputs and results) as JSON strings
                 .field("prediction_result", json.dumps(prediction, default=str))
                 .field("input_data", json.dumps(input_data, default=str))
-                .time(point_time) # Use sensor data time
+                .time(point_time)  # Use sensor data time
             )
 
             # 3. Write the Point
             write_api.write(bucket=influxdb_config["bucket"], record=point)
-            
+
             logger.debug(f"Prediction logged to InfluxDB for model: {model_version}")
 
     except Exception as e:

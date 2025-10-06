@@ -4,9 +4,9 @@ import os
 import numpy as np
 import onnxruntime as ort
 from dotenv import load_dotenv
-from typing import Dict, List, Any, Tuple
+from typing import Dict, List, Tuple
 import logging
-import time # NEW Import
+import time  # NEW Import
 
 # CORRECTED: Use an absolute import from the 'backend' package root
 from backend.core.database import CompressorDatabase
@@ -94,29 +94,35 @@ class ONNXPredictor:
             )
             return np.array([])
 
-        start_time = time.time() 
-        
+        start_time = time.time()
+
         predictions = self.session.run(None, {self.input_name: input_data})[0]
-        
+
         latency_ms = (time.time() - start_time) * 1000
-        self.logger.info(f"Prediction inference time: {latency_ms:.2f} ms") # Log Latency
-        
+        self.logger.info(
+            f"Prediction inference time: {latency_ms:.2f} ms"
+        )  # Log Latency
+
         return predictions.flatten()
-        
+
     # NEW: Predict method for a single data point, returning prediction and latency
-    def predict_single(self, input_data: np.ndarray, model_version: str) -> Tuple[np.ndarray, float]:
+    def predict_single(
+        self, input_data: np.ndarray, model_version: str
+    ) -> Tuple[np.ndarray, float]:
         """Runs prediction for a single data point and returns latency."""
         if input_data.shape[0] != 1 or input_data.ndim != 2:
-            raise ValueError("Input data must be a single row (2D array: 1 row, N features).")
-            
-        start_time = time.time() 
-        
+            raise ValueError(
+                "Input data must be a single row (2D array: 1 row, N features)."
+            )
+
+        start_time = time.time()
+
         ort_inputs = {self.input_name: input_data.astype(np.float32)}
         predictions = self.session.run(None, ort_inputs)[0]
-        
+
         latency_ms = (time.time() - start_time) * 1000
         self.logger.debug(f"Inference time for {model_version}: {latency_ms:.2f} ms")
-        
+
         return predictions, latency_ms
 
 

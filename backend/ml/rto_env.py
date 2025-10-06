@@ -65,15 +65,15 @@ class CompressorEnv(gym.Env):
 
         # NEW: Load Safety Constraints
         self.safety_constraints = RTO_CONSTRAINTS
-        
+
         # CHANGED: Action space is now defined by safety constraints
         self.action_space = spaces.Box(
-            low=self.safety_constraints["LOAD_FACTOR_MIN"], 
-            high=self.safety_constraints["LOAD_FACTOR_MAX"], 
-            shape=(1,), 
-            dtype=np.float32
+            low=self.safety_constraints["LOAD_FACTOR_MIN"],
+            high=self.safety_constraints["LOAD_FACTOR_MAX"],
+            shape=(1,),
+            dtype=np.float32,
         )
-        
+
         self.observation_space = spaces.Box(
             low=-np.inf,
             high=np.inf,
@@ -127,11 +127,11 @@ class CompressorEnv(gym.Env):
     def step(self, action: np.ndarray):
         # 1. Enforce Action Constraint (Action Clipping)
         load_factor = np.clip(
-            action, 
-            self.safety_constraints["LOAD_FACTOR_MIN"], 
-            self.safety_constraints["LOAD_FACTOR_MAX"]
+            action,
+            self.safety_constraints["LOAD_FACTOR_MIN"],
+            self.safety_constraints["LOAD_FACTOR_MAX"],
         )[0]
-        
+
         load_factor_df = pd.DataFrame([[load_factor]], columns=["Load_Factor"])
 
         efficiency = self.models["Efficiency"].predict(load_factor_df)[0]
@@ -160,22 +160,22 @@ class CompressorEnv(gym.Env):
 
         # --- NEW: Safety Constraint Penalty and Termination Logic ---
         safety_penalty = 0
-        terminated = False # Indicates episode ends due to critical safety violation
-        
+        terminated = False  # Indicates episode ends due to critical safety violation
+
         # Heavy penalty for critical violations
         if vibration > self.safety_constraints["MAX_VIBRATION_LIMIT"]:
-            safety_penalty += 100 
-            terminated = True # Critical violation ends the simulation run (E-Stop)
-            
+            safety_penalty += 100
+            terminated = True  # Critical violation ends the simulation run (E-Stop)
+
         if power > self.safety_constraints["MAX_POWER_CONSUMPTION"]:
             safety_penalty += 50
-            
+
         if efficiency < self.safety_constraints["MIN_EFFICIENCY"]:
             safety_penalty += 20
         # -----------------------------------------------------------
-        
+
         # Apply the penalty to the total reward
-        reward -= safety_penalty 
+        reward -= safety_penalty
 
         self.current_step += 1
         # 'truncated' indicates episode ends due to reaching the end of the data
@@ -186,8 +186,13 @@ class CompressorEnv(gym.Env):
             if not terminated and not truncated
             else np.zeros(self.observation_space.shape, dtype=np.float32)
         )
-        
+
         # Add the load factor to info for logging/debugging
-        info = {"efficiency": efficiency, "power": power, "vibration": vibration, "load_factor": load_factor}
+        info = {
+            "efficiency": efficiency,
+            "power": power,
+            "vibration": vibration,
+            "load_factor": load_factor,
+        }
 
         return next_state, reward, terminated, truncated, info

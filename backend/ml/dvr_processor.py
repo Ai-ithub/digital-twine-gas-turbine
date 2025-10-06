@@ -5,7 +5,8 @@ import numpy as np
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
 import statsmodels.api as sm
-from typing import Dict, Any, Optional
+from typing import Dict, Any
+
 # NEW: For signal processing/filtering
 from scipy.signal import butter, lfilter
 
@@ -43,20 +44,19 @@ class DVRProcessor:
     PCA_RECONSTRUCTION_PERCENTILE: int = 95
     GRUBBS_TEST_ALPHA: float = 0.05
     GRUBBS_TEST_COLUMN: str = "Temperature_In"
-    
+
     # --- Adaptive thresholding parameters ---
     ADAPTIVE_THRESHOLD_WINDOW: int = 100
     SENSOR_SPECIFIC_THRESHOLDS: Dict[str, float] = {
         "Pressure_In": 90,
         "Temperature_In": 95,
         "Vibration": 98,
-        "Flow_Rate": 92
+        "Flow_Rate": 92,
     }
-    
+
     # --- NEW: Filtering Parameters for Vibration Data ---
     VIB_FILTER_CUTOFF = 0.05  # Normalized cutoff frequency (for high-pass filter)
-    VIB_FILTER_ORDER = 5     # Order of the Butterworth filter
-
+    VIB_FILTER_ORDER = 5  # Order of the Butterworth filter
 
     def __init__(self):
         """Initializes the DVR processor components like scalers and PCA models."""
@@ -144,9 +144,9 @@ class DVRProcessor:
         if "Vibration_Filtered" in features.columns:
             features["Vibration"] = features["Vibration_Filtered"]
             features = features.drop(columns=["Vibration_Filtered"])
-            
+
         features = features.dropna()
-        
+
         if features.empty:
             df["Reconstruction_Error"] = np.nan
             df["Gross_Error"] = False
@@ -162,8 +162,8 @@ class DVRProcessor:
         # OPTIMIZED: Adaptive threshold based on rolling statistics
         if len(reconstruction_error) > self.ADAPTIVE_THRESHOLD_WINDOW:
             rolling_threshold = np.percentile(
-                reconstruction_error[-self.ADAPTIVE_THRESHOLD_WINDOW:], 
-                self.PCA_RECONSTRUCTION_PERCENTILE
+                reconstruction_error[-self.ADAPTIVE_THRESHOLD_WINDOW :],
+                self.PCA_RECONSTRUCTION_PERCENTILE,
             )
         else:
             rolling_threshold = np.percentile(
@@ -214,29 +214,39 @@ class DVRProcessor:
         return np.array(outliers, dtype=int)
 
     # OPTIMIZED: Enhanced WLS with better weight calculation
-    def apply_wls_model(self, df: pd.DataFrame) -> sm.regression.linear_model.RegressionResultsWrapper:
+    def apply_wls_model(
+        self, df: pd.DataFrame
+    ) -> sm.regression.linear_model.RegressionResultsWrapper:
         """
         Enhanced WLS model with improved weight calculation and validation.
         """
         # Use the filtered vibration data if available
-        input_cols = ["Pressure_In", "Temperature_In", "Flow_Rate", "Efficiency", "Power_Consumption"]
+        input_cols = [
+            "Pressure_In",
+            "Temperature_In",
+            "Flow_Rate",
+            "Efficiency",
+            "Power_Consumption",
+        ]
         df_clean = df.dropna(subset=input_cols).copy()
-        
+
         if len(df_clean) < 10:  # Minimum samples required
             return None
-            
+
         X = df_clean[["Pressure_In", "Temperature_In", "Flow_Rate", "Efficiency"]]
         y = df_clean["Power_Consumption"]
         X = sm.add_constant(X)
 
         # OPTIMIZED: Better weight calculation - Use sensor uncertainty and measurement quality
-        sensor_quality = df_clean.get("all_rules_pass", pd.Series([True] * len(df_clean)))
+        sensor_quality = df_clean.get(
+            "all_rules_pass", pd.Series([True] * len(df_clean))
+        )
         base_weights = np.where(sensor_quality, 1.0, 0.5)
-        
+
         # Rolling variance-based weights
         rolling_std = y.rolling(window=20, min_periods=5).std().fillna(y.std())
         variance_weights = 1.0 / (rolling_std**2 + 1e-6)
-        
+
         # Combined weights
         weights = base_weights * variance_weights
         weights = weights / weights.max()  # Normalize
@@ -252,27 +262,32 @@ class DVRProcessor:
         wls_model = self.apply_wls_model(df)
         if wls_model is None:
             return df
-            
+
         df_corrected = df.copy()
-        
+
         # Identify rows that need correction
         correction_mask = (
-            df.get("Gross_Error", False) | 
-            df.get("Grubbs_Outlier", False) |
-            ~df.get("all_rules_pass", True)
+            df.get("Gross_Error", False)
+            | df.get("Grubbs_Outlier", False)
+            | ~df.get("all_rules_pass", True)
         )
-        
+
         if correction_mask.any():
             # Predict corrected values for flagged data
-            X_correct = df.loc[correction_mask, ["Pressure_In", "Temperature_In", "Flow_Rate", "Efficiency"]]
+            X_correct = df.loc[
+                correction_mask,
+                ["Pressure_In", "Temperature_In", "Flow_Rate", "Efficiency"],
+            ]
             if not X_correct.empty:
                 X_correct = sm.add_constant(X_correct)
                 corrected_power = wls_model.predict(X_correct)
-                df_corrected.loc[correction_mask, "Power_Consumption_Corrected"] = corrected_power
+                df_corrected.loc[correction_mask, "Power_Consumption_Corrected"] = (
+                    corrected_power
+                )
                 df_corrected.loc[correction_mask, "Data_Corrected"] = True
-        
+
         return df_corrected
-        
+
     # NEW: High-Pass Butterworth Filter for Vibration Noise
     def apply_high_pass_filter_to_vibration(self, df: pd.DataFrame) -> pd.DataFrame:
         """
@@ -280,7 +295,7 @@ class DVRProcessor:
         The filtered data is stored in 'Vibration_Filtered'.
         """
         df_filtered = df.copy()
-        
+
         vib_data = df["Vibration"].dropna()
         # Need enough data points for the filter
         if len(vib_data) < self.VIB_FILTER_ORDER + 1:
@@ -290,44 +305,43 @@ class DVRProcessor:
         # Design the high-pass Butterworth filter
         # (Note: fs=1.0 assumes uniformly sampled data)
         b, a = butter(
-            self.VIB_FILTER_ORDER, 
-            self.VIB_FILTER_CUTOFF, 
-            btype='high', 
-            output='ba', 
-            fs=1.0 
+            self.VIB_FILTER_ORDER,
+            self.VIB_FILTER_CUTOFF,
+            btype="high",
+            output="ba",
+            fs=1.0,
         )
-        
+
         # Apply the filter
         filtered_data = lfilter(b, a, vib_data.values)
-        
+
         # Store the filtered data
         df_filtered.loc[vib_data.index, "Vibration_Filtered"] = filtered_data
-        
-        return df_filtered
 
+        return df_filtered
 
     # CHANGED: Enhanced run_all_checks to include vibration filtering
     def run_all_checks(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         Runs all DVR checks, applies vibration filtering, and performs data correction.
-        
+
         Args:
             df (pd.DataFrame): The input DataFrame.
-        
+
         Returns:
             pd.DataFrame: The DataFrame enriched with all DVR flags and corrections.
         """
         # STEP 1: Apply specialized preprocessing for high-frequency data (Vibration)
-        df = self.apply_high_pass_filter_to_vibration(df) # NEW
-        
+        df = self.apply_high_pass_filter_to_vibration(df)  # NEW
+
         # STEP 2: Apply all validation checks
         df = self.apply_rule_based_checks(df)
         df = self.apply_pca_check(df)
         df = self.apply_grubbs_test(df)
-        
+
         # STEP 3: Apply data correction for flagged anomalies
         df = self.correct_sensor_data(df)
-        
+
         # Calculate overall data quality score
         quality_factors = []
         if "all_rules_pass" in df.columns:
@@ -336,10 +350,10 @@ class DVRProcessor:
             quality_factors.append((~df["Gross_Error"]).astype(float))
         if "Grubbs_Outlier" in df.columns:
             quality_factors.append((~df["Grubbs_Outlier"]).astype(float))
-            
+
         if quality_factors:
             df["Data_Quality_Score"] = np.mean(quality_factors, axis=0)
         else:
             df["Data_Quality_Score"] = 1.0
-            
+
         return df

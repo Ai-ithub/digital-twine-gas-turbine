@@ -5,9 +5,9 @@ import numpy as np
 import onnxruntime as ort
 from sklearn.preprocessing import StandardScaler
 import pandas as pd
+
 # CHANGED: Import for improved return type and json
-import json 
-from typing import Dict, Tuple, Any, Optional 
+from typing import Dict, Tuple
 
 
 class CompressorStatusPredictor:
@@ -69,20 +69,20 @@ class CompressorStatusPredictor:
             self.ort_session.get_inputs()[0].name: data_scaled.astype(np.float32)
         }
         ort_outs = self.ort_session.run(None, ort_inputs)
-        
+
         # 1. Uncertainty Estimation: Use Softmax output (probabilities)
-        probabilities = ort_outs[0].flatten() 
-        
+        probabilities = ort_outs[0].flatten()
+
         # Finding the class with the highest probability (Confidence/Trust)
         predicted_class_index = np.argmax(probabilities)
         confidence = float(probabilities[predicted_class_index])
-        
+
         predicted_status = self.status_map[predicted_class_index]
-        
+
         # Map probabilities to status labels
         prob_dict = {
-            self.status_map[i]: float(probabilities[i]) 
+            self.status_map[i]: float(probabilities[i])
             for i in range(len(probabilities))
         }
-        
+
         return predicted_status, confidence, prob_dict

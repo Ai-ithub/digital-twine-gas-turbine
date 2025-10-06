@@ -23,30 +23,52 @@ try:
         RTM_SCALER_SCALE_PATH,
     )
 except ImportError:
-    print("Error: Could not import configuration. Ensure 'backend.core.config' is accessible.")
+    print(
+        "Error: Could not import configuration. Ensure 'backend.core.config' is accessible."
+    )
     # Use fallback paths for execution outside of a structured environment
     RTM_MODEL_PATH = "../artifacts/rtm_model.onnx"
     RTM_EXPLAIN_MODEL_PATH = "../artifacts/rtm_random_forest.joblib"
     RTM_SCALER_MEAN_PATH = "../artifacts/rtm_scaler_mean.npy"
     RTM_SCALER_SCALE_PATH = "../artifacts/rtm_scaler_scale.npy"
     RTM_FEATURE_COLUMNS = [
-        "Pressure_In", "Temperature_In", "Flow_Rate", "Pressure_Out", "Temperature_Out", 
-        "Efficiency", "Power_Consumption", "Vibration", "Ambient_Temperature", "Humidity", 
-        "Air_Pollution", "Frequency", "Amplitude", "Phase_Angle", "Velocity", "Stiffness", 
-        "Vibration_roll_mean", "Power_Consumption_roll_mean", "Vibration_roll_std", "Power_Consumption_roll_std",
+        "Pressure_In",
+        "Temperature_In",
+        "Flow_Rate",
+        "Pressure_Out",
+        "Temperature_Out",
+        "Efficiency",
+        "Power_Consumption",
+        "Vibration",
+        "Ambient_Temperature",
+        "Humidity",
+        "Air_Pollution",
+        "Frequency",
+        "Amplitude",
+        "Phase_Angle",
+        "Velocity",
+        "Stiffness",
+        "Vibration_roll_mean",
+        "Power_Consumption_roll_mean",
+        "Vibration_roll_std",
+        "Power_Consumption_roll_std",
     ]
 
 
-DATASET_PATH = "datasets/MASTER_DATASET.csv" # Adjusted path based on typical project structure
+DATASET_PATH = (
+    "datasets/MASTER_DATASET.csv"  # Adjusted path based on typical project structure
+)
 WINDOW_SIZE = 5
 
 
 def feature_engineering(df: pd.DataFrame) -> pd.DataFrame:
     """Applies rolling mean and std features."""
-    
+
     # Check if base columns for rolling window exist
     if "Vibration" not in df.columns or "Power_Consumption" not in df.columns:
-        print("Required columns 'Vibration' or 'Power_Consumption' not found for feature engineering.")
+        print(
+            "Required columns 'Vibration' or 'Power_Consumption' not found for feature engineering."
+        )
         return df
 
     df["Vibration_roll_mean"] = df["Vibration"].rolling(window=WINDOW_SIZE).mean()
@@ -57,17 +79,17 @@ def feature_engineering(df: pd.DataFrame) -> pd.DataFrame:
     df["Power_Consumption_roll_std"] = (
         df["Power_Consumption"].rolling(window=WINDOW_SIZE).std()
     )
-    
+
     # Fill NaN values created by the rolling window operation
     df.bfill(inplace=True)
     df.ffill(inplace=True)
-    
+
     return df
 
 
 def train_rtm_model():
     """Loads data, trains the RTM RandomForest model, evaluates it, and saves artifacts."""
-    
+
     # --- 1. Load Data ---
     print("Loading data...")
     try:
@@ -80,25 +102,29 @@ def train_rtm_model():
     # --- 2. Feature Engineering ---
     print("\n--- Starting Feature Engineering ---")
     df = feature_engineering(df)
-    
+
     # Verify that all required feature columns are present after engineering
     missing_cols = [col for col in RTM_FEATURE_COLUMNS if col not in df.columns]
     if missing_cols:
-        print(f"❌ Error: Missing required feature columns after engineering: {missing_cols}. Aborting.")
+        print(
+            f"❌ Error: Missing required feature columns after engineering: {missing_cols}. Aborting."
+        )
         return
-        
-    print(f"✅ Feature engineering complete. Total features: {len(RTM_FEATURE_COLUMNS)}")
+
+    print(
+        f"✅ Feature engineering complete. Total features: {len(RTM_FEATURE_COLUMNS)}"
+    )
 
     # --- 3. Prepare Data for Supervised Learning ---
     print("\n--- Preparing data for supervised learning ---")
     X = df[RTM_FEATURE_COLUMNS]
     # Map "Normal" to 1 and all others (Anomaly/Failure) to -1
     y = df["Status"].apply(lambda x: 1 if x == "Normal" else -1)
-    
+
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=0.2, random_state=42, stratify=y
     )
-    
+
     scaler = StandardScaler()
     X_train_scaled = scaler.fit_transform(X_train)
     X_test_scaled = scaler.transform(X_test)
@@ -113,12 +139,14 @@ def train_rtm_model():
     # --- 5. Evaluate the New Model ---
     print("\n--- Evaluating New Model Performance on Test Data ---")
     y_pred = model.predict(X_test_scaled)
-    
+
     print("\n--- Model Performance Metrics ---")
     print(
-        classification_report(y_test, y_pred, target_names=["Anomaly (-1)", "Normal (1)"])
+        classification_report(
+            y_test, y_pred, target_names=["Anomaly (-1)", "Normal (1)"]
+        )
     )
-    
+
     print("\n--- Confusion Matrix ---")
     cm = confusion_matrix(y_test, y_pred)
     print(cm)
@@ -129,7 +157,7 @@ def train_rtm_model():
     # Save the model in ONNX format for fast prediction (RTM_MODEL_PATH)
     target_opset = {"": 15, "ai.onnx.ml": 3}
     initial_type = [("input", FloatTensorType([None, len(RTM_FEATURE_COLUMNS)]))]
-    
+
     try:
         onnx_model = skl2onnx.convert_sklearn(
             model, initial_types=initial_type, target_opset=target_opset
@@ -151,7 +179,9 @@ def train_rtm_model():
     try:
         np.save(RTM_SCALER_MEAN_PATH, scaler.mean_)
         np.save(RTM_SCALER_SCALE_PATH, scaler.scale_)
-        print(f"✅ New scaler parameters saved to: {RTM_SCALER_MEAN_PATH} and {RTM_SCALER_SCALE_PATH}")
+        print(
+            f"✅ New scaler parameters saved to: {RTM_SCALER_MEAN_PATH} and {RTM_SCALER_SCALE_PATH}"
+        )
     except Exception as e:
         print(f"❌ Error saving scaler parameters: {e}")
 

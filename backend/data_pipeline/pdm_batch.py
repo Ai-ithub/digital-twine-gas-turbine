@@ -8,11 +8,11 @@ import pandas as pd
 import onnxruntime as ort
 import pymysql
 import pickle
-from influxdb_client import InfluxDBClient, Point # ADDED Point
+from influxdb_client import InfluxDBClient, Point  # ADDED Point
 from dotenv import load_dotenv
 import json
 from backend.core import config
-from datetime import datetime # ADDED datetime for timestamping
+from datetime import datetime  # ADDED datetime for timestamping
 
 # --- Setup Logging and Load Env ---
 load_dotenv()
@@ -37,6 +37,7 @@ INFLUXDB_CONFIG = {
     "org": os.getenv("INFLUXDB_ORG"),
     "bucket": os.getenv("INFLUXDB_BUCKET"),
 }
+
 
 def fetch_latest_sensor_data_sequence(window_size: int) -> pd.DataFrame:
     """Fetches a sequence of the latest sensor data from InfluxDB as a DataFrame."""
@@ -71,8 +72,8 @@ def fetch_latest_sensor_data_sequence(window_size: int) -> pd.DataFrame:
 
 
 def save_prediction_to_mysql(rul_value: float):
-    # This function is now deprecated in favor of InfluxDB for RUL. 
-    # Keeping it for potential temporary backward compatibility or if 'rul_predictions' 
+    # This function is now deprecated in favor of InfluxDB for RUL.
+    # Keeping it for potential temporary backward compatibility or if 'rul_predictions'
     # is a small table used by a simple front-end.
     # In a full migration, this should be removed and the calling main() function updated.
     logger.info(f"Saving RUL value ({rul_value:.2f}) to MySQL...")
@@ -107,10 +108,10 @@ def log_rul_to_influxdb(rul_value: float):
 
             # Create the Point: log the RUL prediction
             point = (
-                Point("rul_predictions_logs") # Measurement name
-                .tag("model_version", "LSTM_RUL_v1.0") # Assuming version
+                Point("rul_predictions_logs")  # Measurement name
+                .tag("model_version", "LSTM_RUL_v1.0")  # Assuming version
                 .field("rul_days", rul_value)
-                .time(datetime.utcnow()) # Time of prediction run
+                .time(datetime.utcnow())  # Time of prediction run
             )
             write_api.write(bucket=INFLUXDB_CONFIG["bucket"], record=point)
             logger.info("✅ RUL prediction logged to InfluxDB.")
@@ -145,8 +146,8 @@ def main():
         logger.info(f"Predicted RUL: {rul_value:.2f} days")
 
         # Save to MySQL (for simple frontend display of the LAST prediction)
-        save_prediction_to_mysql(rul_value) 
-        
+        save_prediction_to_mysql(rul_value)
+
         # Log to InfluxDB (for historical trend analysis of all predictions)
         log_rul_to_influxdb(rul_value)
 

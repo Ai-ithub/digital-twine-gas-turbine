@@ -13,7 +13,6 @@ from collections import deque
 from backend.core.prediction_logger import log_prediction
 from dotenv import load_dotenv
 from datetime import datetime
-from influxdb_client import InfluxDBClient # NEW IMPORT
 
 # --- 1. Configuration and Setup ---
 load_dotenv()
@@ -44,6 +43,7 @@ INFLUXDB_CONFIG = {
     "org": os.getenv("INFLUXDB_ORG"),
     "bucket": os.getenv("INFLUXDB_BUCKET"),
 }
+
 
 # --- 2. Function to save alerts to the database ---
 def save_alert_to_mysql(alert_data: dict):

@@ -116,9 +116,8 @@ RTO_CONSTRAINTS = {
     # Action Constraints (Limit the output of the Actor model)
     "LOAD_FACTOR_MIN": 0.20,
     "LOAD_FACTOR_MAX": 0.95,
-    
     # Physical/Safety Limits (For applying penalties in the reward function)
-    "MAX_VIBRATION_LIMIT": 1.5, # Emergency shutdown limit (e.g., mm/s)
-    "MAX_POWER_CONSUMPTION": 8000, # Max allowed power (kW)
-    "MIN_EFFICIENCY": 0.75, # Minimum acceptable efficiency
+    "MAX_VIBRATION_LIMIT": 1.5,  # Emergency shutdown limit (e.g., mm/s)
+    "MAX_POWER_CONSUMPTION": 8000,  # Max allowed power (kW)
+    "MIN_EFFICIENCY": 0.75,  # Minimum acceptable efficiency
 }
