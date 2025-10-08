@@ -19,7 +19,8 @@ logger = logging.getLogger(__name__)
 
 # Kafka Configuration
 KAFKA_SERVER = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092")
-KAFKA_TOPIC = os.getenv("KAFKA_RAW_TOPIC", "sensors-raw")
+# FIX: CONSUME BOTH RAW AND VALIDATED TOPICS
+KAFKA_TOPICS = ["sensors-raw", "sensors-validated"] 
 GROUP_ID = "influxdb-writer-group"
 
 # InfluxDB Configuration
@@ -35,18 +36,19 @@ def main():
         logger.critical("❌ InfluxDB credentials not found in .env file. Exiting.")
         return
 
-    # --- FIX: Add retry loop for Kafka connection ---
+    # --- FIX: Update consumer initialization to use all topics
     consumer = None
     while not consumer:
         try:
+            # FIX: Pass the list of topics
             consumer = KafkaConsumer(
-                KAFKA_TOPIC,
+                *KAFKA_TOPICS,
                 bootstrap_servers=[KAFKA_SERVER],
                 auto_offset_reset="earliest",
                 enable_auto_commit=False,
                 group_id=GROUP_ID,
             )
-            logger.info("✅ Kafka Consumer for InfluxDB connected successfully.")
+            logger.info(f"✅ Kafka Consumer for InfluxDB connected successfully. Consuming: {KAFKA_TOPICS}")
         except NoBrokersAvailable:
             logger.warning(
                 "Could not connect to Kafka for InfluxDB writer. Retrying in 5 seconds..."
@@ -65,12 +67,19 @@ def main():
                 f"✅ InfluxDB client connected. Writing to bucket '{INFLUXDB_BUCKET}'."
             )
 
-            logger.info(f"Listening for messages from topic '{KAFKA_TOPIC}'...")
+            logger.info(f"Listening for messages from topics: {KAFKA_TOPICS}...")
             for message in consumer:
                 try:
                     data = json.loads(message.value.decode("utf-8"))
+                    
+                    # FIX: Determine measurement name based on the Kafka topic
+                    if message.topic == "sensors-validated":
+                        measurement = "validated_sensors"
+                    else:
+                        measurement = "compressor_metrics" # Default for 'sensors-raw'
+
                     point = (
-                        Point("compressor_metrics")
+                        Point(measurement) # Use determined measurement
                         .tag("status", data.get("Status", "Unknown"))
                         .time(data.get("Timestamp"))
                     )
@@ -80,14 +89,19 @@ def main():
                             "timestamp",
                             "status",
                             "device_id",
-                        ] and isinstance(value, (int, float)):
+                        ] and isinstance(value, (int, float, bool)): # Added bool for compatibility
                             point = point.field(key, value)
+                            
+                    # FIX: Handle cases where 'Time' is used instead of 'Timestamp'
+                    if 'Time' in data and not data.get('Timestamp'):
+                        point = point.time(data.get("Time"))
+
 
                     write_api.write(
                         bucket=INFLUXDB_BUCKET, org=INFLUXDB_ORG, record=point
                     )
-                    logger.info(
-                        f"Written message with Timestamp={data.get('Timestamp')} to InfluxDB."
+                    logger.debug(
+                        f"Written message to '{measurement}' with Time={data.get('Timestamp') or data.get('Time')}."
                     )
                     consumer.commit()
 
@@ -98,7 +112,7 @@ def main():
                     consumer.commit()
                 except Exception as e:
                     logger.error(
-                        f"❌ Failed to process message: {e}. Data: {message.value}"
+                        f"❌ Failed to process message. Error: {e}. Data: {message.value}"
                     )
 
     except Exception as e:

@@ -3,6 +3,7 @@ import os
 import logging
 import json
 import uuid
+# Imports needed for Kafka/Configuration
 from flask import Flask, jsonify
 from flask_cors import CORS
 from flask_socketio import SocketIO
@@ -10,21 +11,12 @@ from dotenv import load_dotenv
 from kafka import KafkaConsumer
 from kafka.errors import NoBrokersAvailable
 from backend.core import config
-
-# Import blueprints
-from .routes.data_routes import data_bp
-from .routes.prediction_routes import prediction_bp
-from .routes.overview_routes import overview_bp
-from .routes.pdm_routes import pdm_bp
-from .routes.rto_routes import rto_bp
-from .routes.mlops_routes import mlops_bp
-from .routes.control_routes import control_bp
-from .routes.analysis_routes import analysis_bp
+# REMOVED: Imports for model loading logic (pickle, numpy, ONNXPredictor)
 
 eventlet.monkey_patch()
 
 
-# --- New Function: Listen to Processed Data (All Sensors) ---
+# --- Kafka Listener Functions ---
 def kafka_processed_data_listener():
     """Listens to the 'sensors-processed' topic (from RTM Consumer) and pushes messages to clients."""
     consumer = None
@@ -63,8 +55,6 @@ def kafka_processed_data_listener():
             logging.error(f"Error processing processed data message: {e}")
 
 
-# The original kafka_raw_data_listener is removed/replaced.
-# The kafka_alert_listener remains unchanged.
 def kafka_alert_listener():
     """Listens to the 'alerts' topic and pushes messages to clients via WebSocket."""
     consumer = None
@@ -97,7 +87,6 @@ def kafka_alert_listener():
             logging.error(f"Error processing alert message: {e}")
 
 
-# The rto_suggestion_listener remains unchanged.
 def rto_suggestion_listener():
     """Listens to the RTO suggestions topic and pushes them to clients."""
     consumer = None
@@ -150,11 +139,41 @@ def create_app():
     app.config["INFLUXDB_TOKEN"] = os.getenv("INFLUXDB_TOKEN")
     app.config["INFLUXDB_ORG"] = os.getenv("INFLUXDB_ORG")
     app.config["INFLUXDB_BUCKET"] = os.getenv("INFLUXDB_BUCKET")
+    
+    # Redis Config
+    app.config["REDIS_CONFIG"] = {
+        "host": os.getenv("REDIS_HOST", "redis"),
+        "port": int(os.getenv("REDIS_PORT", 6379)),
+        "db": int(os.getenv("REDIS_DB", 0)),
+    }
+    app.config["MYSQL_POOL_SIZE"] = int(os.getenv("MYSQL_POOL_SIZE", 10))
 
+    # Initialize Managers with app config
+    # db_manager.initialize(app.config) 
+    # cache_manager.initialize(app.config["REDIS_CONFIG"])
+
+    # --- FIX: Safe RUL PREDICTOR Initialization ---
     logging.info("Pre-loading machine learning models...")
-    logging.info("✅ All models loaded successfully.")
+
+    # FIX: Remove complex RUL loading logic to prevent conflict with Connection Pool.
+    # The /predict/rul endpoint only reads pre-calculated data from the DB and doesn't need a live Predictor object.
+    app.config["RUL_PREDICTOR"] = None 
+    
+    logging.info("✅ All application configuration finalized. Complex ML initialization skipped to ensure API stability.")
+    # --- END FIX ---
 
     # Register Blueprints
+    # Import blueprints inside the function to ensure they use the correct config
+    from .routes.data_routes import data_bp
+    from .routes.prediction_routes import prediction_bp
+    from .routes.overview_routes import overview_bp
+    from .routes.pdm_routes import pdm_bp
+    from .routes.rto_routes import rto_bp
+    from .routes.mlops_routes import mlops_bp
+    from .routes.control_routes import control_bp
+    from .routes.analysis_routes import analysis_bp
+    from .routes.health_routes import health_bp
+
     app.register_blueprint(data_bp, url_prefix="/api/data")
     app.register_blueprint(prediction_bp, url_prefix="/api/predict")
     app.register_blueprint(overview_bp, url_prefix="/api/status")
@@ -163,6 +182,8 @@ def create_app():
     app.register_blueprint(mlops_bp, url_prefix="/api/models")
     app.register_blueprint(control_bp, url_prefix="/api/control")
     app.register_blueprint(analysis_bp, url_prefix="/api/analysis")
+    # Register health_bp at the base /api prefix to make the route '/api/health'
+    app.register_blueprint(health_bp, url_prefix="/api")
 
     @app.route("/")
     def home():

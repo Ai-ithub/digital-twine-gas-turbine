@@ -13,6 +13,7 @@ def handle_prediction_errors(e, endpoint_name):
     elif isinstance(e, (ValueError, KeyError)):
         return jsonify({"error": f"Invalid data for prediction: {e}"}), 400
     else:
+        # Handles general 500 errors
         return jsonify(
             {"error": "An internal server error occurred during prediction"}
         ), 500
@@ -58,3 +59,36 @@ def predict_status():
         return jsonify({"Predicted Status": prediction})
     except Exception as e:
         return handle_prediction_errors(e, "/predict_status")
+
+
+@prediction_bp.route("/rul", methods=["GET"])
+def predict_rul():
+    """
+    Handles the request for Remaining Useful Life (RUL) prediction.
+    Mapped to /api/predict/rul via the blueprint prefix.
+    """
+    try:
+        # Expects the RUL predictor to be stored under the 'RUL_PREDICTOR' key in app config
+        rul_predictor = current_app.config.get("RUL_PREDICTOR")
+
+        if rul_predictor is None:
+            logging.error("RUL_PREDICTOR not found in app config.")
+            return jsonify({"error": "RUL prediction service is not initialized"}), 503
+
+        # Call the prediction method (assumes it returns a float or a dictionary)
+        prediction_result = rul_predictor.predict()
+
+        if prediction_result is None:
+             return jsonify({"error": "Prediction failed or no data available"}), 404
+
+        # Standardize the response format to {'RUL': value}
+        if isinstance(prediction_result, (int, float)):
+             return jsonify({"RUL": float(prediction_result)})
+        elif isinstance(prediction_result, dict):
+            # If the result is already a dictionary, return it directly
+            return jsonify(prediction_result)
+        else:
+            return jsonify({"error": "Invalid prediction result format"}), 500
+
+    except Exception as e:
+        return handle_prediction_errors(e, "/predict/rul")

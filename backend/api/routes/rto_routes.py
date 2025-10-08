@@ -3,11 +3,13 @@
 import logging
 from flask import Blueprint, jsonify, current_app
 from influxdb_client import InfluxDBClient
+from backend.core.cache_manager import cached_response
 
 rto_bp = Blueprint("rto_routes", __name__)
 
 
 @rto_bp.route("/efficiency_history", methods=["GET"])
+@cached_response(ttl=300)  # Apply 300-second (5 minutes) cache
 def get_efficiency_history():
     """Fetches the last 24 hours of efficiency data from InfluxDB."""
     config = current_app.config
