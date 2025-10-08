@@ -14,9 +14,35 @@ import checklistReducer from '../features/checklist/checklistSlice';
 import analysisReducer from '../features/analysis/analysisSlice';
 import threeDReducer from '../features/threeD/threeDSlice';
 
+
+// FIX: Create a custom persist configuration for the 'rtm' slice
+const rtmPersistConfig = {
+  key: 'rtm',
+  storage,
+  // Blacklist large arrays that cause Local Storage overflow
+  blacklist: ['dataPoints', 'chartData'],
+  // Whitelist small metadata keys (assuming these exist and are safe to persist)
+  // Example small keys:
+  // whitelist: ['alerts', 'connectionStatus', 'selectedSensor'],
+};
+
+// Apply persist to the RTM reducer with the custom configuration
+const persistedRTMReducer = persistReducer(rtmPersistConfig, rtmReducer);
+
+
+// Configuration for global redux-persist (for the root reducer)
+const rootPersistConfig = {
+  key: 'root',
+  storage,
+  // RTM is now persisted selectively, so remove it from the global blacklist
+  blacklist: [],
+};
+
+
 // Combine all reducers into a single root reducer
 const rootReducer = combineReducers({
-  rtm: rtmReducer,
+  // FIX: Use the customized persisted RTM reducer
+  rtm: persistedRTMReducer,
   pdm: pdmReducer,
   rto: rtoReducer,
   ui: uiReducer,
@@ -26,13 +52,7 @@ const rootReducer = combineReducers({
   threeD: threeDReducer,
 });
 
-// Configuration for redux-persist
-const persistConfig = {
-  key: 'root',
-  storage,
-};
-
-const persistedReducer = persistReducer(persistConfig, rootReducer);
+const persistedReducer = persistReducer(rootPersistConfig, rootReducer);
 
 export const store = configureStore({
   reducer: persistedReducer,

@@ -6,10 +6,13 @@ import onnxruntime as ort
 from dotenv import load_dotenv
 from typing import Dict, List, Tuple
 import logging
-import time  # NEW Import
+import time
 
-# CORRECTED: Use an absolute import from the 'backend' package root
-from backend.core.database import CompressorDatabase
+# NEW: Use the shared connection pool manager (if needed later)
+from backend.core.db_pool import db_manager
+
+# CORRECTED: The old import is removed to break the direct dependency on the old DB class
+# from backend.core.database import CompressorDatabase 
 
 DART_MODEL_FEATURES = [
     "Pressure_In",
@@ -28,6 +31,7 @@ class ONNXPredictor:
 
     def __init__(self, onnx_model_path: str, db_config: Dict):
         self.logger = logging.getLogger("ONNXPredictor")
+        self.db_config = db_config  # Store config for future pooled use
 
         try:
             self.session = ort.InferenceSession(onnx_model_path)
@@ -47,7 +51,9 @@ class ONNXPredictor:
 
         if not db_config:
             raise ValueError("db_config is required for ONNXPredictor.")
-        self.db = CompressorDatabase(**db_config)
+        
+        # FIX: Removed the instantiation of CompressorDatabase to prevent DB connection during Flask startup
+        # self.db = CompressorDatabase(**db_config)
         self.scaler = None
 
     def _preprocess_data(self, records: List[Dict]) -> np.ndarray:
@@ -68,44 +74,51 @@ class ONNXPredictor:
 
         return np.array(processed_data, dtype=np.float32)
 
-    # CHANGED: Added latency logging
+    # NOTE: This method needs to be updated to use db_manager or be removed if it's no longer used
+    #       for data loading in the new architecture. For now, it will raise an error 
+    #       because self.db is no longer initialized.
     def predict_all_values(self) -> np.ndarray:
         """
         Loads data from the database, preprocesses it, and runs prediction for all entries.
         """
-        if not self.db.connect():
-            raise ConnectionError("Failed to connect to the database")
+        # FIX: The following lines will need replacement logic using db_manager.
+        # if not self.db.connect():
+        #     raise ConnectionError("Failed to connect to the database")
+        # 
+        # if not self.db.load_data():
+        #     raise ValueError("Failed to load data from the database")
+        # 
+        # input_data = self._preprocess_data(self.db._data)
 
-        if not self.db.load_data():
-            raise ValueError("Failed to load data from the database")
+        # Temporary safety: Raise error since self.db is gone.
+        raise NotImplementedError("predict_all_values needs to be refactored to use db_manager to load data.")
 
-        input_data = self._preprocess_data(self.db._data)
+        # The rest of the logic assumes input_data is correctly loaded/defined
+        # if input_data.shape[0] == 0:
+        #     self.logger.warning(
+        #         "No valid data records found for prediction after preprocessing."
+        #     )
+        #     return np.array([])
+        #
+        # # Check if the number of features matches the model's expectation
+        # if input_data.shape[1] != self.expected_features:
+        #     self.logger.error(
+        #         f"Input data has {input_data.shape[1]} features, but model expects {self.expected_features}."
+        #     )
+        #     return np.array([])
+        #
+        # start_time = time.time()
+        #
+        # predictions = self.session.run(None, {self.input_name: input_data})[0]
+        #
+        # latency_ms = (time.time() - start_time) * 1000
+        # self.logger.info(
+        #     f"Prediction inference time: {latency_ms:.2f} ms"
+        # )
+        #
+        # return predictions.flatten()
 
-        if input_data.shape[0] == 0:
-            self.logger.warning(
-                "No valid data records found for prediction after preprocessing."
-            )
-            return np.array([])
-
-        # Check if the number of features matches the model's expectation
-        if input_data.shape[1] != self.expected_features:
-            self.logger.error(
-                f"Input data has {input_data.shape[1]} features, but model expects {self.expected_features}."
-            )
-            return np.array([])
-
-        start_time = time.time()
-
-        predictions = self.session.run(None, {self.input_name: input_data})[0]
-
-        latency_ms = (time.time() - start_time) * 1000
-        self.logger.info(
-            f"Prediction inference time: {latency_ms:.2f} ms"
-        )  # Log Latency
-
-        return predictions.flatten()
-
-    # NEW: Predict method for a single data point, returning prediction and latency
+    # Predict method for a single data point, returning prediction and latency
     def predict_single(
         self, input_data: np.ndarray, model_version: str
     ) -> Tuple[np.ndarray, float]:
@@ -150,15 +163,20 @@ if __name__ == "__main__":
 
     try:
         predictor = ONNXPredictor(model_path, db_config)
-        predicted_values = predictor.predict_all_values()
+        
+        # NOTE: The predict_all_values method will now raise NotImplementedError
+        # predicted_values = predictor.predict_all_values() 
 
-        print(f"Generated {len(predicted_values)} predictions.")
-        for idx, value in enumerate(predicted_values[:10]):  # Print first 10
-            print(f"Prediction for Entry {idx + 1}: {value:.4f}")
+        print("ONNXPredictor initialized successfully without connecting to the database.")
+        
+        # print(f"Generated {len(predicted_values)} predictions.")
+        # for idx, value in enumerate(predicted_values[:10]):  # Print first 10
+        #     print(f"Prediction for Entry {idx + 1}: {value:.4f}")
 
     except Exception as e:
         print(f"An error occurred: {e}")
 
-    finally:
-        if "predictor" in locals() and predictor.db:
-            predictor.db.close()
+    # The final block to close the database is also removed/commented out since `predictor.db` no longer exists
+    # finally:
+    #     if "predictor" in locals() and predictor.db:
+    #         predictor.db.close()

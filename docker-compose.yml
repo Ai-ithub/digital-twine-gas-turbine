@@ -15,7 +15,7 @@ services:
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: 'CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT'
       KAFKA_INTER_BROKER_LISTENER_NAME: 'PLAINTEXT'
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      KAFKA_CREATE_TOPICS: "sensors-raw:1:1,sensors-validated:1:1,alerts:1:1"
+      KAFKA_CREATE_TOPICS: "sensors-raw:1:1,sensors-validated:1:1,alerts:1:1,sensors-processed:1:1,rto-suggestions:1:1"
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
     env_file:
       - .env
@@ -48,6 +48,17 @@ services:
       timeout: 20s
       retries: 10
       start_period: 10s
+
+  # NEW: Redis Caching Service
+  redis:
+    image: redis:7.2-alpine
+    container_name: redis
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    restart: always
 
   db-importer:
     build: .
@@ -162,8 +173,11 @@ services:
         condition: service_started
       pdm-batch-runner:
         condition: service_completed_successfully
+      redis: # NEW DEPENDENCY
+        condition: service_started
     restart: on-failure
 
 volumes:
   influxdb_data:
   mysql_data:
+  redis_data: # NEW VOLUME
