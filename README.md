@@ -1,140 +1,142 @@
 
 # **Software Requirements Specification (SRS) – Industrial Gas Turbine Compressor Dashboard**
-**Version:** **4.0 (IP-Compliant & Closed-Loop Control)**
+**Version:** **11.0 (Final Comprehensive Requirements)**
 
 ---
 
 ## **1. Introduction**
 
 ### **1.1 Purpose**
-This document defines the software requirements for the **Industrial Gas Turbine Compressor (IGT-12MW Class) Dashboard**, a modern, web-based system for real-time monitoring, predictive maintenance, and closed-loop optimization of industrial compressors using AI and advanced analytics.
+This document defines the **final and unified software requirements** for the **Industrial Gas Turbine Compressor (IGT-12MW Class) Dashboard**. The system is a complete solution for monitoring, predictive maintenance, and **closed-loop optimization**, integrating Cloud AI, Edge AI, a Digital Twin, and robust Data Governance.
 
 ### **1.2 Scope**
-The system includes:
-- **Real-time Monitoring (RTM)** with Anomaly Detection.
-- **Predictive Maintenance (PdM)** forecasting failures.
-- **Data Validation & Reconciliation (DVR)** for sensor accuracy.
-- **Real-Time Optimization (RTO)** with **Direct Closed-Loop Control**.
-- A **React.js**-based UI with a **FastAPI/Flask** backend and **Kafka-centric** data pipeline.
-- Comprehensive **Security**, **DevOps**, and **MLOps** requirements.
+The comprehensive scope includes:
+- **Core Analytics:** **RTM**, **PdM**, and **DVR**.
+- **Advanced Control:** **RTO** with **Direct Closed-Loop Control** and **Digital Twin Validation**.
+- **Data Architecture:** **Kafka** streaming, **InfluxDB** storage, and full MLOps/DevOps pipeline.
+- **Observability:** **Prometheus** for metrics and **Grafana** for dashboarding.
+- **Governance:** Enforcement of Data Quality and Data Lineage policies.
+- **Quality Assurance:** Mandatory implementation of **Unit Testing**.
 
 ### **1.3 Definitions & Acronyms**
 | Term | Definition |
 | :--- | :--- |
-| **IGT-12MW Class** | A generic industrial gas turbine compressor with operational parameters similar to the 12-15 MW class. |
-| **RTO** | Real-Time Optimization (Dynamic parameter adjustment). |
-| **Closed-Loop** | System automatically executes RTO suggestions (Direct Control). |
-| **RTM** | Real-Time Monitoring (Anomaly detection). |
-| **PdM** | Predictive Maintenance (Failure forecasting). |
-| **CI/CD** | Continuous Integration/Continuous Deployment. |
-| **WLS** | Weighted Least Squares (DVR Algorithm). |
+| **RTM** | **Real-Time Monitoring**: Live detection and visualization of current operating conditions. |
+| **RTO** | **Real-Time Optimization**: Dynamic calculation and execution of optimal control setpoints. |
+| **DVR** | **Data Validation and Reconciliation**: Process of detecting and correcting faulty sensor readings. |
+| **PdM** | **Predictive Maintenance**: Forecasting equipment failures and Remaining Useful Life (RUL). |
+| **Data Governance** | Management of data availability, usability, integrity, and security. |
+| **Kafka** | Apache Kafka: Distributed streaming platform. |
+| **InfluxDB** | High-performance Time-Series Database. |
+| **Digital Twin** | A virtual replica of the physical compressor for simulation. |
+| **Unit Test** | Automated testing of the smallest testable parts of an application ($\ge 85\%$ coverage). |
 
 ### **1.4 IGT-12MW Class Operational Profile (Generic Specifications)**
-The system's functional scope (RTM, PdM, RTO) **shall** be based on the following general operational characteristics typical of a twin-shaft gas turbine compressor in the 12-15 MW power class:
-
-| Parameter | Specification | Purpose |
-| :--- | :--- | :--- |
-| **Power Output** | $\approx 12 - 15 \text{ MW}$ (Mechanical Drive) | Defines the load range for RTO. |
-| **Compressor Stages**| 11-Stage Axial Compressor | Basis for PdM models (Blade/Bearing life). |
-| **Pressure Ratio** | $\approx 16:1 \text{ to } 18:1$ | Critical RTO/Surge control parameter. |
-| **Turbine Speed** | $\approx 9,500 - 12,000 \text{ rpm}$ | Key vibration and RUL input. |
-| **Combustion Type** | Dry Low Emissions (DLE) | Implies control over NOx/CO emissions (RTO constraint). |
-| **Key Sensors** | Pressure, Temperature, Vibration (Axial/Radial), Fuel Flow, Exhaust Temp. | Defines the raw data streams. |
+The system manages a twin-shaft gas turbine compressor in the 12-15 MW class, focusing on: Power Output ($\approx 12 - 15 \text{ MW}$), Pressure Ratio ($\approx 16:1 \text{ to } 18:1$), and Turbine Speed ($\approx 9,500 - 12,000 \text{ rpm}$).
 
 ---
 
 ## **2. Overall Description & Architecture**
 
 ### **2.1 System Overview**
-The dashboard operates on a modern, streaming architecture, currently utilizing **Generated Data** (synthetic, near-realistic data) for development, with a clear path to integrate **Real Sensor Data**. The primary innovation is the implementation of AI-driven optimization with **Direct Control (Closed-Loop RTO)** authority.
+The architecture is centered around **Kafka** for high-throughput streaming and **InfluxDB** for time-series storage. **Prometheus** and **Grafana** ensure observability. The system handles **Generated Data** (synthetic) and enforces strict **Data Governance** policies.
 
-### **2.2 Data Segmentation & Extensibility**
-The system data must be segmented to ensure proper governance and model training.
-
+### **2.2 Data Segmentation & Management**
 | Data Segment | Description | Storage/Purpose |
 | :--- | :--- | :--- |
-| **Sensor Data (Raw/Validated)** | High-frequency time-series data from physical or simulated sensors. | **InfluxDB** (Time-Series) |
-| **Historical Data** | Processed, aggregated data for long-term trends and reporting. | **MySQL/S3** (Warehouse) |
-| **Generated Data** | The **synthetic data** currently used for model training and system validation. | Separate Kafka Topic/S3 (For Development/Testing) |
+| **Sensor Data (Raw/Validated)** | High-frequency time-series data streams. | **InfluxDB** |
+| **Historical Data** | Aggregated, audited data for long-term reports. | **MySQL/S3** |
+| **Generated Data** | Synthetic data used for model training and simulation. | Separate Kafka Topic/S3 |
 
-**FR-231 (Extensibility):** The system **shall** incorporate a configurable interface (e.g., via FastAPI and configuration files) allowing new compressor units or external data sources (e.g., different OPC-UA tags, new MQTT brokers) to be added and mapped to the Kafka pipeline with schema enforcement, minimizing code changes.
+**FR-231 (Extensibility):** The system **shall** support configuration-based integration of new IGT units or external data sources (OPC-UA, MQTT) into the **Kafka** pipeline.
 
 ---
 
 ## **3. Functional Requirements**
 
-### **3.1 Real-Time Monitoring (RTM)**
-- **FR-311:** Display live Sensor Data (Pressure, Temp, Vibration) with $\le 1$ second latency.
-- **FR-312:** Detect anomalies using Machine Learning (e.g., Isolation Forest) and Statistical Methods (e.g., Shewhart control charts).
-- **FR-313:** Generate visual and audible alerts for threshold breaches and detected anomalies.
+### **3.1 Real-Time Monitoring (RTM) – Dual-Layer**
+- **FR-311 (Cloud RTM):** Display live Sensor Data from **InfluxDB** with $\le 1$ second latency.
+- **FR-312 (Edge AI RTM):** **RTM** Anomaly Detection models **shall** be deployed on **Edge Devices** (ONNX format) for local inference ($\le 100 \text{ms}$).
 
 ### **3.2 Predictive Maintenance (PdM)**
-- **FR-321:** Forecast **Remaining Useful Life (RUL)** for critical components (e.g., turbine bearings, hot section blades) using time-series models (LSTM, Transformer networks) and Survival Analysis.
-- **FR-322:** Provide actionable maintenance recommendations (e.g., "Schedule bearing replacement within the next 14 days").
+- **FR-321:** Forecast **RUL** for bearings, blades, and liners using **LSTM/Transformer** networks.
+- **FR-322:** Provide actionable maintenance recommendations.
 
-### **3.3 Data Validation & Reconciliation (DVR)**
-- **FR-331:** Detect faulty sensors (e.g., using PCA-based gross error detection, Grubbs’ test for outliers).
-- **FR-332:** Reconcile data via **Weighted Least Squares (WLS)** and publish the corrected stream to the `sensors-validated` Kafka topic.
+### **3.3 Data Validation & Reconciliation (DVR) and Data Quality**
+- **FR-331 (Validation):** The **DVR** module **shall** enforce real-time **Data Quality** checks (range, completeness) and detect faulty sensors.
+- **FR-332 (Reconciliation):** Reconcile data via **WLS** and publish the corrected stream back to the **Kafka** pipeline.
 
-### **3.4 Real-Time Optimization (RTO) – Direct Control**
-- **FR-341:** Calculate and suggest optimal compressor settings (e.g., Variable Inlet Guide Vane position) using **Model Predictive Control (MPC)** and Reinforcement Learning (RL) agents.
-- **FR-342 (Direct Control):** The RTO module **shall** transmit the optimal parameter set directly to the SCADA system via a secured **OPC-UA Client** connection, executing the change in a **Closed-Loop** manner.
-- **FR-343 (Authorization):** A secure **4-eyes principle** (Manager/Engineer approval) **shall** be enforced in the UI before activating or manually overriding the closed-loop RTO mechanism.
-- **FR-344:** All RTO execution events, parameter changes, and control feedback must be logged in the Historical Data segment for auditability.
+### **3.4 Real-Time Optimization (RTO) – Closed-Loop with Digital Twin**
+- **FR-341:** The **RTO** module **shall** calculate optimal control setpoints using **MPC** and RL.
+- **FR-342 (Digital Twin Validation):** The **RTO** output **shall** be simulated by the integrated **Digital Twin** to validate the predicted outcome **before** execution.
+- **FR-343 (Direct Control):** Upon validation and Engineer approval, the **RTO** module **shall** execute parameter changes via a secured **OPC-UA Client** in a **Closed-Loop** manner.
+
+### **3.5 Data Requirements and Sensor List (Mandatory Inputs)**
+The system **shall** ingest and process high-frequency data points required for **RTM**, **PdM**, **DVR**, and **RTO**, including: **RPM**, **Torque**, **Temperature** ($\text{T}_{\text{in}}$, $\text{T}_{\text{exh}}$), **Pressure** ($\text{P}_{\text{in}}$, $\text{P}_{\text{out}}$), **Flow**, **Vibration** (Axial/Radial), **Actuator Position** (IGV), and **Emissions** (NOx/CO).
 
 ---
 
 ## **4. Non-Functional Requirements**
 
-### **4.1 Security (Comprehensive)**
+### **4.1 Security**
 | Requirement | Description |
 | :--- | :--- |
-| **NF-411 (Application Security)** | Implement **JWT** for API authentication and **Role-Based Access Control (RBAC)** (Operator, Engineer, Manager) for UI/API access. |
-| **NF-412 (Kafka In-Transit)** | The Kafka cluster **shall** implement **SSL/TLS** encryption for all data communication between producers, brokers, and consumers. |
-| **NF-413 (Kafka Authentication)** | Use **SASL/SCRAM** for strong authentication of all services connecting to the Kafka brokers. |
-| **NF-414 (Access Control)** | **Access Control Lists (ACLs)** **shall** be configured on all Kafka topics to enforce least-privilege access for each service. |
-| **NF-415 (Control Isolation)** | Direct control (Closed-Loop RTO) communication via OPC-UA **shall** use unique, restricted user credentials/certificates for industrial network isolation. |
+| **NF-411 (Application)** | **JWT** authentication and **RBAC**. |
+| **NF-412 (Kafka In-Transit)** | **SSL/TLS** encryption for all **Kafka** communication. |
+| **NF-414 (Control Isolation)** | RTO's OPC-UA communication **shall** use unique, restricted credentials. |
 
-### **4.2 Development & Quality Assurance (Testing)**
+### **4.2 Development & Quality Assurance**
 | Requirement | Description |
 | :--- | :--- |
-| **NF-421 (Unit Testing)** | All backend (FastAPI/ML logic) and frontend (React components) code **shall** have mandatory **Unit Tests** with minimum **85% code coverage**. |
-| **NF-422 (Integration Testing)** | Automated tests **shall** validate the end-to-end data flow (Producer $\to$ Kafka $\to$ DVR $\to$ RTO $\to$ Database). |
-| **NF-423 (Performance Testing)** | The system must maintain consumer lag $<1$ second and API latency $<500$ milliseconds at peak load ($\ge 10,000 \text{ msgs/sec}$). |
+| **NF-421 (Unit Testing)** | Mandatory **Unit Tests** for all code with **$\ge 85\%$ code coverage**. |
+| **NF-422 (Integration Testing)** | Automated tests validating end-to-end data flow (Kafka $\to$ InfluxDB $\to$ FastAPI). |
+| **NF-423 (Performance)** | **Kafka** consumer lag $\le 1$ second; API latency $\le 500$ milliseconds. |
 
-### **4.3 Maintainability & DevOps/MLOps**
+### **4.3 DevOps/MLOps & Observability**
 | Requirement | Description |
 | :--- | :--- |
-| **NF-431 (CI/CD)** | Implement a **CI/CD pipeline** (using GitLab/GitHub Actions) for automated building (Docker), testing, and deployment (Kubernetes) of all microservices. |
-| **NF-432 (MLOps - Tracking)** | Use **MLflow** for robust version control of all AI models, hyperparameters, and the specific training datasets (including **Generated Data** versions). |
-| **NF-433 (MLOps - Explainability)** | Provide **SHAP plots** and feature importance metrics for PdM and RTO models to support engineer validation. |
-| **NF-434 (Monitoring)** | Implement comprehensive observability via **Prometheus/Grafana** to monitor: 1) Infrastructure Health, 2) Kafka Consumer Lag, and 3) **Model/Data Drift** for AI services. |
+| **NF-431 (CI/CD)** | Full **CI/CD pipeline** for automated building, testing, and deployment (Kubernetes). |
+| **NF-432 (MLOps - Tracking)** | Use **MLflow** for version control of models and **Generated Data** versions. |
+| **NF-433 (Monitoring - Metrics)** | **Prometheus** **shall** be integrated to collect key metrics (CPU, Kafka Consumer Lag) from all microservices. |
+| **NF-434 (Monitoring - Visualization)**| **Grafana** **shall** be deployed as the unified dashboarding tool, visualizing data from both **Prometheus** and **InfluxDB**. |
 
 ---
 
-## **5. Technical Implementation**
+## **5. Data Governance Requirements**
 
-### **5.1 UI/UX (Frontend Modernization)**
-- **Platform:** **React.js** (Mandatory replacement for any legacy HMI, including LabVIEW).
-- **Styling:** Mobile-responsive design using Tailwind CSS.
-- **Visualization:** Plotly/Dash or D3.js for interactive rendering of time-series and AI results.
-
-### **5.2 Data Pipeline & Backend**
-- **Backend/API Gateway:** Python **FastAPI** (for high-performance data serving and ML inference).
-- **Streaming:** **Apache Kafka** (3-node cluster, JSON data format with Schema Registry).
-- **Stream Processing:** Kafka Streams or PySpark for RTM and DVR logic.
-
-### **5.3 AI/ML Tools**
-| Module | Algorithms | Core Tools |
+### **5.1 Data Lineage and Auditability**
+| Requirement ID | Requirement Description | Technical Details |
 | :--- | :--- | :--- |
-| **RTM** | Isolation Forest, Shewhart Charts | `Scikit-learn`, `Statsmodels` |
-| **PdM** | LSTM, Transformer, Survival Analysis | `TensorFlow`, `PyMC3` |
-| **RTO** | MPC, Reinforcement Learning (DDPG/PPO) | `PyTorch`, `CasADi` |
-| **Deployment**| Model Serving via **Kubernetes (KServe)** and **MLflow**. | |
+| **NF-511 (Lineage Logging)** | The system **shall** log the **Data Lineage** for all processed sensor readings, including source ID and the processing service (DVR, RTO) that modified the data. | Metadata tags within Kafka headers and specialized fields in the InfluxDB schema. |
+| **NF-512 (Audit Trail)** | All data changes, especially those from **DVR** reconciliation or **RTO** execution, **shall** be recorded in an immutable audit log (**Historical Data** segment). | Store change records in MySQL (Original Value, Corrected Value, Algorithm ID). |
+
+### **5.2 Data Ownership and Access**
+| Requirement ID | Requirement Description | Technical Details |
+| :--- | :--- | :--- |
+| **NF-521 (Ownership Mapping)** | The system **shall** maintain metadata identifying the **Data Owner** responsible for each sensor group's accuracy. | Configurable mapping stored in the MySQL metadata database, linked to RBAC. |
+| **NF-522 (Data Quality Reporting)** | A dedicated **Grafana** dashboard **shall** provide real-time reports on **Data Quality** metrics (e.g., frequency of **DVR** corrections, outlier rate). | Prometheus metrics scraped from the DVR service. |
 
 ---
 
-## **6. Future Roadmap**
-- **Digital Twin Integration:** Physics-based simulation for RTO validation and **Simulated Training** for RL agents.
-- **Edge AI Deployment:** Implementing ONNX models on edge devices for RTM at the source.
-- **SCADA Integration:** Implementing full **OPC-UA Server** for deeper integration and control.
+## **6. Technical Implementation**
+
+### **6.1 Core Stack**
+- **UI/Frontend:** **React.js**.
+- **Backend/API:** Python **FastAPI**.
+- **Streaming Core:** **Apache Kafka**.
+- **Time-Series DB:** **InfluxDB**.
+- **Observability:** **Prometheus** and **Grafana**.
+
+### **6.2 Advanced Subsystems**
+- **Digital Twin:** Physics-based modeling, high-speed interaction for RL training.
+- **Edge AI:** **RTM** models converted to **ONNX** format for local deployment.
+- **SCADA:** **OPC-UA Client** for **RTO** control, and **OPC-UA Server** for publishing AI results.
+
+---
+
+## **7. AI/ML Frameworks and Testing Tools**
+
+| Module | Core AI/ML Frameworks | Mandatory Unit Test Tools |
+| :--- | :--- | :--- |
+| **Cloud Intelligence** (PdM, RTO) | `TensorFlow`, `PyTorch`, `Scikit-learn`, `CasADi` | **Pytest** (for Python backend/ML logic) |
+| **Frontend** (React.js) | N/A | **Jest** (for React components/UI logic) |
