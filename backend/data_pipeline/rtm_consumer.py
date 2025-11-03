@@ -181,6 +181,19 @@ def main():
             prediction, causes = detector.predict(data_row)
             latency = (time.time() - start_time) * 1000
 
+            # Record metrics
+            from backend.core.metrics import (
+                record_rtm_anomaly,
+                record_rtm_prediction_latency,
+                record_kafka_consumption,
+            )
+            record_rtm_prediction_latency(latency / 1000.0)  # Convert to seconds
+            record_kafka_consumption(KAFKA_TOPIC_IN, "rtm-group")
+            
+            # Record anomaly if detected (prediction == -1 means anomaly in isolation forest)
+            if prediction == -1 or prediction == 1:
+                record_rtm_anomaly("isolation_forest")
+
             # Log every prediction to InfluxDB (UPDATED CALL)
             log_prediction(
                 influxdb_config=INFLUXDB_CONFIG,

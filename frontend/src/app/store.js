@@ -5,6 +5,7 @@ import { persistStore, persistReducer } from 'redux-persist';
 import storage from 'redux-persist/lib/storage';
 
 // Import all your reducers
+import authReducer from '../features/auth/authSlice';
 import rtmReducer from '../features/rtm/rtmSlice';
 import pdmReducer from '../features/pdm/pdmSlice';
 import rtoReducer from '../features/rto/rtoSlice';
@@ -16,6 +17,7 @@ import threeDReducer from '../features/threeD/threeDSlice';
 
 // Combine all reducers into a single root reducer
 const rootReducer = combineReducers({
+  auth: authReducer,
   rtm: rtmReducer,
   pdm: pdmReducer,
   rto: rtoReducer,

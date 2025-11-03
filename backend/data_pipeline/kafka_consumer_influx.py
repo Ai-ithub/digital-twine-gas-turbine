@@ -9,6 +9,10 @@ from kafka.errors import NoBrokersAvailable
 from influxdb_client import InfluxDBClient, Point
 from influxdb_client.client.write_api import SYNCHRONOUS
 from dotenv import load_dotenv
+from backend.core.metrics import (
+    record_kafka_consumption,
+    start_metrics_server,
+)
 
 # --- 1. Configuration and Setup ---
 load_dotenv()
@@ -31,6 +35,12 @@ INFLUXDB_BUCKET = os.getenv("INFLUXDB_BUCKET")
 
 def main():
     """Main function to consume from Kafka and write to InfluxDB."""
+    # Start metrics server
+    try:
+        start_metrics_server(port=8000)
+    except Exception as e:
+        logger.warning(f"Could not start metrics server: {e}")
+    
     if not all([INFLUXDB_URL, INFLUXDB_TOKEN, INFLUXDB_ORG, INFLUXDB_BUCKET]):
         logger.critical("❌ InfluxDB credentials not found in .env file. Exiting.")
         return
@@ -69,6 +79,10 @@ def main():
             for message in consumer:
                 try:
                     data = json.loads(message.value.decode("utf-8"))
+                    
+                    # Record metrics
+                    record_kafka_consumption(KAFKA_TOPIC, GROUP_ID)
+                    
                     point = (
                         Point("compressor_metrics")
                         .tag("status", data.get("Status", "Unknown"))
@@ -80,6 +94,7 @@ def main():
                             "timestamp",
                             "status",
                             "device_id",
+                            "_data_lineage",  # Exclude lineage metadata from metrics
                         ] and isinstance(value, (int, float)):
                             point = point.field(key, value)
 

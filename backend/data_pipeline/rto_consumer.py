@@ -15,6 +15,9 @@ from kafka import KafkaConsumer, KafkaProducer
 from kafka.errors import NoBrokersAvailable
 from dotenv import load_dotenv
 from backend.core import config
+from backend.ml.digital_twin import DigitalTwin
+from influxdb_client import InfluxDBClient
+from typing import Optional
 
 # --- 1. Setup Logging and Load Env ---
 load_dotenv()
@@ -53,7 +56,56 @@ def save_suggestion_to_mysql(suggestion: str):
             conn.close()
 
 
+def initialize_digital_twin() -> Optional[DigitalTwin]:
+    """Initialize Digital Twin with historical data from InfluxDB."""
+    try:
+        influx_url = os.getenv("INFLUXDB_URL")
+        influx_token = os.getenv("INFLUXDB_TOKEN")
+        influx_org = os.getenv("INFLUXDB_ORG")
+        influx_bucket = os.getenv("INFLUXDB_BUCKET")
+        
+        if not all([influx_url, influx_token, influx_org, influx_bucket]):
+            logger.warning("InfluxDB config missing, Digital Twin will not be initialized")
+            return None
+        
+        twin = DigitalTwin()
+        
+        # Fetch recent historical data for training
+        with InfluxDBClient(url=influx_url, token=influx_token, org=influx_org) as client:
+            query_api = client.query_api()
+            flux_query = f'''
+                from(bucket: "{influx_bucket}")
+                  |> range(start: -7d)
+                  |> filter(fn: (r) => r["_measurement"] == "compressor_metrics")
+                  |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
+                  |> limit(n: 1000)
+            '''
+            
+            tables = query_api.query(flux_query)
+            
+            records = []
+            for table in tables:
+                for record in table.records:
+                    records.append(record.values)
+            
+            if records:
+                df = pd.DataFrame(records)
+                twin.initialize(df)
+                logger.info("✅ Digital Twin initialized with historical data")
+                return twin
+            else:
+                logger.warning("No historical data found for Digital Twin initialization")
+                return None
+                
+    except Exception as e:
+        logger.error(f"Failed to initialize Digital Twin: {e}")
+        return None
+
+
 def main():
+    # Initialize Digital Twin (FR-342)
+    digital_twin = initialize_digital_twin()
+    
     try:
         # Use Config Variables for Model Paths and Features
         logger.info(f"Loading RTO model from {config.RTO_MODEL_PATH}...")
@@ -111,11 +163,46 @@ def main():
             action_value = prediction[0][0]
 
             current_load_factor = data_row.get("Load_Factor", 0.8)
+            
+            # NEW: Digital Twin Validation (FR-342)
+            validated = False
+            validation_message = "Digital Twin validation skipped (not initialized)"
+            
+            if digital_twin and digital_twin.initialized:
+                proposed_action = {"Load_Factor": float(action_value)}
+                current_state = {
+                    "Pressure_In": data_row.get("Pressure_In", 0),
+                    "Temperature_In": data_row.get("Temperature_In", 0),
+                    "Flow_Rate": data_row.get("Flow_Rate", 0),
+                    "Load_Factor": current_load_factor,
+                    "Ambient_Temperature": data_row.get("Ambient_Temperature", 25),
+                }
+                
+                predicted_state, is_safe, validation_message = digital_twin.simulate_action(
+                    current_state, proposed_action
+                )
+                
+                if is_safe:
+                    validated = True
+                    logger.info(f"✅ Digital Twin validated action: {validation_message}")
+                    if predicted_state:
+                        logger.info(f"Predicted outcomes: {predicted_state}")
+                else:
+                    validated = False
+                    logger.warning(f"⚠️ Digital Twin rejected action: {validation_message}")
+                    # Use a safer, conservative action value
+                    action_value = current_load_factor * 1.05  # Small conservative increase
+            
             efficiency_gain = (action_value - current_load_factor) * 10
             suggestion_text = (
                 f"Adjust Load Factor to {action_value:.2%} for a potential "
                 f"efficiency gain of {efficiency_gain:.1f}%."
             )
+            
+            if validated:
+                suggestion_text += f" [Digital Twin Validated: {validation_message}]"
+            elif digital_twin and not validated:
+                suggestion_text += f" [Validation Failed: {validation_message} - Using conservative value]"
 
             # 1. Save to DB (as before)
             save_suggestion_to_mysql(suggestion_text)
@@ -124,9 +211,31 @@ def main():
             rto_payload = {
                 "suggestion_text": suggestion_text,
                 "generated_at": pd.Timestamp.now(tz="UTC").isoformat(),  # Add timestamp
+                "validated": validated,
+                "validation_message": validation_message,
+                "action_value": float(action_value),
+                "current_load_factor": float(current_load_factor),
             }
+            
+            # Add data lineage
+            rto_payload["_data_lineage"] = {
+                "source": "sensors-validated",
+                "processing_service": "rto-consumer",
+                "processed_at": pd.Timestamp.now(tz="UTC").isoformat(),
+                "digital_twin_validated": validated,
+            }
+            
             producer.send(config.KAFKA_RTO_SUGGESTIONS_TOPIC, value=rto_payload)
             producer.flush()
+            
+            # Record metrics
+            from backend.core.metrics import (
+                record_rto_suggestion,
+                record_kafka_production,
+            )
+            record_rto_suggestion()
+            record_kafka_production(config.KAFKA_RTO_SUGGESTIONS_TOPIC)
+            
             logger.info(
                 f"✅ Suggestion sent to Kafka topic '{config.KAFKA_RTO_SUGGESTIONS_TOPIC}'."
             )

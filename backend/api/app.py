@@ -12,6 +12,7 @@ from kafka.errors import NoBrokersAvailable
 from backend.core import config
 
 # Import blueprints
+from .routes.auth_routes import auth_bp
 from .routes.data_routes import data_bp
 from .routes.prediction_routes import prediction_bp
 from .routes.overview_routes import overview_bp
@@ -20,6 +21,7 @@ from .routes.rto_routes import rto_bp
 from .routes.mlops_routes import mlops_bp
 from .routes.control_routes import control_bp
 from .routes.analysis_routes import analysis_bp
+from .routes.governance_routes import governance_bp
 
 eventlet.monkey_patch()
 
@@ -131,7 +133,15 @@ def rto_suggestion_listener():
 
 def create_app():
     app = Flask(__name__)
-    CORS(app)
+    
+    # CORS Configuration with proper security
+    allowed_origins = os.getenv("CORS_ALLOWED_ORIGINS", "http://localhost:5173,http://localhost:3000").split(",")
+    CORS(app, 
+         resources={r"/api/*": {"origins": allowed_origins}},
+         supports_credentials=True,
+         allow_headers=["Content-Type", "Authorization"],
+         methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"])
+    
     load_dotenv()
     logging.basicConfig(
         level=logging.INFO,
@@ -154,7 +164,15 @@ def create_app():
     logging.info("Pre-loading machine learning models...")
     logging.info("✅ All models loaded successfully.")
 
+    # Start Prometheus metrics server
+    try:
+        from backend.core.metrics import start_metrics_server
+        start_metrics_server(port=8000)
+    except Exception as e:
+        logging.warning(f"Could not start metrics server: {e}")
+
     # Register Blueprints
+    app.register_blueprint(auth_bp, url_prefix="/api/auth")
     app.register_blueprint(data_bp, url_prefix="/api/data")
     app.register_blueprint(prediction_bp, url_prefix="/api/predict")
     app.register_blueprint(overview_bp, url_prefix="/api/status")
@@ -163,6 +181,7 @@ def create_app():
     app.register_blueprint(mlops_bp, url_prefix="/api/models")
     app.register_blueprint(control_bp, url_prefix="/api/control")
     app.register_blueprint(analysis_bp, url_prefix="/api/analysis")
+    app.register_blueprint(governance_bp, url_prefix="/api/governance")
 
     @app.route("/")
     def home():

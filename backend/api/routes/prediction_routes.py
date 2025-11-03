@@ -1,6 +1,7 @@
 # backend/routes/prediction_routes.py
 import logging
 from flask import Blueprint, jsonify, current_app
+from backend.core.auth import require_auth
 
 prediction_bp = Blueprint("prediction_routes", __name__)
 
@@ -19,6 +20,7 @@ def handle_prediction_errors(e, endpoint_name):
 
 
 @prediction_bp.route("/predict_vibration", methods=["GET"])
+@require_auth
 def predict_vibration():
     try:
         vibration_predictor = current_app.config["VIBRATION_PREDICTOR"]
@@ -33,6 +35,7 @@ def predict_vibration():
 
 
 @prediction_bp.route("/predict_dart", methods=["GET"])
+@require_auth
 def predict_dart():
     try:
         dart_predictor = current_app.config["DART_PREDICTOR"]
@@ -49,6 +52,7 @@ def predict_dart():
 
 
 @prediction_bp.route("/predict_status", methods=["GET"])
+@require_auth
 def predict_status():
     try:
         status_predictor = current_app.config["STATUS_PREDICTOR"]

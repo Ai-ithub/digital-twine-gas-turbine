@@ -2,9 +2,11 @@
 
 import React, { useCallback, useEffect } from 'react';
 import { useDispatch } from 'react-redux';
+import { ThemeProvider, CssBaseline } from '@mui/material';
 import AppRouter from './routes/AppRouter';
 import Notifier from './components/common/Notifier';
 import useWebSocket from './hooks/useWebSocket'; 
+import industrialTheme from './theme/industrialTheme';
 import { 
   addDataPoint, 
   addAlert, 
@@ -64,10 +66,11 @@ function App() {
   }, [isConnected, dispatch]);
 
   return (
-    <>
+    <ThemeProvider theme={industrialTheme}>
+      <CssBaseline />
       <AppRouter />
       <Notifier /> 
-    </>
+    </ThemeProvider>
   );
 }
 

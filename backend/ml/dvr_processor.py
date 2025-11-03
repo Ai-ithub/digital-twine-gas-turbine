@@ -6,9 +6,15 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
 import statsmodels.api as sm
 from typing import Dict, Any
+import logging
 
 # NEW: For signal processing/filtering
 from scipy.signal import butter, lfilter
+
+# NEW: For Bayesian Inference
+from backend.ml.bayesian_inference import apply_bayesian_correction
+
+logger = logging.getLogger(__name__)
 
 
 class DVRProcessor:
@@ -341,6 +347,20 @@ class DVRProcessor:
 
         # STEP 3: Apply data correction for flagged anomalies
         df = self.correct_sensor_data(df)
+        
+        # STEP 4: Apply Bayesian Inference for probabilistic correction (optional)
+        # Only apply if PyMC is available and there are significant anomalies
+        anomaly_count = df.get("rule_violation_flag", pd.Series([False])).sum()
+        if anomaly_count > len(df) * 0.1:  # More than 10% anomalies
+            try:
+                df = apply_bayesian_correction(
+                    df,
+                    sensor_to_correct="Power_Consumption",
+                    related_sensors=["Pressure_In", "Flow_Rate", "Efficiency", "Temperature_In"],
+                )
+                logger.debug("Applied Bayesian inference for sensor correction")
+            except Exception as e:
+                logger.warning(f"Bayesian inference failed: {e}")
 
         # Calculate overall data quality score
         quality_factors = []

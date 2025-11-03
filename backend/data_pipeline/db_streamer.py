@@ -7,6 +7,10 @@ from kafka.errors import NoBrokersAvailable
 from dotenv import load_dotenv
 from datetime import datetime, timezone
 from backend.core.database import CompressorDatabase
+from backend.core.metrics import (
+    record_kafka_production,
+    start_metrics_server,
+)
 
 # --- Configuration and Logging Setup ---
 load_dotenv()
@@ -40,6 +44,11 @@ def stream_data_from_db():
     Connects to the database, reads the master dataset, and streams it row by row
     to the 'sensors-raw' Kafka topic, simulating a live feed.
     """
+    # Start metrics server
+    try:
+        start_metrics_server(port=8000)
+    except Exception as e:
+        logger.warning(f"Could not start metrics server: {e}")
     db_config = {
         "host": os.getenv("DB_HOST"),
         "port": int(os.getenv("DB_PORT", 3306)),
@@ -73,6 +82,7 @@ def stream_data_from_db():
                 )
 
                 producer.send(topic, value=record)
+                record_kafka_production(topic)
                 logger.info(
                     f"Sent record with new LIVE timestamp for Time={record.get('Time')}"
                 )

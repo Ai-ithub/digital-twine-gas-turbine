@@ -4,21 +4,39 @@ services:
     container_name: kafka
     ports:
       - "9092:9092"
+      - "9093:9093"  # SSL port (optional)
+    volumes:
+      # Mount certificates directory if SSL is enabled
+      - ./kafka_certs:/etc/kafka/secrets:ro
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_PROCESS_ROLES: 'broker,controller'
       CLUSTER_ID: '${KAFKA_CLUSTER_ID}'
-      KAFKA_LISTENERS: 'PLAINTEXT://:9092,CONTROLLER://:9093'
+      # Support both PLAINTEXT and SSL listeners
+      KAFKA_LISTENERS: 'PLAINTEXT://:9092,SSL://:9093,CONTROLLER://:9094'
       KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
-      KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://kafka:9092'
-      KAFKA_CONTROLLER_QUORUM_VOTERS: '1@kafka:9093'
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: 'CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT'
-      KAFKA_INTER_BROKER_LISTENER_NAME: 'PLAINTEXT'
+      KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://kafka:9092,SSL://kafka:9093'
+      KAFKA_CONTROLLER_QUORUM_VOTERS: '1@kafka:9094'
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: 'CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,SSL:SSL'
+      KAFKA_INTER_BROKER_LISTENER_NAME: '${KAFKA_INTER_BROKER_LISTENER:-PLAINTEXT}'
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_CREATE_TOPICS: "sensors-raw:1:1,sensors-validated:1:1,alerts:1:1"
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      # SSL Configuration (only if certificates exist)
+      # KAFKA_SSL_KEYSTORE_LOCATION: '/etc/kafka/secrets/kafka.server.keystore.jks'
+      # KAFKA_SSL_KEYSTORE_PASSWORD: 'test1234'
+      # KAFKA_SSL_KEY_PASSWORD: 'test1234'
+      # KAFKA_SSL_TRUSTSTORE_LOCATION: '/etc/kafka/secrets/kafka.server.truststore.jks'
+      # KAFKA_SSL_TRUSTSTORE_PASSWORD: 'test1234'
+      # KAFKA_SSL_CLIENT_AUTH: 'none'
     env_file:
       - .env
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-broker-api-versions --bootstrap-server localhost:9092 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
 
   influxdb:
     image: influxdb:2.7
@@ -29,6 +47,12 @@ services:
       - influxdb_data:/var/lib/influxdb2
     env_file:
       - .env
+    healthcheck:
+      test: ["CMD", "influx", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
 
   mysql:
     image: mysql:8.0
@@ -151,6 +175,7 @@ services:
     command: gunicorn --worker-class eventlet --workers 1 --bind 0.0.0.0:5000 backend.api.app:app
     ports:
       - "5000:5000"
+      - "8000:8000"  # Prometheus metrics endpoint
     volumes:
       - .:/app
     env_file:
@@ -163,7 +188,69 @@ services:
       pdm-batch-runner:
         condition: service_completed_successfully
     restart: on-failure
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus:/etc/prometheus
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+    env_file:
+      - .env
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning
+      - ./grafana/dashboards:/var/lib/grafana/dashboards
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin}
+      - GF_INSTALL_PLUGINS=grafana-influxdb-datasource
+    env_file:
+      - .env
+    depends_on:
+      - prometheus
+      - influxdb
+    restart: unless-stopped
+
+  mlflow:
+    image: ghcr.io/mlflow/mlflow:v2.18.0
+    container_name: mlflow
+    ports:
+      - "5001:5000"
+    environment:
+      - MLFLOW_BACKEND_STORE_URI=mysql+pymysql://${DB_USER}:${DB_PASSWORD}@mysql:3306/${DB_DATABASE}
+      - MLFLOW_DEFAULT_ARTIFACT_ROOT=s3://mlflow-artifacts/
+    volumes:
+      - mlflow_data:/mlflow
+    depends_on:
+      - mysql
+    env_file:
+      - .env
+    restart: unless-stopped
 
 volumes:
   influxdb_data:
   mysql_data:
+  prometheus_data:
+  grafana_data:
+  mlflow_data:

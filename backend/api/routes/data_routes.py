@@ -1,20 +1,25 @@
 # backend/api/routes/data_routes.py
 import logging
+import time
 from flask import Blueprint, jsonify, current_app, request
 from influxdb_client import InfluxDBClient
 from influxdb_client.rest import ApiException
 from backend.core.database import CompressorDatabase
+from backend.core.auth import require_auth
+from backend.core.metrics import record_api_metrics
 import pymysql
 
 data_bp = Blueprint("data_routes", __name__)
 
 
 @data_bp.route("/get_live_data", methods=["GET"])
+@require_auth
 def get_live_data():
     """
     Retrieve data points from InfluxDB.
     For this demo, instead of a time range, we'll fetch the latest N records.
     """
+    start_time = time.time()
     config = current_app.config
     # We will ignore the 'start' and 'stop' parameters for now
     # and always fetch the last 500 records as a sample.
@@ -49,14 +54,22 @@ def get_live_data():
                 for table in tables
                 for record in table.records
             ]
+            
+            # Record metrics
+            duration = time.time() - start_time
+            record_api_metrics("GET", "/get_live_data", 200, duration)
+            
             return jsonify(results)
 
     except Exception as e:
+        duration = time.time() - start_time
+        record_api_metrics("GET", "/get_live_data", 500, duration)
         logging.error(f"Unexpected error in /get_live_data: {e}")
         return jsonify({"error": "An internal server error occurred"}), 500
 
 
 @data_bp.route("/get_all_data", methods=["GET"])
+@require_auth
 def get_all_data():
     db = None
     config = current_app.config
@@ -85,6 +98,7 @@ def get_all_data():
 
 # ===== Persist and Expose Validated DVR Data ======
 @data_bp.route("/dvr/latest", methods=["GET"])
+@require_auth
 def get_latest_validated_data():
     """
     Fetches the latest validated records from the DVR module via InfluxDB.

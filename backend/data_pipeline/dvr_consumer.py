@@ -1,11 +1,18 @@
 import os
 import json
 import logging
+import time
 import pandas as pd
 import numpy as np
 from backend.ml.dvr_processor import DVRProcessor
 from kafka import KafkaConsumer, KafkaProducer
 from dotenv import load_dotenv
+from backend.core.metrics import (
+    record_dvr_validation,
+    record_dvr_correction,
+    start_metrics_server,
+)
+from backend.core.audit_logger import get_audit_logger
 
 # --- 1. Configuration and Setup ---
 load_dotenv()
@@ -24,6 +31,12 @@ VALIDATED_TOPIC = "sensors-validated"
 
 # Processing Configuration
 BATCH_SIZE = 5
+
+# Start metrics server
+try:
+    start_metrics_server(port=8000)
+except Exception as e:
+    logger.warning(f"Could not start metrics server: {e}")
 
 # --- 2. Initialize Components ---
 try:
@@ -80,6 +93,28 @@ while True:
             logger.info(f"Processing a batch of {len(buffer)} records...")
             df = pd.DataFrame(buffer)
             processed_df = processor.run_all_checks(df)
+            
+            # Record metrics
+            rule_passed = processed_df.get("all_rules_pass", pd.Series([False])).sum()
+            rule_failed = len(processed_df) - rule_passed
+            record_dvr_validation("rule_based", rule_passed > 0)
+            if rule_failed > 0:
+                record_dvr_validation("rule_based", False)
+            
+            corrections_count = processed_df.get("Data_Corrected", pd.Series([False])).sum()
+            if corrections_count > 0:
+                record_dvr_correction("wls_reconciliation")
+
+            # NEW: Apply WLS reconciliation if corrections were made
+            if "Data_Corrected" in processed_df.columns and processed_df["Data_Corrected"].any():
+                logger.info("Applying WLS reconciliation for corrected data...")
+                # WLS correction is already applied in run_all_checks via correct_sensor_data
+                # Use corrected values where available
+                if "Power_Consumption_Corrected" in processed_df.columns:
+                    correction_mask = processed_df["Data_Corrected"] == True
+                    processed_df.loc[correction_mask, "Power_Consumption"] = processed_df.loc[
+                        correction_mask, "Power_Consumption_Corrected"
+                    ]
 
             for _, row in processed_df.iterrows():
                 cleaned_data = row.to_dict()
@@ -87,6 +122,36 @@ while True:
                 for key, value in cleaned_data.items():
                     if isinstance(value, np.bool_):
                         cleaned_data[key] = bool(value)
+                    elif isinstance(value, (np.integer, np.floating)):
+                        cleaned_data[key] = float(value) if isinstance(value, np.floating) else int(value)
+
+                # NEW: Add data lineage metadata (NF-511)
+                corrections_applied = cleaned_data.get("Data_Corrected", False)
+                cleaned_data["_data_lineage"] = {
+                    "source": "sensors-raw",
+                    "processing_service": "dvr-consumer",
+                    "processed_at": pd.Timestamp.now().isoformat(),
+                    "corrections_applied": corrections_applied,
+                }
+                
+                # NEW: Log to audit trail if correction was made (NF-512)
+                if corrections_applied:
+                    record_id = str(cleaned_data.get("Time", f"record-{time.time()}"))
+                    audit_logger = get_audit_logger()
+                    
+                    # Log Power_Consumption correction if it was corrected
+                    if "Power_Consumption_Corrected" in cleaned_data:
+                        original = cleaned_data.get("Power_Consumption", 0)
+                        corrected = cleaned_data.get("Power_Consumption_Corrected", original)
+                        audit_logger.log_data_change(
+                            record_id=record_id,
+                            field_name="Power_Consumption",
+                            original_value=original,
+                            corrected_value=corrected,
+                            algorithm_id="WLS",
+                            service_name="dvr-consumer",
+                            reason="WLS reconciliation applied",
+                        )
 
                 logger.debug(f"Producing validated message: {cleaned_data}")
                 producer.send(VALIDATED_TOPIC, cleaned_data)

@@ -2,6 +2,7 @@
 
 import logging
 from flask import Blueprint, jsonify, current_app
+from backend.core.auth import require_auth
 import pymysql
 
 pdm_bp = Blueprint("pdm_routes", __name__)
@@ -79,6 +80,7 @@ def generate_recommendations(rul_value):
 
 
 @pdm_bp.route("/rul", methods=["GET"])
+@require_auth
 def get_latest_rul():
     """Fetches the latest RUL prediction and generates recommendations."""
     db_config = current_app.config["DB_CONFIG"]

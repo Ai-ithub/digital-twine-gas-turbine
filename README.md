@@ -89,7 +89,7 @@ The system **shall** ingest and process high-frequency data points required for 
 | Requirement | Description |
 | :--- | :--- |
 | **NF-421 (Unit Testing)** | Mandatory **Unit Tests** for all code with **$\ge 85\%$ code coverage**. |
-| **NF-422 (Integration Testing)** | Automated tests validating end-to-end data flow (Kafka $\to$ InfluxDB $\to$ FastAPI). |
+| **NF-422 (Integration Testing)** | Automated tests validating end-to-end data flow (Kafka $\to$ InfluxDB $\to$ Flask API). |
 | **NF-423 (Performance)** | **Kafka** consumer lag $\le 1$ second; API latency $\le 500$ milliseconds. |
 
 ### **4.3 DevOps/MLOps & Observability**
@@ -122,7 +122,7 @@ The system **shall** ingest and process high-frequency data points required for 
 
 ### **6.1 Core Stack**
 - **UI/Frontend:** **React.js**.
-- **Backend/API:** Python **FastAPI**.
+- **Backend/API:** Python **Flask** (with Flask-SocketIO for WebSocket support).
 - **Streaming Core:** **Apache Kafka**.
 - **Time-Series DB:** **InfluxDB**.
 - **Observability:** **Prometheus** and **Grafana**.
