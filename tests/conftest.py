@@ -16,6 +16,13 @@ os.environ["DB_PORT"] = "3307"
 os.environ["DB_USER"] = "test_user"
 os.environ["DB_PASSWORD"] = "test_password"
 os.environ["DB_DATABASE"] = "test_db"
+os.environ["TESTING"] = "true"
+os.environ["KAFKA_BROKER_URL"] = "localhost:9092"
+os.environ["INFLUXDB_URL"] = "http://localhost:8086"
+os.environ["INFLUXDB_TOKEN"] = "test-token"
+os.environ["INFLUXDB_ORG"] = "test-org"
+os.environ["INFLUXDB_BUCKET"] = "test-bucket"
+os.environ["CORS_ALLOWED_ORIGINS"] = "http://localhost:5173"
 
 
 @pytest.fixture

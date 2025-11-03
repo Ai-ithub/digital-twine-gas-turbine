@@ -134,6 +134,9 @@ def rto_suggestion_listener():
 def create_app():
     app = Flask(__name__)
     
+    # Check if we're in testing mode
+    is_testing = os.getenv("TESTING", "false").lower() == "true"
+    
     # CORS Configuration with proper security
     allowed_origins = os.getenv("CORS_ALLOWED_ORIGINS", "http://localhost:5173,http://localhost:3000").split(",")
     CORS(app, 
@@ -144,7 +147,7 @@ def create_app():
     
     load_dotenv()
     logging.basicConfig(
-        level=logging.INFO,
+        level=logging.INFO if not is_testing else logging.WARNING,
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     )
 
@@ -161,15 +164,17 @@ def create_app():
     app.config["INFLUXDB_ORG"] = os.getenv("INFLUXDB_ORG")
     app.config["INFLUXDB_BUCKET"] = os.getenv("INFLUXDB_BUCKET")
 
-    logging.info("Pre-loading machine learning models...")
-    logging.info("✅ All models loaded successfully.")
+    if not is_testing:
+        logging.info("Pre-loading machine learning models...")
+        logging.info("✅ All models loaded successfully.")
 
-    # Start Prometheus metrics server
-    try:
-        from backend.core.metrics import start_metrics_server
-        start_metrics_server(port=8000)
-    except Exception as e:
-        logging.warning(f"Could not start metrics server: {e}")
+    # Start Prometheus metrics server (skip in testing)
+    if not is_testing:
+        try:
+            from backend.core.metrics import start_metrics_server
+            start_metrics_server(port=8000)
+        except Exception as e:
+            logging.warning(f"Could not start metrics server: {e}")
 
     # Register Blueprints
     app.register_blueprint(auth_bp, url_prefix="/api/auth")
@@ -192,18 +197,28 @@ def create_app():
 
 # --- Initialize App and SocketIO ---
 app = create_app()
-socketio = SocketIO(
-    app, cors_allowed_origins="http://localhost:5173", async_mode="eventlet"
-)
 
-# Start Kafka listeners as background tasks
-eventlet.spawn(kafka_alert_listener)
-# Replace kafka_raw_data_listener with the new processed data listener
-eventlet.spawn(kafka_processed_data_listener)
-eventlet.spawn(rto_suggestion_listener)
+# Only initialize SocketIO and Kafka listeners if not in testing mode
+if os.getenv("TESTING", "false").lower() != "true":
+    socketio = SocketIO(
+        app, cors_allowed_origins="http://localhost:5173", async_mode="eventlet"
+    )
+    
+    # Start Kafka listeners as background tasks
+    eventlet.spawn(kafka_alert_listener)
+    # Replace kafka_raw_data_listener with the new processed data listener
+    eventlet.spawn(kafka_processed_data_listener)
+    eventlet.spawn(rto_suggestion_listener)
+else:
+    # Create a mock socketio for testing
+    socketio = None
 
 # Gunicorn uses the 'app' object, so the __main__ block is for direct execution
 if __name__ == "__main__":
-    port = int(os.getenv("PORT", 5000))
-    logging.info(f"Starting direct execution SocketIO server on port {port}...")
-    socketio.run(app, host="0.0.0.0", port=port)
+    if os.getenv("TESTING", "false").lower() != "true":
+        port = int(os.getenv("PORT", 5000))
+        logging.info(f"Starting direct execution SocketIO server on port {port}...")
+        if socketio:
+            socketio.run(app, host="0.0.0.0", port=port)
+    else:
+        logging.info("Running in test mode - skipping SocketIO server start")

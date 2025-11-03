@@ -30,4 +30,4 @@ ENV PATH="/opt/venv/bin:$PATH"
 COPY . .
 
 # Make entrypoint script executable (in case it's used)
-RUN chmod +x entrypoint.sh
+RUN if [ -f entrypoint.sh ]; then chmod +x entrypoint.sh; fi
