@@ -13,6 +13,7 @@ import GraphAnalysisPage from '../pages/industrial/GraphAnalysisPage';
 import ControlPage from '../pages/industrial/ControlPage';
 import RealTimeOptimizationPage from '../pages/industrial/RealTimeOptimizationPage';
 import PDMPage from '../pages/industrial/PDMPage';
+import TestChartsPage from '../pages/industrial/TestChartsPage';
 
 // Lazy load pages for better performance
 const Overview = React.lazy(() => import('../pages/Overview.jsx'));
@@ -59,6 +60,7 @@ const AppRouter = () => {
             {/* Industrial Dashboard Routes */}
             <Route index element={<DisplayPage />} />
             <Route path="dashboard" element={<DisplayPage />} />
+            <Route path="test-charts" element={<TestChartsPage />} />
             <Route path="checklist" element={<Checklist />} />
             <Route path="alarms" element={<Alarms />} />
             <Route path="graph-analysis" element={<GraphAnalysisPage />} />
