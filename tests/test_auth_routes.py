@@ -30,7 +30,7 @@ class TestAuthRoutes:
             
             assert response.status_code == 200
             data = json.loads(response.data)
-            assert "token" in data
+            assert "access_token" in data
             assert data["user"]["username"] == "testuser"
             assert data["user"]["role"] == "admin"
 
