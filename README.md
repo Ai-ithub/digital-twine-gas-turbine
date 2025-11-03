@@ -142,24 +142,13 @@ The system **shall** ingest and process high-frequency data points required for 
 | **Frontend** (React.js) | N/A | **Jest** (for React components/UI logic) |
 
 
-# **Software Requirements Specification (SRS) – Industrial Gas Turbine Compressor Dashboard**
-**Version:** **13.0 (Final with Visual Diagrams)**
 
----
 
-## **1. Introduction**
 
-### **1.1 Purpose**
-This document provides comprehensive software requirements for the Industrial Gas Turbine Compressor Dashboard with complete visual diagram specifications.
 
-### **1.2 Scope**
-End-to-end solution integrating Real-Time Monitoring, Predictive Maintenance, Data Validation, Real-Time Optimization, and Digital Twin technologies.
+## **8. System Architecture Diagrams**
 
----
-
-## **2. System Architecture Diagrams**
-
-### **2.1 Overall System Architecture**
+### **8.1 Overall System Architecture**
 
 ```mermaid
 graph TB
@@ -195,9 +184,9 @@ graph TB
 
 ---
 
-## **3. Core Functional Modules**
+## **9. Core Functional Modules**
 
-### **3.1 Real-Time Monitoring (RTM) Architecture**
+### **9.1 Real-Time Monitoring (RTM) Architecture**
 
 ```mermaid
 graph LR
@@ -219,7 +208,7 @@ graph LR
     style G fill:#fff3e0
 ```
 
-### **3.2 Predictive Maintenance (PdM) Framework**
+### **9.2 Predictive Maintenance (PdM) Framework**
 
 ```mermaid
 graph TB
@@ -246,7 +235,7 @@ graph TB
     style J fill:#fff3e0
 ```
 
-### **3.3 Data Validation & Reconciliation (DVR) System**
+### **9.3 Data Validation & Reconciliation (DVR) System**
 
 ```mermaid
 graph TB
@@ -273,7 +262,7 @@ graph TB
     style I fill:#e1f5fe
 ```
 
-### **3.4 Real-Time Optimization (RTO) with Digital Twin**
+### **9.4 Real-Time Optimization (RTO) with Digital Twin**
 
 ```mermaid
 graph TB
@@ -302,9 +291,9 @@ graph TB
 
 ---
 
-## **4. Data Pipeline & Streaming Architecture**
+## **10. Data Pipeline & Streaming Architecture**
 
-### **4.1 Kafka Streaming Infrastructure**
+### **10.1 Kafka Streaming Infrastructure**
 
 ```mermaid
 graph TB
@@ -339,7 +328,7 @@ graph TB
     style D fill:#e8f5e8
 ```
 
-### **4.2 Monitoring & Observability Stack**
+### **10.2 Monitoring & Observability Stack**
 
 ```mermaid
 graph TB
@@ -371,9 +360,9 @@ graph TB
 
 ---
 
-## **5. Data Governance Framework**
+## **11. Data Governance Framework**
 
-### **5.1 Data Lineage & Quality Management**
+### **11.1 Data Lineage & Quality Management**
 
 ```mermaid
 graph TB
@@ -401,9 +390,9 @@ graph TB
 
 ---
 
-## **6. Security Architecture**
+## **12. Security Architecture**
 
-### **6.1 Comprehensive Security Layers**
+### **12.1 Comprehensive Security Layers**
 
 ```mermaid
 graph TB
@@ -430,9 +419,9 @@ graph TB
 
 ---
 
-## **7. Deployment & DevOps**
+## **13. Deployment & DevOps**
 
-### **7.1 CI/CD Pipeline Architecture**
+### **13.1 CI/CD Pipeline Architecture**
 
 ```mermaid
 graph TB
