@@ -140,3 +140,386 @@ The system **shall** ingest and process high-frequency data points required for 
 | :--- | :--- | :--- |
 | **Cloud Intelligence** (PdM, RTO) | `TensorFlow`, `PyTorch`, `Scikit-learn`, `CasADi` | **Pytest** (for Python backend/ML logic) |
 | **Frontend** (React.js) | N/A | **Jest** (for React components/UI logic) |
+
+
+# **Software Requirements Specification (SRS) – Industrial Gas Turbine Compressor Dashboard**
+**Version:** **13.0 (Final with Visual Diagrams)**
+
+---
+
+## **1. Introduction**
+
+### **1.1 Purpose**
+This document provides comprehensive software requirements for the Industrial Gas Turbine Compressor Dashboard with complete visual diagram specifications.
+
+### **1.2 Scope**
+End-to-end solution integrating Real-Time Monitoring, Predictive Maintenance, Data Validation, Real-Time Optimization, and Digital Twin technologies.
+
+---
+
+## **2. System Architecture Diagrams**
+
+### **2.1 Overall System Architecture**
+
+```mermaid
+graph TB
+    A[Physical Gas Turbine] --> B[Sensor Network]
+    B --> C[Edge Gateway]
+    C --> D[Kafka Cluster]
+    
+    D --> E[Data Validation & Reconciliation]
+    D --> F[Real-Time Monitoring]
+    D --> G[Predictive Maintenance]
+    D --> H[Digital Twin]
+    
+    E --> I[InfluxDB TSDB]
+    F --> I
+    G --> J[ML Model Repository]
+    H --> K[Simulation Engine]
+    
+    I --> L[Grafana Dashboards]
+    J --> L
+    K --> M[Real-Time Optimization]
+    
+    M --> N[Control Actions]
+    N --> A
+    
+    L --> O[Operators]
+    M --> O
+    
+    style A fill:#e1f5fe
+    style L fill:#f3e5f5
+    style M fill:#e8f5e8
+    style E fill:#fff3e0
+```
+
+---
+
+## **3. Core Functional Modules**
+
+### **3.1 Real-Time Monitoring (RTM) Architecture**
+
+```mermaid
+graph LR
+    A[Raw Sensor Data] --> B[Data Ingestion]
+    B --> C[Data Preprocessing]
+    C --> D[Anomaly Detection]
+    C --> E[Performance Metrics]
+    C --> F[Health Indicators]
+    
+    D --> G[Alert Generation]
+    E --> H[Dashboard Visualization]
+    F --> H
+    
+    G --> I[Operator Notifications]
+    H --> J[Real-Time Decisions]
+    
+    style D fill:#ffebee
+    style H fill:#e8f5e8
+    style G fill:#fff3e0
+```
+
+### **3.2 Predictive Maintenance (PdM) Framework**
+
+```mermaid
+graph TB
+    A[Historical Sensor Data] --> B[Feature Engineering]
+    A --> C[Failure Events Database]
+    
+    B --> D[ML Training Pipeline]
+    C --> D
+    
+    D --> E[LSTM Networks]
+    D --> F[Transformer Models]
+    D --> G[Survival Analysis]
+    
+    E --> H[RUL Prediction]
+    F --> H
+    G --> H
+    
+    H --> I[Maintenance Scheduling]
+    H --> J[Spare Parts Planning]
+    H --> K[Risk Assessment]
+    
+    style H fill:#ffebee
+    style I fill:#e8f5e8
+    style J fill:#fff3e0
+```
+
+### **3.3 Data Validation & Reconciliation (DVR) System**
+
+```mermaid
+graph TB
+    A[Raw Sensor Input] --> B[Data Quality Checks]
+    B --> C{Range Validation}
+    B --> D[Completeness Check]
+    B --> E[Rate of Change Analysis]
+    
+    C --> F[Outlier Detection]
+    D --> F
+    E --> F
+    
+    F --> G[Faulty Sensor Identification]
+    G --> H[Weighted Least Squares Reconciliation]
+    
+    H --> I[Corrected Data Stream]
+    H --> J[Data Quality Metrics]
+    
+    I --> K[Downstream Systems]
+    J --> L[Quality Dashboard]
+    
+    style F fill:#ffebee
+    style H fill:#e8f5e8
+    style I fill:#e1f5fe
+```
+
+### **3.4 Real-Time Optimization (RTO) with Digital Twin**
+
+```mermaid
+graph TB
+    A[Current Operating State] --> B[Optimization Engine]
+    C[Economic Objectives] --> B
+    D[Operational Constraints] --> B
+    
+    B --> E[Optimal Setpoints]
+    E --> F[Digital Twin Validation]
+    
+    F --> G{Simulation Results}
+    G --> H[Safe for Implementation]
+    G --> I[Unsafe - Reject]
+    
+    H --> J[Engineer Approval]
+    J --> K[OPC-UA Control Execution]
+    
+    K --> L[Physical Actuators]
+    L --> M[Performance Feedback]
+    M --> B
+    
+    style F fill:#e1f5fe
+    style B fill:#e8f5e8
+    style K fill:#fff3e0
+```
+
+---
+
+## **4. Data Pipeline & Streaming Architecture**
+
+### **4.1 Kafka Streaming Infrastructure**
+
+```mermaid
+graph TB
+    A[Sensor Producers] --> B[Kafka Cluster]
+    
+    subgraph Kafka Topics
+        C[raw-sensor-data]
+        D[validated-data]
+        E[alerts-notifications]
+        F[control-commands]
+    end
+    
+    B --> C
+    B --> D
+    B --> E
+    B --> F
+    
+    C --> G[DVR Consumer]
+    C --> H[RTM Consumer]
+    
+    D --> I[PdM Consumer]
+    D --> J[RTO Consumer]
+    D --> K[InfluxDB Writer]
+    
+    F --> L[OPC-UA Producer]
+    
+    G --> D
+    J --> F
+    
+    style B fill:#e1f5fe
+    style C fill:#ffebee
+    style D fill:#e8f5e8
+```
+
+### **4.2 Monitoring & Observability Stack**
+
+```mermaid
+graph TB
+    A[Microservices] --> B[Prometheus Metrics]
+    C[Kafka Consumers] --> D[Consumer Lag Metrics]
+    E[ML Models] --> F[Performance Metrics]
+    
+    B --> G[Prometheus Server]
+    D --> G
+    F --> G
+    
+    G --> H[Grafana Data Source]
+    
+    I[InfluxDB] --> H
+    J[Business Metrics] --> H
+    
+    H --> K[Operational Dashboards]
+    H --> L[Business Dashboards]
+    H --> M[Technical Dashboards]
+    
+    K --> N[System Health]
+    L --> O[KPI Tracking]
+    M --> P[Debugging Views]
+    
+    style G fill:#e1f5fe
+    style H fill:#e8f5e8
+    style K fill:#fff3e0
+```
+
+---
+
+## **5. Data Governance Framework**
+
+### **5.1 Data Lineage & Quality Management**
+
+```mermaid
+graph TB
+    A[Raw Data Sources] --> B[Lineage Tracking]
+    B --> C[Kafka Headers]
+    B --> D[InfluxDB Tags]
+    
+    E[Data Processing] --> F[Audit Logging]
+    F --> G[MySQL Audit Tables]
+    
+    H[Data Quality Rules] --> I[Real-time Validation]
+    I --> J[Quality Metrics]
+    J --> K[Prometheus]
+    
+    L[Data Owners] --> M[RBAC Access Control]
+    M --> N[Approval Workflows]
+    
+    K --> O[Quality Dashboards]
+    G --> P[Compliance Reports]
+    
+    style B fill:#e1f5fe
+    style I fill:#ffebee
+    style O fill:#e8f5e8
+```
+
+---
+
+## **6. Security Architecture**
+
+### **6.1 Comprehensive Security Layers**
+
+```mermaid
+graph TB
+    A[External Access] --> B[API Gateway]
+    B --> C[JWT Authentication]
+    C --> D[RBAC Authorization]
+    
+    E[Internal Services] --> F[Service Mesh]
+    F --> G[mTLS Encryption]
+    
+    H[Kafka Cluster] --> I[SSL/TLS Encryption]
+    H --> J[SASL Authentication]
+    
+    K[OPC-UA Control] --> L[Certificate Auth]
+    K --> M[Network Segmentation]
+    
+    N[Data Storage] --> O[Encryption at Rest]
+    N --> P[Access Logging]
+    
+    style C fill:#ffebee
+    style G fill:#e8f5e8
+    style I fill:#fff3e0
+```
+
+---
+
+## **7. Deployment & DevOps**
+
+### **7.1 CI/CD Pipeline Architecture**
+
+```mermaid
+graph TB
+    A[Developer Commit] --> B[Git Repository]
+    B --> C[CI Pipeline]
+    
+    C --> D[Unit Tests]
+    C --> E[Integration Tests]
+    C --> F[Security Scan]
+    
+    D --> G[Build Docker Images]
+    E --> G
+    F --> G
+    
+    G --> H[Push to Registry]
+    H --> I[Deployment Staging]
+    
+    I --> J[Smoke Tests]
+    J --> K[Production Deployment]
+    
+    K --> L[Prometheus Monitoring]
+    K --> M[Rollback Capability]
+    
+    style D fill:#ffebee
+    style G fill:#e1f5fe
+    style K fill:#e8f5e8
+```
+
+---
+
+## **8. Performance Requirements**
+
+### **8.1 System Performance Matrix**
+
+```mermaid
+graph TB
+    A[Performance Category] --> B[Latency Requirements]
+    A --> C[Throughput Requirements]
+    A --> D[Availability Requirements]
+    
+    B --> E[Edge Processing: ≤100ms]
+    B --> F[Cloud RTM: ≤1s]
+    B --> G[API Response: ≤500ms]
+    
+    C --> H[Kafka: ≥10K msgs/sec]
+    C --> I[Database: ≥1K writes/sec]
+    
+    D --> J[System Uptime: ≥99.9%]
+    D --> K[Data Pipeline: ≥99.95%]
+    
+    style E fill:#e8f5e8
+    style F fill:#e8f5e8
+    style H fill:#e1f5fe
+```
+
+---
+
+## **9. Appendices**
+
+### **9.1 Technology Stack Specification**
+
+```mermaid
+graph TB
+    A[Technology Stack] --> B[Frontend Layer]
+    A --> C[Backend Layer]
+    A --> D[Data Layer]
+    A --> E[AI/ML Layer]
+    A --> F[Infrastructure Layer]
+    
+    B --> G[React.js]
+    B --> H[Grafana Embedded]
+    
+    C --> I[Python Flask]
+    C --> J[FastAPI]
+    
+    D --> K[Apache Kafka]
+    D --> L[InfluxDB]
+    D --> M[MySQL]
+    
+    E --> N[TensorFlow]
+    E --> O[PyTorch]
+    E --> P[MLflow]
+    
+    F --> Q[Kubernetes]
+    F --> R[Docker]
+    F --> S[Prometheus]
+    
+    style G fill:#e1f5fe
+    style K fill:#fff3e0
+    style N fill:#e8f5e8
