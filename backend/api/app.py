@@ -1,15 +1,26 @@
-import eventlet
 import os
 import logging
 import json
 import uuid
 from flask import Flask, jsonify
 from flask_cors import CORS
-from flask_socketio import SocketIO
 from dotenv import load_dotenv
-from kafka import KafkaConsumer
-from kafka.errors import NoBrokersAvailable
 from backend.core import config
+
+# Only import eventlet and socketio if not in testing mode
+is_testing = os.getenv("TESTING", "false").lower() == "true"
+
+if not is_testing:
+    import eventlet
+    from flask_socketio import SocketIO
+    from kafka import KafkaConsumer
+    from kafka.errors import NoBrokersAvailable
+    eventlet.monkey_patch()
+else:
+    # Mock for testing
+    SocketIO = None
+    KafkaConsumer = None
+    NoBrokersAvailable = Exception
 
 # Import blueprints
 from .routes.auth_routes import auth_bp
@@ -23,12 +34,12 @@ from .routes.control_routes import control_bp
 from .routes.analysis_routes import analysis_bp
 from .routes.governance_routes import governance_bp
 
-eventlet.monkey_patch()
-
 
 # --- New Function: Listen to Processed Data (All Sensors) ---
 def kafka_processed_data_listener():
     """Listens to the 'sensors-processed' topic (from RTM Consumer) and pushes messages to clients."""
+    if is_testing:
+        return
     consumer = None
     PROCESSED_DATA_TOPIC = "sensors-processed"
 
@@ -50,7 +61,11 @@ def kafka_processed_data_listener():
             logging.warning(
                 "Processed data bridge could not connect to Kafka. Retrying in 5 seconds..."
             )
-            eventlet.sleep(5)
+            if not is_testing:
+                eventlet.sleep(5)
+            else:
+                import time
+                time.sleep(5)
 
     for message in consumer:
         try:
@@ -69,6 +84,8 @@ def kafka_processed_data_listener():
 # The kafka_alert_listener remains unchanged.
 def kafka_alert_listener():
     """Listens to the 'alerts' topic and pushes messages to clients via WebSocket."""
+    if is_testing:
+        return
     consumer = None
     logging.info("Starting Kafka listener for WebSocket bridge...")
     while not consumer:
@@ -88,7 +105,11 @@ def kafka_alert_listener():
             logging.warning(
                 "WebSocket bridge could not connect to Kafka. Retrying in 5 seconds..."
             )
-            eventlet.sleep(5)
+            if not is_testing:
+                eventlet.sleep(5)
+            else:
+                import time
+                time.sleep(5)
 
     for message in consumer:
         try:
@@ -102,6 +123,8 @@ def kafka_alert_listener():
 # The rto_suggestion_listener remains unchanged.
 def rto_suggestion_listener():
     """Listens to the RTO suggestions topic and pushes them to clients."""
+    if is_testing:
+        return
     consumer = None
     logging.info("Starting Kafka listener for RTO suggestions...")
     while not consumer:
@@ -117,7 +140,11 @@ def rto_suggestion_listener():
             logging.info("✅ WebSocket bridge connected to RTO suggestions topic.")
         except NoBrokersAvailable:
             logging.warning("RTO bridge could not connect to Kafka. Retrying...")
-            eventlet.sleep(5)
+            if not is_testing:
+                eventlet.sleep(5)
+            else:
+                import time
+                time.sleep(5)
 
     for message in consumer:
         try:
@@ -134,8 +161,8 @@ def rto_suggestion_listener():
 def create_app():
     app = Flask(__name__)
     
-    # Check if we're in testing mode
-    is_testing = os.getenv("TESTING", "false").lower() == "true"
+    # Check if we're in testing mode (already defined at module level)
+    # is_testing is already set at module level
     
     # CORS Configuration with proper security
     allowed_origins = os.getenv("CORS_ALLOWED_ORIGINS", "http://localhost:5173,http://localhost:3000").split(",")
@@ -199,7 +226,8 @@ def create_app():
 app = create_app()
 
 # Only initialize SocketIO and Kafka listeners if not in testing mode
-if os.getenv("TESTING", "false").lower() != "true":
+if not is_testing and SocketIO:
+    import eventlet  # Import here to ensure it's available
     socketio = SocketIO(
         app, cors_allowed_origins="http://localhost:5173", async_mode="eventlet"
     )

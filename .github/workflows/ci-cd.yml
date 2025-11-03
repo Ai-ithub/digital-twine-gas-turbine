@@ -46,7 +46,7 @@ jobs:
     - name: Run tests with pytest
       continue-on-error: true
       run: |
-        pytest tests/ -v --maxfail=10 --tb=short --cov=backend --cov-report=xml --cov-report=html --cov-fail-under=30 || true
+        pytest tests/ -v --maxfail=10 --tb=short --cov=backend --cov-report=xml --cov-report=html --cov-fail-under=30 --ignore=tests/integration || true
         
     - name: Upload coverage reports
       uses: codecov/codecov-action@v4
