@@ -7,7 +7,7 @@ import React, { useState, useEffect } from 'react';
 import { Box, Grid, Typography, Paper, Select, MenuItem, FormControl, InputLabel } from '@mui/material';
 import CircularGauge from '../../components/gauges/CircularGauge';
 import LinearGauge from '../../components/gauges/LinearGauge';
-import { apiClient } from '../../api/apiClient';
+import apiClient from '../../api/apiClient';
 
 const DisplayPage = () => {
   const [sensorData, setSensorData] = useState({

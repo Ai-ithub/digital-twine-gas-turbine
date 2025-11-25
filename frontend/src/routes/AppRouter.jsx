@@ -36,9 +36,11 @@ const AppRouter = () => {
           display: 'flex', 
           justifyContent: 'center', 
           alignItems: 'center', 
-          minHeight: '100vh' 
+          minHeight: '100vh',
+          backgroundColor: '#000000',
+          color: '#8BC34A'
         }}>
-          Loading...
+          <div>Loading...</div>
         </div>
       }>
         <Routes>
@@ -48,14 +50,10 @@ const AppRouter = () => {
             element={isAuthenticated ? <Navigate to="/" replace /> : <Login />} 
           />
 
-          {/* Protected Routes */}
+          {/* Public Dashboard Routes - No authentication required */}
           <Route
             path="/"
-            element={
-              <ProtectedRoute>
-                <IndustrialLayout />
-              </ProtectedRoute>
-            }
+            element={<IndustrialLayout />}
           >
             {/* Industrial Dashboard Routes */}
             <Route index element={<DisplayPage />} />

@@ -32,10 +32,10 @@ import {
   Description as ReportIcon,
   Link as ConnectionIcon,
   Storage as DataLoggerIcon,
-  Database as DatabaseIcon,
+  Folder as DatabaseIcon,
   Security as CSMIcon,
   Thermostat as ThermoIcon,
-  Engineering as PDMIcon,
+  PrecisionManufacturing as PDMIcon,
   Videocam as DVRIcon,
   ExpandLess,
   ExpandMore,
@@ -43,7 +43,7 @@ import {
   Logout as LogoutIcon,
 } from '@mui/icons-material';
 import { useSelector, useDispatch } from 'react-redux';
-import { logout } from '../features/auth/authSlice';
+import { logoutUser } from '../features/auth/authSlice';
 
 const DRAWER_WIDTH = 200;
 
@@ -89,8 +89,8 @@ const IndustrialLayout = () => {
     }
   };
 
-  const handleLogout = () => {
-    dispatch(logout());
+  const handleLogout = async () => {
+    await dispatch(logoutUser());
     navigate('/login');
   };
 
