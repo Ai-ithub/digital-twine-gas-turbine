@@ -55,14 +55,52 @@ const ControlPage = () => {
   });
 
   useEffect(() => {
-    // Simulate real-time data updates
+    // Simulate real-time data updates for all parameters
     const interval = setInterval(() => {
       setControlData((prev) => ({
         ...prev,
+        temperature: {
+          ambient: Math.max(20, Math.min(30, prev.temperature.ambient + (Math.random() - 0.5) * 1)),
+          inlet: Math.max(400, Math.min(450, prev.temperature.inlet + (Math.random() - 0.5) * 5)),
+          outlet: Math.max(570, Math.min(590, prev.temperature.outlet + (Math.random() - 0.5) * 5)),
+        },
+        pressure: {
+          ...prev.pressure,
+          filterDiff: Math.max(10, Math.min(20, prev.pressure.filterDiff + (Math.random() - 0.5) * 1)),
+          turbineExhaust: Math.max(840, Math.min(860, prev.pressure.turbineExhaust + (Math.random() - 0.5) * 3)),
+          compressorDischarge: Math.max(910, Math.min(930, prev.pressure.compressorDischarge + (Math.random() - 0.5) * 3)),
+          tempData: Math.max(710, Math.min(730, prev.pressure.tempData + (Math.random() - 0.5) * 2)),
+          pressureData: Math.max(670, Math.min(690, prev.pressure.pressureData + (Math.random() - 0.5) * 2)),
+        },
         rpm: {
           ...prev.rpm,
-          turbineSpeed: prev.rpm.turbineSpeed + (Math.random() - 0.5) * 2,
+          turbineSpeed: Math.max(25, Math.min(31, prev.rpm.turbineSpeed + (Math.random() - 0.5) * 1)),
+          rateOfRevolutions: Math.max(3000, Math.min(3100, prev.rpm.rateOfRevolutions + (Math.random() - 0.5) * 10)),
+          vibrationData: Math.max(10, Math.min(15, prev.rpm.vibrationData + (Math.random() - 0.5) * 0.5)),
         },
+        torque: {
+          shaft: Math.max(60, Math.min(70, prev.torque.shaft + (Math.random() - 0.5) * 1)),
+          propeller: Math.max(55, Math.min(62, prev.torque.propeller + (Math.random() - 0.5) * 1)),
+          starboard: Math.max(50, Math.min(55, prev.torque.starboard + (Math.random() - 0.5) * 1)),
+        },
+        power: {
+          input: Math.max(840, Math.min(860, prev.power.input + (Math.random() - 0.5) * 5)),
+          loadDemand: Math.max(770, Math.min(790, prev.power.loadDemand + (Math.random() - 0.5) * 5)),
+          energyYield: Math.max(910, Math.min(930, prev.power.energyYield + (Math.random() - 0.5) * 5)),
+        },
+        control: {
+          ...prev.control,
+          injectionControl: Math.max(70, Math.min(80, prev.control.injectionControl + (Math.random() - 0.5) * 1)),
+          efficiency: Math.max(85, Math.min(92, prev.control.efficiency + (Math.random() - 0.5) * 1)),
+          humidity: Math.max(40, Math.min(50, prev.control.humidity + (Math.random() - 0.5) * 1)),
+          fuelFlow: Math.max(310, Math.min(330, prev.control.fuelFlow + (Math.random() - 0.5) * 2)),
+          decayState: Math.max(3, Math.min(7, prev.control.decayState + (Math.random() - 0.5) * 0.2)),
+        },
+        emissions: {
+          dioxide: Math.max(410, Math.min(430, prev.emissions.dioxide + (Math.random() - 0.5) * 3)),
+          monoxide: Math.max(80, Math.min(90, prev.emissions.monoxide + (Math.random() - 0.5) * 2)),
+        },
+        viscosity: Math.max(40, Math.min(45, prev.viscosity + (Math.random() - 0.5) * 0.5)),
       }));
     }, 2000);
 

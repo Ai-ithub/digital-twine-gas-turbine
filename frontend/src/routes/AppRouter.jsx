@@ -25,6 +25,8 @@ const Control = React.lazy(() => import('../pages/Control.jsx'));
 const ThreeDAnalysis = React.lazy(() => import('../pages/ThreeDAnalysis.jsx'));
 const Checklist = React.lazy(() => import('../pages/Checklist.jsx'));
 const GraphAnalysis = React.lazy(() => import('../pages/GraphAnalysis.jsx'));
+const Connection = React.lazy(() => import('../pages/Connection.jsx'));
+const DataLogger = React.lazy(() => import('../pages/DataLogger.jsx'));
 
 const AppRouter = () => {
   const { isAuthenticated } = useSelector((state) => state.auth);
@@ -67,21 +69,14 @@ const AppRouter = () => {
             <Route path="pdm" element={<PDMPage />} />
             <Route path="dvr" element={<Monitoring />} />
             <Route path="reporting" element={<Overview />} />
-            <Route path="connection" element={<Overview />} />
-            <Route path="data-loggers" element={<Monitoring />} />
+            <Route path="connection" element={<Connection />} />
+            <Route path="data-loggers" element={<DataLogger />} />
             <Route path="databases" element={<Overview />} />
             <Route path="csm" element={<Overview />} />
             <Route path="thermo-vision" element={<Overview />} />
             
-            {/* Control page requires engineer or admin role */}
-            <Route
-              path="control"
-              element={
-                <ProtectedRoute requiredRoles={['admin', 'engineer']}>
-                  <ControlPage />
-                </ProtectedRoute>
-              }
-            />
+            {/* Control page - No authentication required */}
+            <Route path="control" element={<ControlPage />} />
             
             {/* Legacy Routes */}
             <Route path="monitoring" element={<Monitoring />} />
