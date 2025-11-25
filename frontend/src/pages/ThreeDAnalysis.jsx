@@ -11,7 +11,7 @@ import {
   CameraAlt, Settings, Visibility, VisibilityOff 
 } from '@mui/icons-material';
 import PageHeader from '../components/common/PageHeader';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ScatterChart, Scatter, ZAxis } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, ScatterChart, Scatter, ZAxis } from 'recharts';
 
 const ThreeDAnalysis = () => {
   const [viewMode, setViewMode] = useState('full');
@@ -420,7 +420,7 @@ const ThreeDAnalysis = () => {
                 <CartesianGrid strokeDasharray="3 3" stroke="#333" />
                 <XAxis dataKey="hour" stroke="#8BC34A" />
                 <YAxis stroke="#8BC34A" />
-                <Tooltip contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid #8BC34A' }} />
+                <RechartsTooltip contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid #8BC34A' }} />
                 <Legend />
                 <Line type="monotone" dataKey="inlet" stroke="#2196F3" name="Inlet" />
                 <Line type="monotone" dataKey="compressor" stroke="#FF5722" name="Compressor" />
@@ -683,7 +683,7 @@ const ThreeDAnalysis = () => {
                   name="Temperature" 
                   range={[50, 400]}
                 />
-                <Tooltip 
+                <RechartsTooltip 
                   cursor={{ strokeDasharray: '3 3' }}
                   contentStyle={{ 
                     backgroundColor: '#1a1a1a', 
