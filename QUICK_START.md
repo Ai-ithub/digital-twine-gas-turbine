@@ -1,50 +1,50 @@
-# 🚀 راهنمای سریع راه‌اندازی
+# 🚀 Quick Start Guide
 
-## ⚠️ پیش‌نیازها
+## ⚠️ Prerequisites
 
-### 1. نصب Docker Desktop برای Windows
+### 1. Install Docker Desktop for Windows
 
-1. دانلود از: https://www.docker.com/products/docker-desktop/
-2. نصب و راه‌اندازی Docker Desktop
-3. اطمینان از فعال بودن Docker Desktop
+1. Download from: https://www.docker.com/products/docker-desktop/
+2. Install and set up Docker Desktop
+3. Make sure Docker Desktop is running
 
 ```powershell
-# بررسی نصب Docker
+# Check the Docker installation
 docker --version
 docker-compose --version
 ```
 
-### 2. فایل .env
+### 2. The .env file
 
-فایل `.env` از قبل ایجاد شده است. می‌توانید مقادیر را تغییر دهید.
+The `.env` file has already been created. You can change the values.
 
-## 🔧 راه‌اندازی سیستم
+## 🔧 Starting the System
 
-### مرحله 1: راه‌اندازی تمام سرویس‌ها
+### Step 1: Start all services
 
 ```powershell
-# در مسیر اصلی پروژه
+# In the project root
 docker-compose up -d
 
-# مشاهده لاگ‌ها
+# View logs
 docker-compose logs -f
 
-# بررسی وضعیت سرویس‌ها
+# Check service status
 docker-compose ps
 ```
 
-### مرحله 2: انتظار برای آماده‌سازی Database
+### Step 2: Wait for the Database to be ready
 
 ```powershell
-# بررسی لاگ MySQL
+# Check the MySQL log
 docker-compose logs mysql
 
-# بررسی آماده بودن Database
+# Check that the Database is ready
 docker-compose exec mysql mysqladmin ping -h localhost -u root -p
 # Password: root_password_123
 ```
 
-### مرحله 3: راه‌اندازی Frontend (در ترمینال جدید)
+### Step 3: Start the Frontend (in a new terminal)
 
 ```powershell
 cd frontend
@@ -52,9 +52,9 @@ npm install
 npm run dev
 ```
 
-## 🌐 دسترسی به سرویس‌ها
+## 🌐 Accessing Services
 
-| سرویس | آدرس | اطلاعات ورود |
+| Service | Address | Login info |
 |-------|------|--------------|
 | **Backend API** | http://localhost:5000 | JWT Token required |
 | **Frontend** | http://localhost:5173 | - |
@@ -63,35 +63,35 @@ npm run dev
 | **MLflow** | http://localhost:5001 | - |
 | **InfluxDB** | http://localhost:8086 | Token required |
 
-## 🔐 ورود و دریافت Token
+## 🔐 Login and Getting a Token
 
 ```powershell
-# ورود و دریافت Token
+# Login and get a Token
 $response = Invoke-RestMethod -Uri "http://localhost:5000/api/auth/login" `
   -Method POST `
   -ContentType "application/json" `
   -Body '{"username": "admin", "password": "admin123"}'
 
-# ذخیره Token
+# Save the Token
 $token = $response.token
 Write-Host "Token: $token"
 
-# استفاده از Token
+# Use the Token
 Invoke-RestMethod -Uri "http://localhost:5000/api/data/get_live_data" `
   -Headers @{Authorization = "Bearer $token"}
 ```
 
-## 👤 کاربران پیش‌فرض
+## 👤 Default Users
 
-- **admin** / **admin123** (نقش: admin)
-- **engineer** / **admin123** (نقش: engineer)
-- **operator** / **admin123** (نقش: operator)
+- **admin** / **admin123** (role: admin)
+- **engineer** / **admin123** (role: engineer)
+- **operator** / **admin123** (role: operator)
 
-⚠️ **توجه:** در production حتماً password‌ها را تغییر دهید!
+⚠️ **Note:** Be sure to change the passwords in production!
 
-## 📊 بررسی وضعیت سیستم
+## 📊 Checking System Status
 
-### مشاهده لاگ‌های سرویس‌ها
+### Viewing service logs
 
 ```powershell
 # Backend
@@ -110,78 +110,78 @@ docker-compose logs -f rtm-consumer
 docker-compose logs -f rto-consumer
 ```
 
-### بررسی Metrics در Prometheus
+### Checking Metrics in Prometheus
 
-1. باز کردن: http://localhost:9090
-2. جستجوی metric: `api_request_duration_seconds`
-3. مشاهده metrics دیگر در Grafana: http://localhost:3000
+1. Open: http://localhost:9090
+2. Search for the metric: `api_request_duration_seconds`
+3. View other metrics in Grafana: http://localhost:3000
 
-## 🛑 توقف سیستم
+## 🛑 Stopping the System
 
 ```powershell
-# توقف تمام سرویس‌ها
+# Stop all services
 docker-compose down
 
-# توقف و حذف volumes
+# Stop and remove volumes
 docker-compose down -v
 ```
 
-## 🔄 راه‌اندازی مجدد
+## 🔄 Restarting
 
 ```powershell
-# راه‌اندازی مجدد
+# Restart
 docker-compose restart
 
-# راه‌اندازی مجدد یک سرویس خاص
+# Restart a specific service
 docker-compose restart backend
 ```
 
-## ❗ رفع مشکلات
+## ❗ Troubleshooting
 
-### مشکل: Port در حال استفاده است
+### Problem: Port is in use
 
 ```powershell
-# بررسی استفاده از port
+# Check port usage
 netstat -ano | findstr :5000
 netstat -ano | findstr :3307
 netstat -ano | findstr :9092
 
-# یا تغییر port در docker-compose.yml
+# Or change the port in docker-compose.yml
 ```
 
-### مشکل: سرویس‌ها شروع نمی‌شوند
+### Problem: Services do not start
 
 ```powershell
-# بررسی لاگ‌های خطا
+# Check the error logs
 docker-compose logs --tail=50
 
-# بررسی وضعیت
+# Check the status
 docker-compose ps
 ```
 
-### مشکل: Database initialize نشده
+### Problem: Database not initialized
 
 ```powershell
-# بررسی init.sql
+# Check init.sql
 cat init/init.sql
 
-# اجرای دستی
+# Run manually
 docker-compose exec mysql mysql -u root -p compressor_db < init/init.sql
 # Password: root_password_123
 ```
 
-## ✅ چک‌لیست راه‌اندازی
+## ✅ Setup Checklist
 
-- [ ] Docker Desktop نصب و در حال اجرا است
-- [ ] فایل `.env` وجود دارد
-- [ ] تمام containers در حال اجرا هستند (`docker-compose ps`)
-- [ ] Backend API پاسخ می‌دهد (http://localhost:5000)
-- [ ] می‌توانید login کنید و Token دریافت کنید
-- [ ] Grafana در دسترس است (http://localhost:3000)
-- [ ] Prometheus در دسترس است (http://localhost:9090)
-- [ ] Frontend در حال اجرا است (http://localhost:5173)
+- [ ] Docker Desktop is installed and running
+- [ ] The `.env` file exists
+- [ ] All containers are running (`docker-compose ps`)
+- [ ] The Backend API responds (http://localhost:5000)
+- [ ] You can log in and get a Token
+- [ ] Grafana is accessible (http://localhost:3000)
+- [ ] Prometheus is accessible (http://localhost:9090)
+- [ ] The Frontend is running (http://localhost:5173)
 
 ---
 
-**سیستم آماده است!** 🎉
+**The system is ready!** 🎉
 

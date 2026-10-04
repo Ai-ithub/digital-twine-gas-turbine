@@ -1,6 +1,6 @@
 /**
- * Test Charts Page - برای دیباگ
- * صفحه ساده برای تست نمودارها
+ * Test Charts Page - for debugging
+ * A simple page for testing charts
  */
 
 import React from 'react';
@@ -17,7 +17,7 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 
-// داده‌های ساده تست
+// Simple test data
 const testData = [
   { name: 'A', value: 10 },
   { name: 'B', value: 30 },
@@ -36,7 +36,7 @@ const TestChartsPage = () => {
         🧪 Test Charts Page
       </Typography>
 
-      {/* تست 1: Line Chart ساده */}
+      {/* Test 1: Simple Line Chart */}
       <Paper sx={{ p: 2, mb: 3, backgroundColor: '#1a1a1a' }}>
         <Typography variant="h6" sx={{ color: '#FFFFFF', mb: 2 }}>
           ✅ Test 1: Simple Line Chart
@@ -52,7 +52,7 @@ const TestChartsPage = () => {
         </ResponsiveContainer>
       </Paper>
 
-      {/* تست 2: Bar Chart ساده */}
+      {/* Test 2: Simple Bar Chart */}
       <Paper sx={{ p: 2, mb: 3, backgroundColor: '#1a1a1a' }}>
         <Typography variant="h6" sx={{ color: '#FFFFFF', mb: 2 }}>
           ✅ Test 2: Simple Bar Chart
@@ -68,13 +68,13 @@ const TestChartsPage = () => {
         </ResponsiveContainer>
       </Paper>
 
-      {/* نتیجه */}
+      {/* Result */}
       <Paper sx={{ p: 2, backgroundColor: '#1a1a1a', border: '2px solid #8BC34A' }}>
         <Typography variant="body1" sx={{ color: '#FFFFFF' }}>
-          ✅ اگر نمودارها را می‌بینید → recharts کار می‌کند!
+          ✅ If you see the charts → recharts works!
         </Typography>
         <Typography variant="body1" sx={{ color: '#FFFFFF', mt: 1 }}>
-          ❌ اگر نمودارها نیستند → Console را چک کنید (F12)
+          ❌ If the charts are missing → Check the Console (F12)
         </Typography>
       </Paper>
     </Box>

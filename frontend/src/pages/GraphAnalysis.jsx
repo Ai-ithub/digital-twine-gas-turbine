@@ -9,10 +9,10 @@ import { fetchAnalysisData } from '../features/analysis/analysisSlice';
 
 const GraphAnalysis = () => {
     const dispatch = useDispatch();
-    // داده‌ها و وضعیت را از Redux store می‌گیریم
+    // We take data and state from the Redux store
     const { trendData, correlationData, distributionData, status } = useSelector((state) => state.analysis);
     
-    // State برای انتخاب‌های کاربر
+    // State for the user's selections
     const [sensor1, setSensor1] = useState('Vibration');
     const [sensor2, setSensor2] = useState('Efficiency');
     const [timeRange, setTimeRange] = useState('-24h');
@@ -25,7 +25,7 @@ const GraphAnalysis = () => {
     const sensorOptions = ["Pressure_In", "Temperature_In", "Flow_Rate", "Vibration", "Efficiency", "Power_Consumption"];
     const timeRangeOptions = { "Last Hour": "-1h", "Last 6 Hours": "-6h", "Last 24 Hours": "-24h", "Last 7 Days": "-7d" };
 
-    // این تابع بر اساس نوع تحلیل، نمودار مناسب را رندر می‌کند
+    // This function renders the appropriate chart based on the analysis type
     const renderChart = () => {
         if (status === 'loading') return <CircularProgress />;
         
@@ -76,8 +76,8 @@ const GraphAnalysis = () => {
         }
     };
 
-    // **تغییر اصلی اینجاست**
-    // یک متغیر برای بررسی وجود داده در هر یک از حالت‌های ممکن تعریف می‌کنیم
+    // **The main change is here**
+    // We define a variable to check for the existence of data in each possible state
     const isDataAvailable = 
         (analysisType === 'trend' && trendData.length > 0) ||
         (analysisType === 'distribution' && distributionData.length > 0) ||
@@ -101,8 +101,8 @@ const GraphAnalysis = () => {
                 </Grid>
             </Paper>
             <Paper elevation={3} sx={{ p: 2, height: '60vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                {/* **خط اصلاح شده** */}
-                {/* به جای `data` از متغیر `isDataAvailable` استفاده می‌کنیم */}
+                {/* **Corrected line** */}
+                {/* Instead of `data` we use the `isDataAvailable` variable */}
                 {!isDataAvailable && status !== 'loading' ? 
                     <Typography color="text.secondary">No data to display. Please generate an analysis.</Typography> 
                     : renderChart()

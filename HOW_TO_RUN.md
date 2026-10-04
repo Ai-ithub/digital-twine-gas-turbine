@@ -1,43 +1,43 @@
-# 🚀 راهنمای اجرای سریع Dashboard
+# 🚀 Quick Dashboard Run Guide
 
-## ✅ مرحله 1: بررسی پیش‌نیازها
+## ✅ Step 1: Check Prerequisites
 
 ```bash
-# بررسی Node.js (باید >= 18)
+# Check Node.js (must be >= 18)
 node --version
 
-# بررسی npm
+# Check npm
 npm --version
 
-# بررسی Docker (برای backend)
+# Check Docker (for the backend)
 docker --version
 ```
 
 ---
 
-## ✅ مرحله 2: نصب Frontend
+## ✅ Step 2: Install the Frontend
 
 ```bash
-# رفتن به پوشه frontend
+# Go to the frontend folder
 cd "C:\Users\asus\Documents\companies\ithub\AI\products\clones\digital twin\digital-twine-gas-turbine-1\frontend"
 
-# نصب dependencies
+# Install dependencies
 npm install
 
-# اگر خطا دادید، این را امتحان کنید:
+# If you get an error, try this:
 npm install --legacy-peer-deps
 ```
 
 ---
 
-## ✅ مرحله 3: اجرای Frontend
+## ✅ Step 3: Run the Frontend
 
 ```bash
-# در همان پوشه frontend
+# In the same frontend folder
 npm run dev
 ```
 
-**خروجی باید شبیه این باشد:**
+**The output should look like this:**
 ```
   VITE v7.1.2  ready in 500 ms
 
@@ -47,116 +47,116 @@ npm run dev
 
 ---
 
-## ✅ مرحله 4: باز کردن Browser
+## ✅ Step 4: Open the Browser
 
-1. **باز کنید:** http://localhost:5173/
+1. **Open:** http://localhost:5173/
 
-2. **صفحات مختلف:**
-   - Dashboard اصلی: http://localhost:5173/dashboard
-   - تست نمودارها: http://localhost:5173/test-charts ⭐ **ابتدا این را امتحان کنید**
+2. **Various pages:**
+   - Main Dashboard: http://localhost:5173/dashboard
+   - Chart test: http://localhost:5173/test-charts ⭐ **Try this first**
    - Graph Analysis: http://localhost:5173/graph-analysis
    - Control: http://localhost:5173/control
    - Real-Time Optimization: http://localhost:5173/real-time-op
 
 ---
 
-## 🧪 تست سریع نمودارها
+## 🧪 Quick Chart Test
 
-اگر نمودارها نمایش داده نمی‌شوند:
+If the charts are not displayed:
 
-### 1. برو به صفحه تست:
+### 1. Go to the test page:
 ```
 http://localhost:5173/test-charts
 ```
 
-### 2. بررسی Console:
-- `F12` بزنید
-- تب **Console** را باز کنید
-- باید این پیام‌ها را ببینید:
+### 2. Check the Console:
+- Press `F12`
+- Open the **Console** tab
+- You should see these messages:
   ```
   TestChartsPage rendered
   Test Data: [{...}, {...}, ...]
   ```
 
-### 3. اگر خطا دیدید:
-- خطا را کپی کنید
-- در Google جستجو کنید
-- یا به من بگویید!
+### 3. If you see an error:
+- Copy the error
+- Search on Google
+- Or tell me!
 
 ---
 
-## ❌ مشکلات رایج و راه‌حل
+## ❌ Common Problems and Solutions
 
-### مشکل 1: "Cannot find module 'recharts'"
+### Problem 1: "Cannot find module 'recharts'"
 
-**راه‌حل:**
+**Solution:**
 ```bash
 cd frontend
 npm install recharts@latest
 npm install @mui/x-charts@latest
 ```
 
-### مشکل 2: صفحه سفید است
+### Problem 2: The page is white
 
-**راه‌حل:**
-1. Console را باز کنید (F12)
-2. خطاها را بخوانید
-3. Cache browser را پاک کنید:
+**Solution:**
+1. Open the Console (F12)
+2. Read the errors
+3. Clear the browser cache:
    - `Ctrl + Shift + Delete`
-   - "Cached images and files" را انتخاب کنید
-   - Delete کنید
+   - Select "Cached images and files"
+   - Delete
 4. Hard Refresh: `Ctrl + Shift + R`
 
-### مشکل 3: "Port 5173 is already in use"
+### Problem 3: "Port 5173 is already in use"
 
-**راه‌حل:**
+**Solution:**
 ```bash
-# Terminal را ببندید و دوباره باز کنید
-# یا port را تغییر دهید:
+# Close the Terminal and reopen it
+# Or change the port:
 npm run dev -- --port 3000
 ```
 
-### مشکل 4: npm install خطا می‌دهد
+### Problem 4: npm install gives an error
 
-**راه‌حل:**
+**Solution:**
 ```bash
-# پاک کردن cache
+# Clear the cache
 npm cache clean --force
 
-# حذف node_modules و package-lock.json
+# Delete node_modules and package-lock.json
 rm -rf node_modules package-lock.json
 
-# نصب مجدد
+# Reinstall
 npm install
 ```
 
 ---
 
-## 🎯 Login به Dashboard
+## 🎯 Login to the Dashboard
 
-اگر از شما login خواست:
+If it asks you to log in:
 
 ```
 Username: admin
 Password: admin123
 ```
 
-**نکته:** برای این کار، backend باید در حال اجرا باشد.
+**Note:** For this, the backend must be running.
 
 ---
 
-## 🐳 اجرای Backend (اختیاری)
+## 🐳 Run the Backend (Optional)
 
-اگر می‌خواهید داده‌های واقعی ببینید:
+If you want to see real data:
 
 ```bash
-# بازگشت به root
+# Return to root
 cd "C:\Users\asus\Documents\companies\ithub\AI\products\clones\digital twin\digital-twine-gas-turbine-1"
 
-# اجرای با Docker
+# Run with Docker
 docker-compose up -d
 
-# یا بدون Docker:
+# Or without Docker:
 cd backend
 pip install -r ../requirements.txt
 python api/app.py
@@ -164,45 +164,45 @@ python api/app.py
 
 ---
 
-## 📸 Screenshot مشکل
+## 📸 Screenshot the Problem
 
-اگر مشکل دارید، این اطلاعات را به من بدهید:
+If you have a problem, provide this information:
 
-1. **Screenshot از صفحه**
-2. **Screenshot از Console (F12 → Console)**
-3. **Screenshot از Network Tab (F12 → Network)**
-4. **خروجی Terminal که `npm run dev` اجرا کردید**
-
----
-
-## ✅ Checklist نهایی
-
-قبل از اینکه بگویید "کار نمی‌کند"، این موارد را چک کنید:
-
-- [ ] `npm install` اجرا شده است
-- [ ] `npm run dev` در حال اجرا است
-- [ ] Browser به `http://localhost:5173` باز است
-- [ ] Console خطا ندارد (F12)
-- [ ] Cache browser پاک شده
-- [ ] Hard Refresh انجام شده (Ctrl+Shift+R)
-- [ ] صفحه تست امتحان شده (`/test-charts`)
+1. **Screenshot of the page**
+2. **Screenshot of the Console (F12 → Console)**
+3. **Screenshot of the Network Tab (F12 → Network)**
+4. **The output of the Terminal where you ran `npm run dev`**
 
 ---
 
-## 🎉 موفقیت!
+## ✅ Final Checklist
 
-اگر نمودارها را می‌بینید:
-- ✅ recharts کار می‌کند
-- ✅ @mui/x-charts کار می‌کند
-- ✅ Dashboard آماده است!
+Before saying "it doesn't work", check these:
 
-**حالا می‌توانید به صفحات اصلی بروید:**
-- `/dashboard` - صفحه اصلی با Gauges
-- `/graph-analysis` - نمودارهای Noise و Histogram
-- `/control` - کنترل توربین
-- `/real-time-op` - بهینه‌سازی
+- [ ] `npm install` has been run
+- [ ] `npm run dev` is running
+- [ ] The browser is open at `http://localhost:5173`
+- [ ] The Console has no errors (F12)
+- [ ] The browser cache is cleared
+- [ ] A Hard Refresh was done (Ctrl+Shift+R)
+- [ ] The test page was tried (`/test-charts`)
 
 ---
 
-**نکته مهم:** اگر تغییری در کد دادید، فایل خودکار reload می‌شود. نیازی به restart نیست!
+## 🎉 Success!
+
+If you see the charts:
+- ✅ recharts works
+- ✅ @mui/x-charts works
+- ✅ The Dashboard is ready!
+
+**Now you can go to the main pages:**
+- `/dashboard` - main page with Gauges
+- `/graph-analysis` - Noise and Histogram charts
+- `/control` - turbine control
+- `/real-time-op` - optimization
+
+---
+
+**Important note:** If you change the code, the file reloads automatically. No restart is needed!
 

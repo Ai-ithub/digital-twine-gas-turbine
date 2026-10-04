@@ -5,7 +5,7 @@ import { useSelector } from 'react-redux';
 import { Box, Chip, ButtonGroup, Button, Typography, Grid, Paper, Card, CardContent, Table, TableBody, TableCell, TableContainer, TableHead, TableRow } from '@mui/material';
 import { ResponsiveContainer, BarChart, Bar, CartesianGrid, XAxis, YAxis, Tooltip, LineChart, Line, Legend } from 'recharts';
 import PageHeader from '../components/common/PageHeader';
-// 1. کامپوننت DynamicChart ایمپورت شد
+// 1. The DynamicChart component was imported
 import DynamicChart from '../features/rtm/components/DynamicChart'; 
 
 // Constants for time ranges
@@ -179,7 +179,7 @@ const Monitoring = () => {
     return Object.keys(bins).map(key => ({ range: key, frequency: bins[key] }));
   }, [displayData]);
   
-  // 2. کامپوننت DynamicChart و createAnomalyDotRenderer حذف شدند
+  // 2. The DynamicChart component and createAnomalyDotRenderer were removed
 
   return (
     <Box>
@@ -433,7 +433,7 @@ const Monitoring = () => {
             yAxisLabel="Pressure (bar)"
             yAxisId="pressure"
             orientation="left"
-            data={displayData} // 3. ارسال داده
+            data={displayData} // 3. Send data
         />
 
         {/* Chart 2: Compressor Core: Temperature */}
@@ -444,7 +444,7 @@ const Monitoring = () => {
                 { key: "Temperature_Out", name: "Outlet Temp (°C)", color: "#82ca9d" },
             ]}
             yAxisLabel="Temperature (°C)"
-            data={displayData} // 3. ارسال داده
+            data={displayData} // 3. Send data
         />
 
         {/* Chart 3: Key Performance Indicators (KPIs) */}
@@ -458,7 +458,7 @@ const Monitoring = () => {
             yAxisLabel="Efficiency (%)"
             yAxisId="kpi"
             orientation="left"
-            data={displayData} // 3. ارسال داده
+            data={displayData} // 3. Send data
         />
         
         {/* Chart 4: Vibration - Time Domain (Raw) */}
@@ -468,7 +468,7 @@ const Monitoring = () => {
                 { key: "Vibration", name: "Vibration (mm/s)", color: "#8884d8" },
             ]}
             yAxisLabel="Vibration Amplitude (mm/s)"
-            data={displayData} // 3. ارسال داده
+            data={displayData} // 3. Send data
         />
 
         {/* Chart 5: Vibration - Frequency Domain */}
@@ -480,7 +480,7 @@ const Monitoring = () => {
                 { key: "Phase_Angle", name: "Phase Angle (Deg)", color: "#ff9800" },
             ]}
             yAxisLabel="Value"
-            data={displayData} // 3. ارسال داده
+            data={displayData} // 3. Send data
         />
         
         {/* Chart 6: Vibration - Statistical Metrics */}
@@ -493,7 +493,7 @@ const Monitoring = () => {
                 { key: "vib_rms", name: "RMS", color: "#673ab7" },
             ]}
             yAxisLabel="Vibration Metric (mm/s)"
-            data={displayData} // 3. ارسال داده
+            data={displayData} // 3. Send data
         />
         
         {/* Chart 7: Ambient Conditions */}
@@ -505,7 +505,7 @@ const Monitoring = () => {
                 { key: "Air_Pollution", name: "Air Pollution", color: "#ff9800" },
             ]}
             yAxisLabel="Value"
-            data={displayData} // 3. ارسال داده
+            data={displayData} // 3. Send data
         />
 
         {/* Chart 8: Fluid Characteristics */}
@@ -518,7 +518,7 @@ const Monitoring = () => {
                 { key: "Velocity", name: "Velocity (m/s)", color: "#f44336" },
             ]}
             yAxisLabel="Value"
-            data={displayData} // 3. ارسال داده
+            data={displayData} // 3. Send data
         />
 
         {/* Chart 9: Mechanical State & Quality Factors */}
@@ -531,7 +531,7 @@ const Monitoring = () => {
                 { key: "Maintenance_Quality", name: "Maintenance Quality (%)", color: "#26a69a" },
             ]}
             yAxisLabel="Value"
-            data={displayData} // 3. ارسال داده
+            data={displayData} // 3. Send data
         />
         
         {/* Chart 10: RPM & Torque */}

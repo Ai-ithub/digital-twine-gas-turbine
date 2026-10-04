@@ -1,19 +1,19 @@
 # MLflow Setup Guide
 
-راهنمای پیکربندی و استفاده از MLflow برای model versioning و experiment tracking.
+Guide to configuring and using MLflow for model versioning and experiment tracking.
 
-## 📋 پیکربندی
+## 📋 Configuration
 
 ### Environment Variables
 
-در `.env` اضافه کنید:
+Add to `.env`:
 
 ```env
 MLFLOW_TRACKING_URI=http://mlflow:5000
 MLFLOW_EXPERIMENT_NAME=Digital-Twin-Models
 ```
 
-## 🚀 استفاده
+## 🚀 Usage
 
 ### Logging a Model
 
@@ -46,7 +46,7 @@ tracker.log_data_version(
 
 ## 🌐 Access
 
-MLflow UI در دسترس است در:
+The MLflow UI is available at:
 - **URL:** http://localhost:5001
 - **Tracking URI:** http://mlflow:5000
 

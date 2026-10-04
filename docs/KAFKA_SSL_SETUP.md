@@ -1,47 +1,47 @@
 # Kafka SSL/TLS Setup Guide
 
-این راهنما نحوه پیکربندی SSL/TLS برای Kafka را شرح می‌دهد.
+This guide describes how to configure SSL/TLS for Kafka.
 
-## 📋 پیش‌نیازها
+## 📋 Prerequisites
 
 - OpenSSL
-- Java keytool (برای تولید keystores)
+- Java keytool (for generating keystores)
 
-## 🔐 تولید Certificates
+## 🔐 Generating Certificates
 
-### مرحله 1: اجرای اسکریپت تولید Certificate
+### Step 1: Run the Certificate Generation Script
 
 ```bash
 chmod +x scripts/generate_kafka_certs.sh
 ./scripts/generate_kafka_certs.sh
 ```
 
-این اسکریپت موارد زیر را تولید می‌کند:
-- `kafka_certs/ca-cert.pem` - CA certificate (برای clients)
+This script generates the following:
+- `kafka_certs/ca-cert.pem` - CA certificate (for clients)
 - `kafka_certs/kafka.server.keystore.jks` - Server keystore
 - `kafka_certs/kafka.server.truststore.jks` - Server truststore
 - `kafka_certs/kafka.client.truststore.jks` - Client truststore
 
-### مرحله 2: فعال‌سازی SSL در Kafka
+### Step 2: Enable SSL in Kafka
 
-در فایل `.env` اضافه کنید:
+Add to the `.env` file:
 
 ```env
 KAFKA_SSL_ENABLED=true
 KAFKA_CERT_DIR=kafka_certs
-KAFKA_INTER_BROKER_LISTENER=SSL  # برای استفاده از SSL بین brokers
+KAFKA_INTER_BROKER_LISTENER=SSL  # to use SSL between brokers
 ```
 
-### مرحله 3: پیکربندی docker-compose
+### Step 3: Configure docker-compose
 
-گزینه‌های SSL در `docker-compose.yml` با کامنت مشخص شده‌اند. برای فعال‌سازی:
+The SSL options in `docker-compose.yml` are marked with comments. To enable:
 
-1. Uncomment کردن SSL environment variables در سرویس Kafka
-2. اطمینان از mount شدن volume certificates
+1. Uncomment the SSL environment variables in the Kafka service
+2. Make sure the certificates volume is mounted
 
-## 🔧 استفاده در Python Clients
+## 🔧 Use in Python Clients
 
-### استفاده از Secure Producer
+### Using the Secure Producer
 
 ```python
 from backend.core.kafka_ssl import create_secure_kafka_producer
@@ -52,7 +52,7 @@ producer = create_secure_kafka_producer(
 )
 ```
 
-### استفاده از Secure Consumer
+### Using the Secure Consumer
 
 ```python
 from backend.core.kafka_ssl import create_secure_kafka_consumer
@@ -64,21 +64,21 @@ consumer = create_secure_kafka_consumer(
 )
 ```
 
-## ⚠️ نکات امنیتی
+## ⚠️ Security Notes
 
 1. **Development vs Production:**
-   - Certificates تولید شده self-signed هستند و فقط برای development مناسبند
-   - برای production، از certificates واقعی از CA استفاده کنید
+   - The generated certificates are self-signed and suitable only for development
+   - For production, use real certificates from a CA
 
 2. **Password Management:**
-   - در production، passwords را در environment variables نگه دارید
-   - هرگز passwords را در کد hard-code نکنید
+   - In production, keep passwords in environment variables
+   - Never hard-code passwords in code
 
 3. **Certificate Rotation:**
-   - Certificates باید به صورت دوره‌ای rotate شوند
-   - یک plan برای certificate renewal داشته باشید
+   - Certificates must be rotated periodically
+   - Have a plan for certificate renewal
 
-## 🧪 تست SSL Connection
+## 🧪 Testing the SSL Connection
 
 ```python
 from backend.core.kafka_ssl import get_kafka_ssl_context
@@ -92,24 +92,24 @@ else:
 
 ## 📝 Migration Guide
 
-برای migrate کردن existing consumers به SSL:
+To migrate existing consumers to SSL:
 
-1. `KAFKA_SSL_ENABLED=true` را در `.env` set کنید
-2. Producer/Consumer creation را به `create_secure_kafka_*` functions تغییر دهید
-3. Port را از `9092` به `9093` تغییر دهید
-4. تست کنید و اطمینان حاصل کنید که connection برقرار است
+1. Set `KAFKA_SSL_ENABLED=true` in `.env`
+2. Change Producer/Consumer creation to the `create_secure_kafka_*` functions
+3. Change the Port from `9092` to `9093`
+4. Test and make sure the connection is established
 
 ## 🐛 Troubleshooting
 
-### مشکل: "SSL handshake failed"
-- بررسی کنید که certificates در مسیر صحیح هستند
-- اطمینان حاصل کنید که port 9093 باز است
+### Problem: "SSL handshake failed"
+- Check that the certificates are in the correct path
+- Make sure port 9093 is open
 
-### مشکل: "Certificate verification failed"
-- برای development، `check_hostname=False` در SSL context set شده است
-- در production، hostname verification باید فعال باشد
+### Problem: "Certificate verification failed"
+- For development, `check_hostname=False` is set in the SSL context
+- In production, hostname verification must be enabled
 
-### مشکل: "Kafka broker not available"
-- بررسی کنید که Kafka با SSL listeners شروع شده است
-- Logs کافکا را بررسی کنید
+### Problem: "Kafka broker not available"
+- Check that Kafka started with SSL listeners
+- Check the Kafka logs
 

@@ -1,17 +1,17 @@
-# 🚀 راهنمای کامل راه‌اندازی سیستم
+# 🚀 Complete System Setup Guide
 
-این راهنما تمام مراحل راه‌اندازی سیستم Digital Twin Gas Turbine را شرح می‌دهد.
+This guide describes all the steps for setting up the Digital Twin Gas Turbine system.
 
-## 📋 پیش‌نیازها
+## 📋 Prerequisites
 
 - Docker & Docker Compose
 - Python 3.11+
-- Node.js 18+ (برای Frontend)
+- Node.js 18+ (for the Frontend)
 - 8GB+ RAM recommended
 
-## 🔧 راه‌اندازی
+## 🔧 Setup
 
-### 1. کلون کردن و تنظیمات اولیه
+### 1. Clone and Initial Setup
 
 ```bash
 # Clone repository
@@ -19,13 +19,13 @@ git clone <repository-url>
 cd digital-twine-gas-turbine-1
 
 # Create .env file
-cp .env.example .env  # اگر وجود دارد
-# یا فایل .env را با مقادیر زیر ایجاد کنید:
+cp .env.example .env  # if it exists
+# Or create the .env file with the following values:
 ```
 
-### 2. تنظیم Environment Variables
+### 2. Set Environment Variables
 
-فایل `.env` را ایجاد کنید:
+Create the `.env` file:
 
 ```env
 # Database
@@ -63,7 +63,7 @@ GRAFANA_ADMIN_PASSWORD=admin
 MLFLOW_TRACKING_URI=http://mlflow:5000
 ```
 
-### 3. راه‌اندازی Services
+### 3. Start Services
 
 ```bash
 # Start all services
@@ -78,16 +78,16 @@ docker-compose ps
 
 ### 4. Initialize Database
 
-Database به صورت خودکار با `init/init.sql` initialize می‌شود.
+The Database is initialized automatically with `init/init.sql`.
 
 Default users:
 - **admin** / **admin123** (role: admin)
 - **engineer** / **admin123** (role: engineer)
 - **operator** / **admin123** (role: operator)
 
-⚠️ **توجه:** در production حتماً password‌ها را تغییر دهید!
+⚠️ **Note:** Be sure to change the passwords in production!
 
-### 5. راه‌اندازی Frontend
+### 5. Start the Frontend
 
 ```bash
 cd frontend
@@ -95,7 +95,7 @@ npm install
 npm run dev
 ```
 
-Frontend در http://localhost:5173 در دسترس است.
+The Frontend is available at http://localhost:5173.
 
 ## 🌐 Access Points
 
@@ -118,7 +118,7 @@ curl -X POST http://localhost:5000/api/auth/login \
   -d '{"username": "admin", "password": "admin123"}'
 ```
 
-### استفاده از Token
+### Using the Token
 
 ```bash
 TOKEN="your-jwt-token-here"
@@ -131,16 +131,16 @@ curl -X GET http://localhost:5000/api/data/get_live_data \
 
 ### Prometheus Metrics
 
-Metrics در دسترس هستند در:
+Metrics are available at:
 - Backend: http://localhost:8000/metrics
 - DVR Consumer: http://localhost:8000/metrics
 - RTM Consumer: http://localhost:8000/metrics
 
 ### Grafana Dashboards
 
-1. Login به Grafana
-2. Dashboards به صورت خودکار load می‌شوند
-3. System Overview و Data Quality dashboards در دسترس هستند
+1. Log in to Grafana
+2. Dashboards load automatically
+3. System Overview and Data Quality dashboards are available
 
 ## 🔄 Workflow Example
 
@@ -176,7 +176,7 @@ npm test
 
 ## 📝 Troubleshooting
 
-### مشکل: Kafka connection failed
+### Problem: Kafka connection failed
 ```bash
 # Check Kafka status
 docker-compose ps kafka
@@ -185,30 +185,30 @@ docker-compose ps kafka
 docker-compose logs kafka
 ```
 
-### مشکل: Database connection error
+### Problem: Database connection error
 ```bash
 # Check MySQL health
 docker-compose exec mysql mysqladmin ping -h localhost -u root -p
 ```
 
-### مشکل: Metrics not showing
-- بررسی کنید که metrics server در حال اجرا است
-- Port 8000 باز باشد
-- Prometheus config درست باشد
+### Problem: Metrics not showing
+- Check that the metrics server is running
+- Port 8000 must be open
+- The Prometheus config must be correct
 
 ## ✅ Verification Checklist
 
-- [ ] تمام containers در حال اجرا هستند
-- [ ] Database initialized شده است
-- [ ] Default users ایجاد شده‌اند
-- [ ] Authentication کار می‌کند
-- [ ] Metrics در Prometheus قابل مشاهده هستند
-- [ ] Grafana dashboards load می‌شوند
-- [ ] MLflow UI در دسترس است
-- [ ] Data flow کار می‌کند
-- [ ] Tests pass می‌شوند
+- [ ] All containers are running
+- [ ] The Database is initialized
+- [ ] Default users have been created
+- [ ] Authentication works
+- [ ] Metrics are visible in Prometheus
+- [ ] Grafana dashboards load
+- [ ] The MLflow UI is available
+- [ ] Data flow works
+- [ ] Tests pass
 
 ---
 
-**سیستم آماده برای استفاده است!** 🎉
+**The system is ready for use!** 🎉
 

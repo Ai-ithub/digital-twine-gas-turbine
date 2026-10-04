@@ -1,137 +1,137 @@
-# 🚀 بهینه‌سازی مدل‌های RTO، RUL و DVR
+# 🚀 Optimization of RTO, RUL and DVR Models
 
-## 📈 **تحلیل عملکرد فعلی**
+## 📈 **Analysis of Current Performance**
 
 ### **1. RTO (Real-Time Optimization)**
-**وضعیت فعلی:**
-- الگوریتم: PPO (Proximal Policy Optimization)
-- معماری: Actor-Critic Networks
-- مشکل: عملکرد بهینه‌سازی نیاز به بهبود دارد
+**Current status:**
+- Algorithm: PPO (Proximal Policy Optimization)
+- Architecture: Actor-Critic Networks
+- Problem: Optimization performance needs improvement
 
-**مشکلات شناسایی شده:**
-- تعداد epochs کم (100 epoch)
-- وزن‌های reward نامتعادل
-- نیاز به تنظیم hyperparameters
+**Identified problems:**
+- Low number of epochs (100 epochs)
+- Unbalanced reward weights
+- Need to tune hyperparameters
 
 ### **2. RUL (Remaining Useful Life)**
-**وضعیت فعلی:**
-- الگوریتم: LSTM Network
-- MAE: 0.28 روز
+**Current status:**
+- Algorithm: LSTM Network
+- MAE: 0.28 days
 - R² Score: 0.72
-- معماری: 64 LSTM units
+- Architecture: 64 LSTM units
 
-**نقاط قوت:**
-- عملکرد قابل قبول
-- استفاده از Kalman Filter برای پیش‌پردازش
-- تبدیل به ONNX برای deployment
+**Strengths:**
+- Acceptable performance
+- Use of a Kalman Filter for preprocessing
+- Conversion to ONNX for deployment
 
 ### **3. DVR (Data Validation & Reconciliation)**
-**وضعیت فعلی:**
+**Current status:**
 - ✅ Rule-Based Checks
 - ✅ PCA-based anomaly detection  
 - ✅ Grubbs' test
-- ⏳ WLS (نیمه‌کاره)
-- ❌ Bayesian Inference (پیاده‌نشده)
+- ⏳ WLS (half-finished)
+- ❌ Bayesian Inference (not implemented)
 
 ---
 
-## 🎯 **پیشنهادات بهینه‌سازی**
+## 🎯 **Optimization Suggestions**
 
 ### **RTO Optimization**
 
-#### **1. بهبود Hyperparameters**
+#### **1. Improve Hyperparameters**
 ```python
 OPTIMIZED_CONFIG = {
-    "n_epochs": 200,  # افزایش از 100
-    "timesteps_per_epoch": 4096,  # افزایش از 2048
-    "actor_lr": 1e-4,  # کاهش learning rate
+    "n_epochs": 200,  # increased from 100
+    "timesteps_per_epoch": 4096,  # increased from 2048
+    "actor_lr": 1e-4,  # reduce learning rate
     "critic_lr": 5e-4,
-    "gamma": 0.995,  # افزایش discount factor
+    "gamma": 0.995,  # increase discount factor
     "reward_weights": {
-        "efficiency": 10.0,  # افزایش وزن efficiency
-        "power": -0.005,  # کاهش penalty
-        "vibration": -0.2  # افزایش penalty برای vibration
+        "efficiency": 10.0,  # increase efficiency weight
+        "power": -0.005,  # reduce penalty
+        "vibration": -0.2  # increase penalty for vibration
     }
 }
 ```
 
-#### **2. بهبود معماری شبکه**
-- افزایش عمق شبکه: [256, 128, 64]
-- اضافه کردن Batch Normalization
-- استفاده از Dropout برای regularization
+#### **2. Improve Network Architecture**
+- Increase network depth: [256, 128, 64]
+- Add Batch Normalization
+- Use Dropout for regularization
 
-#### **3. بهبود محیط شبیه‌سازی**
-- اضافه کردن noise واقعی‌تر
-- بهبود reward function
-- اضافه کردن constraints فیزیکی
+#### **3. Improve the Simulation Environment**
+- Add more realistic noise
+- Improve the reward function
+- Add physical constraints
 
 ### **RUL Optimization**
 
-#### **1. بهبود معماری LSTM**
+#### **1. Improve LSTM Architecture**
 ```python
 IMPROVED_LSTM = {
     "lstm_units": [128, 64],  # Multi-layer LSTM
     "dropout": 0.2,
     "recurrent_dropout": 0.2,
-    "batch_size": 64,  # کاهش از 128
-    "window_size": 120,  # افزایش از 60
+    "batch_size": 64,  # reduced from 128
+    "window_size": 120,  # increased from 60
 }
 ```
 
-#### **2. Feature Engineering بهتر**
-- اضافه کردن rolling statistics
-- استفاده از Fourier Transform برای frequency features
-- اضافه کردن lag features
+#### **2. Better Feature Engineering**
+- Add rolling statistics
+- Use the Fourier Transform for frequency features
+- Add lag features
 
 #### **3. Ensemble Methods**
-- ترکیب LSTM با Random Forest
-- استفاده از Voting Regressor
-- Cross-validation بهتر
+- Combine LSTM with Random Forest
+- Use a Voting Regressor
+- Better cross-validation
 
 ### **DVR Optimization**
 
-#### **1. تکمیل WLS Implementation**
+#### **1. Complete the WLS Implementation**
 ```python
 def enhanced_wls_correction(self, df: pd.DataFrame) -> pd.DataFrame:
     """
-    پیاده‌سازی کامل WLS برای تصحیح داده‌ها
+    Complete WLS implementation for data correction
     """
-    # محاسبه وزن‌ها بر اساس uncertainty
-    # تصحیح مقادیر missing/noisy
-    # validation نتایج
+    # Calculate weights based on uncertainty
+    # Correct missing/noisy values
+    # Validate results
     pass
 ```
 
-#### **2. اضافه کردن Bayesian Inference**
-- استفاده از PyMC3 یا Stan
-- تخمین probabilistic مقادیر sensor
-- محاسبه confidence intervals
+#### **2. Add Bayesian Inference**
+- Use PyMC3 or Stan
+- Probabilistic estimation of sensor values
+- Calculate confidence intervals
 
-#### **3. بهبود PCA Threshold**
-- استفاده از adaptive thresholding
-- تنظیم بر اساس sensor type
-- اضافه کردن temporal analysis
+#### **3. Improve the PCA Threshold**
+- Use adaptive thresholding
+- Adjust based on sensor type
+- Add temporal analysis
 
 ---
 
 ## 🔧 **Implementation Plan**
 
-### **Phase 1: RTO Optimization (اولویت بالا)**
-1. تنظیم hyperparameters جدید
-2. بهبود reward function
-3. افزایش training time
-4. validation با backtesting
+### **Phase 1: RTO Optimization (High priority)**
+1. Set new hyperparameters
+2. Improve the reward function
+3. Increase training time
+4. Validate with backtesting
 
-### **Phase 2: RUL Enhancement (اولویت متوسط)**
-1. پیاده‌سازی multi-layer LSTM
-2. بهبود feature engineering
-3. اضافه کردن ensemble methods
-4. تست عملکرد
+### **Phase 2: RUL Enhancement (Medium priority)**
+1. Implement a multi-layer LSTM
+2. Improve feature engineering
+3. Add ensemble methods
+4. Test performance
 
-### **Phase 3: DVR Completion (اولویت متوسط)**
-1. تکمیل WLS implementation
-2. اضافه کردن Bayesian inference
-3. بهبود PCA thresholding
+### **Phase 3: DVR Completion (Medium priority)**
+1. Complete the WLS implementation
+2. Add Bayesian inference
+3. Improve PCA thresholding
 4. integration testing
 
 ---
@@ -139,28 +139,28 @@ def enhanced_wls_correction(self, df: pd.DataFrame) -> pd.DataFrame:
 ## 📊 **Expected Performance Improvements**
 
 ### **RTO**
-- هدف: بهبود 15-20% در efficiency optimization
-- کاهش oscillation در control actions
-- بهتر شدن convergence
+- Goal: 15-20% improvement in efficiency optimization
+- Reduce oscillation in control actions
+- Better convergence
 
 ### **RUL**
-- هدف: MAE < 0.20 روز
+- Goal: MAE < 0.20 days
 - R² Score > 0.80
-- بهبود generalization
+- Improved generalization
 
 ### **DVR**
-- هدف: کاهش 30% false positives
-- بهبود data quality score
-- تشخیص دقیق‌تر sensor faults
+- Goal: 30% reduction in false positives
+- Improve the data quality score
+- More accurate sensor fault detection
 
 ---
 
-## ⚠️ **نکات مهم**
+## ⚠️ **Important Notes**
 
-1. **تست کامل**: هر تغییر باید با validation set تست شود
-2. **Monitoring**: اضافه کردن metrics برای real-time monitoring
-3. **Rollback Plan**: امکان برگشت به مدل قبلی در صورت مشکل
-4. **Documentation**: مستندسازی کامل تغییرات
+1. **Complete testing**: Every change must be tested with the validation set
+2. **Monitoring**: Add metrics for real-time monitoring
+3. **Rollback Plan**: Ability to return to the previous model if there is a problem
+4. **Documentation**: Complete documentation of changes
 
 ---
 
@@ -170,4 +170,4 @@ def enhanced_wls_correction(self, df: pd.DataFrame) -> pd.DataFrame:
 - **RUL**: MAE, R², Prediction accuracy
 - **DVR**: Data quality score, False positive rate, Coverage
 
-این بهینه‌سازی‌ها باعث بهبود قابل توجه عملکرد سیستم Digital Twin خواهد شد.
+These optimizations will significantly improve the performance of the Digital Twin system.

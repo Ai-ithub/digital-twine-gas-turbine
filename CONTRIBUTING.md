@@ -1,6 +1,6 @@
-# راهنمای مشارکت در پروژه
+# Project Contribution Guide
 
-از اینکه می‌خواهید در پروژه مشارکت کنید، خوشحالیم! لطفاً برای مشارکت در این پروژه، مراحل زیر را دنبال کنید:
+We are glad you want to contribute to the project! To contribute, please follow these steps:
 
-## مراحل مشارکت
+## Contribution Steps
 

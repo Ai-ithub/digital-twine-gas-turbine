@@ -67,22 +67,22 @@ def perform_analysis():
             if df.empty:
                 return jsonify([])
 
-            # --- این بخش اصلاح شده و کلیدی است ---
-            # 1. اطمینان از اینکه ستون زمان از نوع datetime است
+            # --- This section has been corrected and is key ---
+            # 1. Make sure the time column is of datetime type
             df["time"] = pd.to_datetime(df["time"])
 
-            # 2. تبدیل ستون سنسور به نوع عددی؛ مقادیر نامعتبر به NaN تبدیل می‌شوند
+            # 2. Convert the sensor column to numeric; invalid values become NaN
             df[sensor1] = pd.to_numeric(df[sensor1], errors="coerce")
 
-            # 3. حذف سطرهایی که مقدار سنسور در آن‌ها NaN است (یعنی تبدیل ناموفق بوده)
+            # 3. Drop rows where the sensor value is NaN (i.e., conversion failed)
             df.dropna(subset=[sensor1], inplace=True)
 
-            # اگر پس از پاکسازی داده‌ای باقی نماند، لیست خالی برگردان
+            # If no data remains after cleaning, return an empty list
             if df.empty:
                 return jsonify([])
 
-            # 4. حالا با خیال راحت میانگین را محاسبه کن
-            # داده‌ها بر اساس بازه‌های زمانی 10 دقیقه‌ای گروه‌بندی (resample) شده و میانگین آن‌ها محاسبه می‌شود
+            # 4. Now calculate the mean safely
+            # The data is grouped (resampled) into 10-minute intervals and their mean is computed
             df_resampled = (
                 df.set_index("time")[[sensor1]].resample("10T").mean().dropna()
             )
@@ -97,7 +97,7 @@ def perform_analysis():
                 ), 400
             df = query_influx_for_analysis(config, time_range, [sensor1, sensor2])
 
-            # --- این اصلاح برای بخش Correlation هم اعمال شود ---
+            # --- This fix should also be applied to the Correlation section ---
             df[sensor1] = pd.to_numeric(df[sensor1], errors="coerce")
             df[sensor2] = pd.to_numeric(df[sensor2], errors="coerce")
 
@@ -115,7 +115,7 @@ def perform_analysis():
         elif analysis_type == "distribution":
             df = query_influx_for_analysis(config, time_range, [sensor1])
 
-            # --- این اصلاح برای بخش Distribution هم اعمال شود ---
+            # --- This fix should also be applied to the Distribution section ---
             df[sensor1] = pd.to_numeric(df[sensor1], errors="coerce")
 
             sensor_data = df[sensor1].dropna()

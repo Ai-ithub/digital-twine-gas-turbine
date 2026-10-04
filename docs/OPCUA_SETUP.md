@@ -1,15 +1,15 @@
 # OPC-UA Client Setup Guide
 
-این راهنما نحوه پیکربندی و استفاده از OPC-UA Client را شرح می‌دهد.
+This guide describes how to configure and use the OPC-UA Client.
 
-## 📋 پیش‌نیازها
+## 📋 Prerequisites
 
 - OPC-UA Server (SCADA/PLC system)
 - Python OPC-UA libraries (asyncua, opcua)
 
-## 🔧 پیکربندی Environment Variables
+## 🔧 Configuring Environment Variables
 
-در فایل `.env` اضافه کنید:
+Add to the `.env` file:
 
 ```env
 # OPC-UA Server Configuration
@@ -26,17 +26,17 @@ OPCUA_NODE_SYSTEM_STATUS=ns=2;s=SystemStatus
 
 ## 🔐 Security Configuration (NF-414)
 
-طبق requirement NF-414، OPC-UA connection باید از:
-- **Unique credentials** برای RTO control استفاده کند
-- **Restricted permissions** داشته باشد
-- **Isolated** از سایر connections باشد
+According to requirement NF-414, the OPC-UA connection must:
+- Use **Unique credentials** for RTO control
+- Have **Restricted permissions**
+- Be **Isolated** from other connections
 
-برای این منظور:
-1. یک کاربر OPC-UA جداگانه برای RTO ایجاد کنید
-2. فقط read/write permissions برای control nodes بدهید
-3. این credentials را در `.env` نگه دارید (نه در کد)
+For this purpose:
+1. Create a separate OPC-UA user for RTO
+2. Give only read/write permissions for the control nodes
+3. Keep these credentials in `.env` (not in code)
 
-## 🚀 استفاده
+## 🚀 Usage
 
 ### 1. Propose Control Change
 
@@ -68,20 +68,20 @@ Authorization: Bearer <engineer_token>
 
 ## 🔄 Closed-Loop Control Workflow (FR-343)
 
-1. **RTO Suggestion** → RTO module پیشنهاد بهینه‌سازی می‌دهد
-2. **Propose Action** → سیستم یک control action پیشنهاد می‌کند
-3. **Engineer Approval** → مهندس action را بررسی و approve می‌کند
-4. **Execute** → Action از طریق OPC-UA اجرا می‌شود
-5. **Monitor** → نتایج monitor می‌شوند
+1. **RTO Suggestion** → The RTO module provides an optimization suggestion
+2. **Propose Action** → The system proposes a control action
+3. **Engineer Approval** → The engineer reviews and approves the action
+4. **Execute** → The action is executed through OPC-UA
+5. **Monitor** → The results are monitored
 
 ## 📝 Integration with RTO
 
-برای integrate کردن RTO با OPC-UA:
+To integrate RTO with OPC-UA:
 
 ```python
 from backend.opcua.opcua_client import OPCUAClient, OPCUAControlExecutor
 
-# در RTO consumer، بعد از تولید suggestion:
+# In the RTO consumer, after generating a suggestion:
 executor = OPCUAControlExecutor(OPCUAClient())
 action = await executor.propose_control_action(
     action_id=generate_uuid(),
@@ -92,23 +92,23 @@ action = await executor.propose_control_action(
 )
 ```
 
-## ⚠️ نکات امنیتی
+## ⚠️ Security Notes
 
 1. **Credentials:**
-   - هرگز credentials را در کد hard-code نکنید
-   - از environment variables یا secret management استفاده کنید
+   - Never hard-code credentials in code
+   - Use environment variables or secret management
 
 2. **Network Security:**
-   - OPC-UA connection باید در یک network isolated باشد
-   - از VPN یا firewall rules استفاده کنید
+   - The OPC-UA connection must be on an isolated network
+   - Use a VPN or firewall rules
 
 3. **Access Control:**
-   - فقط engineers و admins می‌توانند actions را approve/execute کنند
-   - تمام actions log می‌شوند
+   - Only engineers and admins can approve/execute actions
+   - All actions are logged
 
 ## 🧪 Testing
 
-برای تست OPC-UA connection:
+To test the OPC-UA connection:
 
 ```python
 from backend.opcua.opcua_client import OPCUAClient
@@ -122,16 +122,16 @@ if connected:
 
 ## 🐛 Troubleshooting
 
-### مشکل: "Cannot connect to OPC-UA server"
-- بررسی کنید که OPC-UA server در حال اجرا است
-- Endpoint URL را بررسی کنید
-- Firewall rules را بررسی کنید
+### Problem: "Cannot connect to OPC-UA server"
+- Check that the OPC-UA server is running
+- Check the Endpoint URL
+- Check the Firewall rules
 
-### مشکل: "Authentication failed"
-- Username/password را بررسی کنید
-- اطمینان حاصل کنید که کاربر در OPC-UA server وجود دارد
+### Problem: "Authentication failed"
+- Check the Username/password
+- Make sure the user exists on the OPC-UA server
 
-### مشکل: "Node not found"
-- Node IDs را بررسی کنید
-- ساختار OPC-UA server را با brows کردن بررسی کنید
+### Problem: "Node not found"
+- Check the Node IDs
+- Check the OPC-UA server structure by browsing
 

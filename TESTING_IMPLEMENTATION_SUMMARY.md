@@ -1,20 +1,20 @@
-# خلاصه پیاده‌سازی تست‌ها (اولویت 2)
+# Tests Implementation Summary (Priority 2)
 
-این فایل خلاصه‌ای از پیاده‌سازی تست‌های unit و integration است.
+This file is a summary of the implementation of unit and integration tests.
 
-## ✅ کارهای انجام شده
+## ✅ Work Done
 
-### 1. Unit Tests برای Backend (✅ تکمیل شده)
+### 1. Unit Tests for the Backend (✅ Completed)
 
-#### فایل‌های ایجاد شده:
-- `tests/conftest.py` - Pytest fixtures مشترک
-- `tests/test_auth_routes.py` - تست‌های authentication routes
-- `tests/test_data_routes.py` - تست‌های data routes
-- `tests/test_control_routes.py` - تست‌های control routes
-- `tests/test_prediction_routes.py` - تست‌های prediction routes
-- `tests/test_pdm_routes.py` - تست‌های predictive maintenance routes
-- `tests/test_rto_routes.py` - تست‌های RTO routes
-- `tests/test_auth_module.py` - تست‌های authentication utilities
+#### Files created:
+- `tests/conftest.py` - Shared Pytest fixtures
+- `tests/test_auth_routes.py` - authentication routes tests
+- `tests/test_data_routes.py` - data routes tests
+- `tests/test_control_routes.py` - control routes tests
+- `tests/test_prediction_routes.py` - prediction routes tests
+- `tests/test_pdm_routes.py` - predictive maintenance routes tests
+- `tests/test_rto_routes.py` - RTO routes tests
+- `tests/test_auth_module.py` - authentication utilities tests
 
 #### Coverage:
 - ✅ Authentication routes (login, register, user management)
@@ -26,21 +26,21 @@
 - ✅ Auth utilities (JWT, password hashing, RBAC)
 
 #### Pytest Configuration:
-- ✅ `pytest.ini` با coverage threshold 85%
+- ✅ `pytest.ini` with a coverage threshold of 85%
 - ✅ Coverage reporting (terminal, HTML, XML)
 - ✅ Test markers (unit, integration, slow)
 
-### 2. Frontend Tests با Jest (✅ تکمیل شده)
+### 2. Frontend Tests with Jest (✅ Completed)
 
-#### فایل‌های ایجاد شده:
+#### Files created:
 - `frontend/jest.config.js` - Jest configuration
-- `frontend/babel.config.js` - Babel configuration برای JSX
-- `frontend/src/setupTests.js` - Test setup و mocks
-- `frontend/src/components/common/StatCard.test.jsx` - تست StatCard component
-- `frontend/src/components/common/LoadingSpinner.test.jsx` - تست LoadingSpinner
-- `frontend/src/features/rtm/rtmSlice.test.js` - تست Redux slice
+- `frontend/babel.config.js` - Babel configuration for JSX
+- `frontend/src/setupTests.js` - Test setup and mocks
+- `frontend/src/components/common/StatCard.test.jsx` - StatCard component test
+- `frontend/src/components/common/LoadingSpinner.test.jsx` - LoadingSpinner test
+- `frontend/src/features/rtm/rtmSlice.test.js` - Redux slice test
 
-#### Dependencies اضافه شده:
+#### Dependencies added:
 - `@testing-library/react` - React testing utilities
 - `@testing-library/jest-dom` - DOM matchers
 - `@testing-library/user-event` - User interaction simulation
@@ -54,9 +54,9 @@
 "test:coverage": "jest --coverage"
 ```
 
-### 3. Integration Tests (✅ تکمیل شده)
+### 3. Integration Tests (✅ Completed)
 
-#### فایل‌های ایجاد شده:
+#### Files created:
 - `tests/integration/test_kafka_influxdb_api.py` - Integration tests
 
 #### Coverage:
@@ -68,7 +68,7 @@
 
 ### Backend:
 - **Target:** ≥ 85% coverage
-- **Current:** در حال اجرای تست‌ها برای measurement
+- **Current:** Running tests for measurement
 
 ### Frontend:
 - **Target:** ≥ 70% coverage
@@ -78,7 +78,7 @@
   - Lines: 70%
   - Statements: 70%
 
-## 🚀 نحوه اجرای تست‌ها
+## 🚀 How to Run the Tests
 
 ### Backend Tests:
 ```bash
@@ -144,27 +144,27 @@ frontend/src/
 ## 🧪 Mocking Strategy
 
 ### Backend:
-- **Database:** Mocked با `pymysql` connections
-- **InfluxDB:** Mocked با `InfluxDBClient`
-- **Kafka:** Mocked با `KafkaProducer` و `KafkaConsumer`
+- **Database:** Mocked with `pymysql` connections
+- **InfluxDB:** Mocked with `InfluxDBClient`
+- **Kafka:** Mocked with `KafkaProducer` and `KafkaConsumer`
 - **OPC-UA:** Mocked async client
 - **Auth:** Mocked user authentication
 
 ### Frontend:
-- **API Calls:** Mocked با `axios` mocks
-- **Redux Store:** Test store برای slice testing
+- **API Calls:** Mocked with `axios` mocks
+- **Redux Store:** Test store for slice testing
 - **WebSocket:** Mocked socket connections
-- **DOM APIs:** Mocked در `setupTests.js`
+- **DOM APIs:** Mocked in `setupTests.js`
 
-## ⚠️ نکات مهم
+## ⚠️ Important Notes
 
 1. **Test Data:**
-   - از fixtures برای sample data استفاده شده
-   - Test data نباید production data باشد
+   - Fixtures are used for sample data
+   - Test data must not be production data
 
 2. **Async Testing:**
-   - OPC-UA و async operations با `asyncio` mock شده‌اند
-   - Integration tests از real async patterns استفاده می‌کنند
+   - OPC-UA and async operations are mocked with `asyncio`
+   - Integration tests use real async patterns
 
 3. **Coverage Threshold:**
    - Backend: 85% (mandatory per NF-421)
@@ -172,21 +172,21 @@ frontend/src/
 
 ## 📈 Next Steps
 
-برای افزایش coverage:
+To increase coverage:
 - [ ] Add tests for remaining route handlers
 - [ ] Add tests for ML modules
 - [ ] Add tests for data pipeline consumers
 - [ ] Add more Frontend component tests
 - [ ] Add E2E tests with Playwright/Cypress
 
-## 🎉 نتیجه
+## 🎉 Result
 
-تمام تست‌های اولویت 2 پیاده‌سازی شده‌اند:
-- ✅ Unit Tests برای route handlers
-- ✅ Frontend Tests با Jest
-- ✅ Integration Tests برای data pipeline
+All priority 2 tests have been implemented:
+- ✅ Unit Tests for route handlers
+- ✅ Frontend Tests with Jest
+- ✅ Integration Tests for the data pipeline
 
-سیستم آماده برای:
+The system is ready for:
 - CI/CD integration
 - Continuous testing
 - Quality assurance

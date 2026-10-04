@@ -1,8 +1,8 @@
 # Prometheus & Grafana Setup Guide
 
-راهنمای کامل پیکربندی Prometheus و Grafana برای observability.
+Complete guide to configuring Prometheus and Grafana for observability.
 
-## 🚀 راه‌اندازی سریع
+## 🚀 Quick Start
 
 ### 1. Start Services
 
@@ -60,7 +60,7 @@ docker-compose up prometheus grafana
 
 ### Prometheus Targets
 
-تمام microservices metrics endpoints در `prometheus/prometheus.yml` پیکربندی شده‌اند.
+All microservices metrics endpoints are configured in `prometheus/prometheus.yml`.
 
 ### Grafana Data Sources
 

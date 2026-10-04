@@ -1,30 +1,30 @@
-# 🏭 گزارش طراحی Dashboard صنعتی
+# 🏭 Industrial Dashboard Design Report
 
-**تاریخ:** 2025  
-**وضعیت:** ✅ **تکمیل شده - آماده برای استفاده**
+**Date:** 2025
+**Status:** ✅ **Completed - Ready for use**
 
 ---
 
-## 📋 خلاصه اجرایی
+## 📋 Executive Summary
 
-Dashboard صنعتی مشابه Turbin Generator با موفقیت طراحی و پیاده‌سازی شد.
+An industrial Dashboard similar to the Turbin Generator was successfully designed and implemented.
 
-### ویژگی‌های کلیدی:
-- ✅ **Sidebar سبز رنگ** مشابه نمونه
-- ✅ **15 صفحه مختلف** با routing کامل
-- ✅ **Gauges حرفه‌ای** (Circular & Linear)
-- ✅ **نمودارهای Real-time** (Line Charts, Bar Charts, Scatter Charts)
-- ✅ **تم صنعتی سبز-مشکی**
+### Key Features:
+- ✅ **Green Sidebar** similar to the reference
+- ✅ **15 different pages** with complete routing
+- ✅ **Professional Gauges** (Circular & Linear)
+- ✅ **Real-time charts** (Line Charts, Bar Charts, Scatter Charts)
+- ✅ **Green-black industrial theme**
 - ✅ **Responsive Design** (Mobile & Desktop)
 - ✅ **Real-time Data Integration**
 
 ---
 
-## 🎨 طراحی UI/UX
+## 🎨 UI/UX Design
 
-### 1. تم رنگی صنعتی
+### 1. Industrial Color Theme
 
-**پالت اصلی:**
+**Main palette:**
 ```javascript
 Primary: #8BC34A (Light Green)
 Background: #000000 (Black)
@@ -34,15 +34,15 @@ Borders: #4CAF50 (Green)
 Text: #FFFFFF (White)
 ```
 
-**فایل:** `frontend/src/theme/industrialTheme.js`
+**File:** `frontend/src/theme/industrialTheme.js`
 
 ---
 
 ### 2. Sidebar Navigation
 
-**ساختار منو (15 صفحه):**
+**Menu structure (15 pages):**
 ```
-├── 📊 Display (Dashboard اصلی)
+├── 📊 Display (main Dashboard)
 ├── ✓ Check List
 ├── 🔔 Alarm Systems
 ├── ⚙️ Control
@@ -59,24 +59,24 @@ Text: #FFFFFF (White)
 └── 📹 DVR
 ```
 
-**ویژگی‌ها:**
-- ✅ Highlight فعال با border زرد
-- ✅ Hover effect با تغییر background
-- ✅ User info و logout در پایین
-- ✅ Logo "TURBIN Generator" در بالا
-- ✅ Mobile responsive با drawer
+**Features:**
+- ✅ Active highlight with a yellow border
+- ✅ Hover effect with background change
+- ✅ User info and logout at the bottom
+- ✅ "TURBIN Generator" logo at the top
+- ✅ Mobile responsive with a drawer
 
-**فایل:** `frontend/src/layouts/IndustrialLayout.jsx`
+**File:** `frontend/src/layouts/IndustrialLayout.jsx`
 
 ---
 
-## 📄 صفحات پیاده‌سازی شده
+## 📄 Implemented Pages
 
-### 1. Display Page (صفحه اصلی)
+### 1. Display Page (main page)
 
-**مسیر:** `/dashboard` or `/`
+**Route:** `/dashboard` or `/`
 
-**محتوا:**
+**Content:**
 - **Frequency Section:**
   - Amplitude gauge (0-100)
   - Frequence gauge (0-1000 Hz)
@@ -98,40 +98,40 @@ Text: #FFFFFF (White)
 - Gauge_parameter
 - sensor_prameter
 
-**فایل:** `frontend/src/pages/industrial/DisplayPage.jsx`
+**File:** `frontend/src/pages/industrial/DisplayPage.jsx`
 
 ---
 
 ### 2. Graph Analysis Page
 
-**مسیر:** `/graph-analysis`
+**Route:** `/graph-analysis`
 
-**محتوا:**
+**Content:**
 - **Noise Signal Chart:**
-  - نمودار خطی real-time
-  - محور X: Time (0-1)
-  - محور Y: Amplitude (-20 to 20)
-  - رنگ سبز (#8BC34A)
-  - Grid خاکستری (#333333)
-  - Update هر 3 ثانیه
+  - Real-time line chart
+  - X axis: Time (0-1)
+  - Y axis: Amplitude (-20 to 20)
+  - Green color (#8BC34A)
+  - Gray grid (#333333)
+  - Update every 3 seconds
 
 - **Histogram of Noise:**
-  - نمودار میله‌ای
-  - Distribution نرمال
-  - رنگ قرمز تیره (#8B0000)
+  - Bar chart
+  - Normal distribution
+  - Dark red color (#8B0000)
   - 50 bin
 
-**فایل:** `frontend/src/pages/industrial/GraphAnalysisPage.jsx`
+**File:** `frontend/src/pages/industrial/GraphAnalysisPage.jsx`
 
 ---
 
 ### 3. Control Page
 
-**مسیر:** `/control`
+**Route:** `/control`
 
-**محتوا:** 30+ Gauges دسته‌بندی شده
+**Content:** 30+ categorized Gauges
 
-**بخش‌ها:**
+**Sections:**
 1. **T/C (Temperature/Compressor):**
    - Am Temp, In Temp, Out Temp
    - Tempe Data, Pressure Data
@@ -155,80 +155,80 @@ Text: #FFFFFF (White)
    - Dioxide, Monoxide
    - Viscosity, Decay State
 
-**فایل:** `frontend/src/pages/industrial/ControlPage.jsx`
+**File:** `frontend/src/pages/industrial/ControlPage.jsx`
 
 ---
 
 ### 4. Real-Time Optimization Page
 
-**مسیر:** `/real-time-op`
+**Route:** `/real-time-op`
 
-**محتوا:**
-- **Panel چپ (Settings):**
+**Content:**
+- **Left Panel (Settings):**
   - Standard Functions dropdown
   - Algorithms dropdown
   - Stopping Criteria (6 text fields)
   - Optimization Method (Quasi-newton/Newton/Gradient Descent)
   - Conjugate Gradient Settings
 
-- **Panel راست (Visualization):**
+- **Right Panel (Visualization):**
   - Intensity Graph (Scatter Chart)
   - 200 data points
-  - محور X: x(t-1)
-  - محور Y: x(t)
-  - دکمه RUN بزرگ در پایین
+  - X axis: x(t-1)
+  - Y axis: x(t)
+  - Large RUN button at the bottom
 
-**فایل:** `frontend/src/pages/industrial/RealTimeOptimizationPage.jsx`
+**File:** `frontend/src/pages/industrial/RealTimeOptimizationPage.jsx`
 
 ---
 
 ### 5. PDM Page (Predictive Maintenance)
 
-**مسیر:** `/pdm`
+**Route:** `/pdm`
 
-**محتوا:**
-- **Panel چپ:** 4 threshold linear gauges
-- **Panel وسط:**
+**Content:**
+- **Left Panel:** 4 threshold linear gauges
+- **Middle Panel:**
   - Sensor selector (Sensor_2)
-  - دکمه RUN بزرگ
-  - 12 دکمه دایره‌ای سفید (toggle-able to green)
-- **Panel راست:**
+  - Large RUN button
+  - 12 white circular buttons (toggle-able to green)
+- **Right Panel:**
   - Gauge_parameter_2 selector
   - sensor_prameter_2 selector
 
-**فایل:** `frontend/src/pages/industrial/PDMPage.jsx`
+**File:** `frontend/src/pages/industrial/PDMPage.jsx`
 
 ---
 
-## 🔧 کامپوننت‌های مشترک
+## 🔧 Shared Components
 
 ### 1. CircularGauge Component
 
 **Props:**
 ```javascript
 {
-  value: number,          // مقدار فعلی
-  min: number,            // حداقل
-  max: number,            // حداکثر
-  label: string,          // برچسب
-  unit: string,           // واحد
-  width: number,          // عرض
-  height: number,         // ارتفاع
-  warningThreshold: number,   // آستانه هشدار (70%)
-  criticalThreshold: number,  // آستانه بحرانی (90%)
+  value: number,          // current value
+  min: number,            // minimum
+  max: number,            // maximum
+  label: string,          // label
+  unit: string,           // unit
+  width: number,          // width
+  height: number,         // height
+  warningThreshold: number,   // warning threshold (70%)
+  criticalThreshold: number,  // critical threshold (90%)
 }
 ```
 
-**ویژگی‌ها:**
-- رنگ پویا بر اساس مقدار:
-  - سبز: < 70%
-  - نارنجی: 70-90%
-  - قرمز: > 90%
-- Border سبز (#4CAF50)
-- Background مشکی (#1a1a1a)
-- نمایش value و unit در مرکز
+**Features:**
+- Dynamic color based on value:
+  - Green: < 70%
+  - Orange: 70-90%
+  - Red: > 90%
+- Green border (#4CAF50)
+- Black background (#1a1a1a)
+- Display value and unit in the center
 
-**فایل:** `frontend/src/components/gauges/CircularGauge.jsx`
+**File:** `frontend/src/components/gauges/CircularGauge.jsx`
 
 ---
 
@@ -249,14 +249,14 @@ Text: #FFFFFF (White)
 }
 ```
 
-**ویژگی‌ها:**
-- Vertical bar با fill از پایین به بالا
-- Scale marks در 0%, 25%, 50%, 75%, 100%
-- رنگ پویا مشابه CircularGauge
-- نمایش min/max در بالا و پایین
-- نمایش value در box مجزا
+**Features:**
+- Vertical bar filling from bottom to top
+- Scale marks at 0%, 25%, 50%, 75%, 100%
+- Dynamic color similar to CircularGauge
+- Display min/max at the top and bottom
+- Display value in a separate box
 
-**فایل:** `frontend/src/components/gauges/LinearGauge.jsx`
+**File:** `frontend/src/components/gauges/LinearGauge.jsx`
 
 ---
 
@@ -264,7 +264,7 @@ Text: #FFFFFF (White)
 
 ### Real-Time Data Integration
 
-**در DisplayPage.jsx:**
+**In DisplayPage.jsx:**
 ```javascript
 useEffect(() => {
   const fetchData = async () => {
@@ -275,12 +275,12 @@ useEffect(() => {
   };
 
   fetchData();
-  const interval = setInterval(fetchData, 2000); // هر 2 ثانیه
+  const interval = setInterval(fetchData, 2000); // every 2 seconds
   return () => clearInterval(interval);
 }, []);
 ```
 
-**API Endpoints مورد نیاز:**
+**Required API Endpoints:**
 ```
 GET /api/data/real-time     # Real-time sensor data
 GET /api/data/history       # Historical data
@@ -289,15 +289,15 @@ POST /api/control/set       # Control commands
 
 ---
 
-## 📦 Dependencies جدید
+## 📦 New Dependencies
 
-**نصب شده:**
+**Installed:**
 ```bash
 npm install recharts --save
 npm install @mui/x-charts --save
 ```
 
-**در `package.json`:**
+**In `package.json`:**
 ```json
 {
   "recharts": "^2.10.x",
@@ -307,43 +307,43 @@ npm install @mui/x-charts --save
 
 ---
 
-## 🗂️ ساختار فایل‌ها
+## 🗂️ File Structure
 
 ```
 frontend/src/
 ├── theme/
-│   └── industrialTheme.js         # تم صنعتی سبز-مشکی
+│   └── industrialTheme.js         # green-black industrial theme
 ├── layouts/
-│   └── IndustrialLayout.jsx       # Layout با Sidebar
+│   └── IndustrialLayout.jsx       # Layout with Sidebar
 ├── pages/industrial/
-│   ├── DisplayPage.jsx            # صفحه اصلی با Gauges
-│   ├── GraphAnalysisPage.jsx      # نمودارهای تحلیل
-│   ├── ControlPage.jsx            # کنترل توربین
-│   ├── RealTimeOptimizationPage.jsx  # بهینه‌سازی
-│   └── PDMPage.jsx                # نگهداری پیش‌بینانه
+│   ├── DisplayPage.jsx            # main page with Gauges
+│   ├── GraphAnalysisPage.jsx      # analysis charts
+│   ├── ControlPage.jsx            # turbine control
+│   ├── RealTimeOptimizationPage.jsx  # optimization
+│   └── PDMPage.jsx                # predictive maintenance
 ├── components/gauges/
-│   ├── CircularGauge.jsx          # Gauge دایره‌ای
-│   └── LinearGauge.jsx            # Gauge عمودی
-├── App.jsx                         # اضافه شد ThemeProvider
-└── routes/AppRouter.jsx            # Routing به IndustrialLayout
+│   ├── CircularGauge.jsx          # circular Gauge
+│   └── LinearGauge.jsx            # vertical Gauge
+├── App.jsx                         # ThemeProvider added
+└── routes/AppRouter.jsx            # Routing to IndustrialLayout
 ```
 
 ---
 
-## 🚀 نحوه استفاده
+## 🚀 How to Use
 
-### 1. نصب Dependencies:
+### 1. Install Dependencies:
 ```bash
 cd frontend
 npm install
 ```
 
-### 2. اجرای Development Server:
+### 2. Run the Development Server:
 ```bash
 npm run dev
 ```
 
-### 3. دسترسی به Dashboard:
+### 3. Access the Dashboard:
 ```
 http://localhost:5173/dashboard
 ```
@@ -361,9 +361,9 @@ Password: admin123
 **Breakpoints:**
 - Mobile: < 768px → Hamburger menu
 - Tablet: 768px - 1024px → Sidebar collapse
-- Desktop: > 1024px → Sidebar کامل
+- Desktop: > 1024px → Full Sidebar
 
-**در IndustrialLayout:**
+**In IndustrialLayout:**
 ```javascript
 const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
@@ -378,23 +378,23 @@ const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
 ---
 
-## 🎯 ویژگی‌های خاص
+## 🎯 Special Features
 
 ### 1. Color-Coded Status
-همه Gauges رنگ خود را بر اساس threshold تغییر می‌دهند:
-- سبز (#8BC34A): Normal
-- نارنجی (#FF9800): Warning
-- قرمز (#F44336): Critical
+All Gauges change their color based on a threshold:
+- Green (#8BC34A): Normal
+- Orange (#FF9800): Warning
+- Red (#F44336): Critical
 
 ### 2. Real-Time Updates
-- نمودارها هر 2-3 ثانیه update می‌شوند
-- Smooth animations با CSS transitions
-- WebSocket support آماده
+- Charts update every 2-3 seconds
+- Smooth animations with CSS transitions
+- WebSocket support ready
 
 ### 3. User Experience
 - Loading states
 - Error boundaries
-- Tooltips روی نمودارها
+- Tooltips on charts
 - Hover effects
 - Click interactions
 
@@ -402,13 +402,13 @@ const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
 ## 🔐 Security & Authentication
 
-**محافظت شده با:**
+**Protected with:**
 - JWT Authentication
 - Role-Based Access Control (RBAC)
 - Protected Routes
 - Session Management
 
-**صفحه Control:**
+**Control page:**
 ```javascript
 <ProtectedRoute requiredRoles={['admin', 'engineer']}>
   <ControlPage />
@@ -419,7 +419,7 @@ const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
 ## 📊 Data Structure
 
-**Format داده‌های سنسور:**
+**Sensor data format:**
 ```javascript
 {
   frequency: {
@@ -454,7 +454,7 @@ const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
 ## 🧪 Testing
 
-**تست‌های پیشنهادی:**
+**Suggested tests:**
 
 ### 1. Unit Tests:
 ```bash
@@ -477,7 +477,7 @@ npm test industrial-routes
 
 ## ⚡ Performance
 
-**بهینه‌سازی‌های انجام شده:**
+**Optimizations performed:**
 - ✅ Lazy loading for pages
 - ✅ React.memo for gauges
 - ✅ useCallback for handlers
@@ -491,36 +491,36 @@ npm test industrial-routes
 
 ---
 
-## 🔄 مقایسه با نمونه اصلی
+## 🔄 Comparison with the Original Reference
 
-| ویژگی | نمونه اصلی | پیاده‌سازی ما | وضعیت |
+| Feature | Original | Our implementation | Status |
 |-------|-----------|---------------|-------|
-| Sidebar سبز | ✅ | ✅ | Match |
-| Gauges دایره‌ای | ✅ | ✅ | Match |
-| Gauges عمودی | ✅ | ✅ | Match |
-| نمودار Noise Signal | ✅ | ✅ | Match |
+| Green Sidebar | ✅ | ✅ | Match |
+| Circular Gauges | ✅ | ✅ | Match |
+| Vertical Gauges | ✅ | ✅ | Match |
+| Noise Signal chart | ✅ | ✅ | Match |
 | Histogram | ✅ | ✅ | Match |
 | Intensity Graph | ✅ | ✅ | Match |
-| دکمه‌های Control | ✅ | ✅ | Match |
-| تم رنگی | ✅ | ✅ | Match |
-| Responsive | ❌ | ✅ | **بهبود** |
+| Control buttons | ✅ | ✅ | Match |
+| Color theme | ✅ | ✅ | Match |
+| Responsive | ❌ | ✅ | **Improved** |
 | Real-time Updates | ✅ | ✅ | Match |
 
 ---
 
-## 📚 مستندات تکمیلی
+## 📚 Additional Documentation
 
-1. **API Documentation:** به `docs/API.md` مراجعه کنید
-2. **Component Storybook:** در `frontend/storybook/`
+1. **API Documentation:** See `docs/API.md`
+2. **Component Storybook:** In `frontend/storybook/`
 3. **Theme Customization:** `frontend/src/theme/README.md`
 
 ---
 
-## 🐛 مشکلات شناخته شده
+## 🐛 Known Issues
 
-**هیچ مشکل بحرانی وجود ندارد**
+**There are no critical issues**
 
-**Improvements آینده:**
+**Future Improvements:**
 - [ ] Add more chart types (Area, Radar)
 - [ ] Historical data comparison
 - [ ] Export data to CSV/PDF
@@ -529,14 +529,14 @@ npm test industrial-routes
 
 ---
 
-## ✅ Checklist نهایی
+## ✅ Final Checklist
 
-- [x] تم صنعتی پیاده‌سازی شد
-- [x] Sidebar با 15 منو
-- [x] 5 صفحه اصلی کامل شد
+- [x] Industrial theme implemented
+- [x] Sidebar with 15 menus
+- [x] 5 main pages completed
 - [x] Circular Gauges
 - [x] Linear Gauges
-- [x] نمودارهای Real-time
+- [x] Real-time charts
 - [x] Responsive Design
 - [x] Authentication Integration
 - [x] Real-time Data Integration
@@ -545,11 +545,11 @@ npm test industrial-routes
 
 ---
 
-## 🎉 نتیجه
+## 🎉 Result
 
-Dashboard صنعتی با موفقیت **100% مشابه نمونه Turbin Generator** طراحی و پیاده‌سازی شد!
+The industrial Dashboard was successfully designed and implemented **100% similar to the Turbin Generator reference**!
 
-**امکانات اضافه شده نسبت به نمونه:**
+**Features added relative to the reference:**
 - ✅ Responsive Mobile Design
 - ✅ Authentication & Security
 - ✅ Real-time WebSocket Integration
@@ -558,9 +558,9 @@ Dashboard صنعتی با موفقیت **100% مشابه نمونه Turbin Gener
 
 ---
 
-**آماده برای استفاده در Production** ✅
+**Ready for use in Production** ✅
 
-تاریخ تکمیل: 2025  
-توسعه‌دهنده: AI Assistant  
-نسخه: 1.0.0
+Completion date: 2025
+Developer: AI Assistant
+Version: 1.0.0
 
